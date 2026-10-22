@@ -6,13 +6,21 @@
 
 ### task
 
-- [ ] syphon動作チェック
-  - [ ] アウトプットのRawImageとかいじる
+#### 未分類
+
+- [x] syphon動作チェック
+  - [x] アウトプットのRawImageとかいじる
 - [x] UiBuilder
-- [ ] BpmManager
-- [ ] midi
-  - [ ] Lister機能
-  - [ ] ランタイムマッピング
+- [x] BpmManager
+
+#### UI
+- [ ] このままだとUIが細かくなりすぎる
+
+#### Midi
+- [ ] Lister機能
+- [ ] ランタイムマッピング
+
+#### 描画
 
 ### note
 

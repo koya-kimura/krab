@@ -4,9 +4,9 @@ using PrefsGUI.RosettaUI;
 using RosettaUI;
 using UnityEngine;
 
-namespace Krab.Common.Settings
+namespace Krab.Common.Timing
 {
-    public class ApplicationFrameSettings : MonoBehaviour, IUiTarget
+    public class ApplicationFrameSettings : MonoBehaviour, IUiTarget, IFrameRateContainer
     {
         private const int MinTargetFrameRate = 15;
         private const int MaxTargetFrameRate = 240;
@@ -27,6 +27,8 @@ namespace Krab.Common.Settings
         {
             ApplyIfChanged();
         }
+
+        public int TargetFrameRate => _targetFrameRate;
 
         public Element CreateElement()
         {
