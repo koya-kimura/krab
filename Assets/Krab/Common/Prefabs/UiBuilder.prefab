@@ -1,0 +1,226 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &88490007510232223
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2565558099650713739}
+  - component: {fileID: 9128611566016575940}
+  - component: {fileID: 7068385788488430949}
+  - component: {fileID: 4757347120228586088}
+  - component: {fileID: 8529108389809975842}
+  m_Layer: 0
+  m_Name: UiBuilder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2565558099650713739
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 88490007510232223}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9128611566016575940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 88490007510232223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 90ba62be0d3544e649f36549d80d2113, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 0}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &7068385788488430949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 88490007510232223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4b323ec9e4d646ec92b2071df6ff6cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Views.UiBuilder
+  _title: Settings
+  _prefsSaveAction:
+    m_Name: Prefs Save
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: f63b4c58-ff64-4a58-a9e2-b48ea2d7108d
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: One Modifier
+      m_Id: b308a07d-af65-432b-aee2-2e702969c25a
+      m_Path: OneModifier
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Prefs Save
+      m_Flags: 4
+    - m_Name: modifier
+      m_Id: 45978cc4-9f30-47d1-bb3f-b3f22c56490e
+      m_Path: <Keyboard>/leftMeta
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Prefs Save
+      m_Flags: 8
+    - m_Name: binding
+      m_Id: e7dccd32-6ba2-4a5d-a817-9f3ec5c8e6f2
+      m_Path: <Keyboard>/s
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Prefs Save
+      m_Flags: 8
+    m_Flags: 0
+  _toggleUIAction:
+    m_Name: Toggle UI
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: e6cd0c87-aa78-4538-bcab-7e19e52df1d5
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: de71023a-eafc-4fb2-8767-7a0f233e443b
+      m_Path: <Keyboard>/d
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Toggle UI
+      m_Flags: 0
+    m_Flags: 0
+--- !u!114 &4757347120228586088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 88490007510232223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de292b76e20316349842181a7da14d32, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: RosettaUI.UIToolkit::RosettaUI.UIToolkit.RosettaUIRootUIToolkit
+  disableKeyboardInputWhileUIFocused: 1
+  disablePointerInputOverUI: 1
+  disableMouseInputOverUI: 1
+  undoAction:
+    m_Name: Undo
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 1fdeced9-66b6-48a8-a4a6-5727a7b2b325
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: One Modifier
+      m_Id: 4af2a9fc-ca2f-45b0-8715-992fd37935cc
+      m_Path: OneModifier
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Undo
+      m_Flags: 4
+    - m_Name: modifier
+      m_Id: 6de61ec0-cf9d-459d-b28e-b2f697fef008
+      m_Path: <Keyboard>/leftMeta
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Undo
+      m_Flags: 8
+    - m_Name: binding
+      m_Id: d0962f86-cf23-4592-b5e0-28a3c1b63483
+      m_Path: 
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Undo
+      m_Flags: 8
+    m_Flags: 0
+  redoAction:
+    m_Name: Redo
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: d3f9158a-7f0c-48b8-b92c-bb0a9eb012c6
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: Two Modifiers
+      m_Id: 4c24f5a8-e593-4f42-aeea-904697b84133
+      m_Path: TwoModifiers
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Redo
+      m_Flags: 4
+    - m_Name: modifier1
+      m_Id: 07a7e446-26ad-4f2f-9ba5-21e1fb1df6f6
+      m_Path: <Keyboard>/leftMeta
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Redo
+      m_Flags: 8
+    - m_Name: modifier2
+      m_Id: d4074104-8d4b-430f-a56f-d6b29885dcc6
+      m_Path: <Keyboard>/shift
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Redo
+      m_Flags: 8
+    - m_Name: binding
+      m_Id: 1e79d73f-b8d9-4951-8e35-b6b5f4d66f2b
+      m_Path: <Keyboard>/z
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Redo
+      m_Flags: 8
+    m_Flags: 0
+--- !u!114 &8529108389809975842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 88490007510232223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f45fdd78baa00824fa0bd95ff0bf37bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PrefsGUI::PrefsGUI.Kvs.PrefsKvsPathCustom
+  platform: 12
+  _path: '%dataPath%/../../%productName%Prefs'
