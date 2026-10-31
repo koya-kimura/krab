@@ -528,6 +528,11 @@ GameObject:
   - component: {fileID: 894227604}
   - component: {fileID: 894227605}
   - component: {fileID: 894227606}
+  - component: {fileID: 894227607}
+  - component: {fileID: 894227608}
+  - component: {fileID: 894227609}
+  - component: {fileID: 894227610}
+  - component: {fileID: 894227611}
   m_Layer: 0
   m_Name: Common
   m_TagString: Untagged
@@ -590,6 +595,68 @@ MonoBehaviour:
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
+--- !u!114 &894227607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894227603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071119aa21724c38a3d3309e595cdd01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Output.MidiOutput
+  _portNameFilter: APC mini mk2
+  _reconnectInterval: 2
+--- !u!114 &894227608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894227603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcdc632fa4f34eac8987a58cebe998fa, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Input.MidiInputManager
+--- !u!114 &894227609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894227603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6a1b7917de04ded964f8006ffe87b48, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Sample.ParamSampleComponent
+--- !u!114 &894227610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894227603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 733a754811ef4bf38f6edcfa10d4aa6d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Devices.ApcMiniMk2.ApcMiniMk2Simulator
+--- !u!114 &894227611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894227603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf5247c5247c4c27b4e41002999103c8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Views.MidiBindingUi
 --- !u!4 &937342195 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3460104897646375886, guid: 53cb97e4c09164f4bb6dcfd51b215329, type: 3}
