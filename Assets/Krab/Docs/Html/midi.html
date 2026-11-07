@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>KRAB MIDI — 現在の構成</title>
+  <link rel="stylesheet" href="retro-brutal.css">
+</head>
+<body>
+  <a class="skip" href="#main">本文へ移動</a>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand mono">KRAB / MIDI</div>
+      <nav aria-label="ページ内ナビゲーション">
+        <a href="#route">経路</a><a href="#surface">座標</a><a href="#parts">責務</a><a href="#contracts">IF契約</a><a href="#model">データ</a><a href="#lifecycle">寿命</a><a href="#operation">操作</a><a href="#scene">Scene</a><a href="#extension">拡張</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <div class="hero">
+        <span class="eyebrow">CURRENT ARCHITECTURE / APC MINI MK2</span>
+        <h1>MIDI SYSTEM.</h1>
+        <p>APC mini mk2 とシミュレーターが同じ入力経路を使うMIDI機構。クラス間の契約、状態の所有者、Learn、保存、LED返送まで現在のコードに沿って記録する。</p>
+      </div>
+      <div class="status-strip mono" aria-label="構成の要点">
+        <span>8 × 8 PAD</span><span>8 LOGICAL PAGES</span><span>9 FADERS</span><span>PARAM-LOCAL LEARN</span>
+      </div>
+
+      <section id="route" aria-labelledby="route-title">
+        <div class="section-head"><span class="step">01</span><h2 id="route-title">入力からParamまで</h2></div>
+        <p class="section-intro">実機とシミュレーターは <code>ApcMiniMk2InputAdapter</code> に合流する。そこでページ付きの <code>MidiControl</code> が作られ、Learn中なら割り当て、それ以外ならActionへ配送される。</p>
+        <div class="flow" aria-label="MIDI入力の流れ">
+          <div class="flow-node yellow"><span class="flow-tag">01 / SOURCE</span><h3>実機 + Simulator</h3><p>実機はMinis / Input System、画面はRosettaUI。パッド、ボタン、CCを受け取る。</p></div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node blue"><span class="flow-tag">02 / NORMALIZE</span><h3>InputAdapter</h3><p>Note / CCを正規化し、現在のページを添えた <code>MidiMessage</code> に変換。</p></div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node mint"><span class="flow-tag">03 / ROUTE</span><h3>BindingManager</h3><p>Learn中は1対1で再割当て。通常時は一致するBindingのActionを実行。</p></div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node pink"><span class="flow-tag">04 / STATE</span><h3>Action → Param</h3><p>登録時に選んだ <code>toggle / radio / oneshot / momentary / state / sequence / float</code> が入力を状態へ反映する。</p></div>
+        </div>
+        <span class="feedback-caption">FEEDBACK / PARAM → LED</span>
+        <div class="feedback" aria-label="LEDフィードバックの流れ">
+          <div class="flow-node pink"><span class="flow-tag">STATE</span><h3>Binding + Action</h3><p>現在ページの割当てとAction固有の状態、設定色から表示状態を計算。</p></div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node blue"><span class="flow-tag">DESIRED / SENT</span><h3>MidiInputManager</h3><p>差分を15Hz以下で送出。ページ切替時は旧ページを消して再描画。</p></div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node yellow"><span class="flow-tag">OUTPUT</span><h3>OutputAdapter → RtMidi</h3><p>RGBパッドはSysEx、トラック／ページボタンはNoteで実機へ。Simulatorも同じ希望色を表示。</p></div>
+        </div>
+      </section>
+
+      <section id="surface" aria-labelledby="surface-title">
+        <div class="section-head"><span class="step">02</span><h2 id="surface-title">ページと座標</h2></div>
+        <p class="section-intro">サイドボタンはページ選択。上端を0、下端を7とし、押したページが以前のページを完全に置き換える。パッド座標は左端がx=0、下端がy=0。</p>
+        <div class="two-col">
+          <div class="diagram-panel">
+            <h3>APC MINI MK2 / LOGICAL MAP</h3>
+            <div class="surface" aria-label="8×8パッド。左下が(0,0)、右上が(7,7)。右側のP0からP7でページを選択">
+              <div class="pad-grid" aria-hidden="true">
+                <span class="pad">0,7</span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad">7,7</span>
+                <span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span>
+                <span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span>
+                <span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span>
+                <span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span>
+                <span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span>
+                <span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span>
+                <span class="pad">0,0</span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad"></span><span class="pad">7,0</span>
+              </div>
+              <div class="side-buttons" aria-hidden="true"><span>P0</span><span>P1</span><span>P2</span><span>P3</span><span>P4</span><span>P5</span><span>P6</span><span>P7</span></div>
+            </div>
+            <div class="surface-label"><span>← X: 0 TO 7 →</span><span>Y: BOTTOM TO TOP ↑</span></div>
+            <p class="mini-note">例: ページ1の左から2列目・下から2段目は <code>(1, 1, 1)</code>。パッドNote番号は <code>y × 8 + x</code>。</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>操作子</th><th>番号 / 役割</th><th>現在の扱い</th></tr></thead>
+              <tbody>
+                <tr><td>8×8 Pad</td><td>Note 0–63</td><td>現在ページ + (x,y) で別の割当て。RGB LED対応。</td></tr>
+                <tr><td>Side P0–P7</td><td>Note 112–119</td><td>ページ0–7を選択。ページボタン自体はBindingへ送らない。</td></tr>
+                <tr><td>Track T0–T7</td><td>Note 100–107</td><td>対応するF0–F7のnormal／割当てモードを切替。実機LEDは有効時に赤点灯。</td></tr>
+                <tr><td>Shift</td><td>Note 122</td><td>ページ非依存のグローバルBindingとしてLearn可能。</td></tr>
+                <tr><td>F0–F7 + M</td><td>CC 48–56</td><td>現在ページ + CC番号でLearn。F0–F7はmute/randomの出力値、Masterは常に物理値。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="parts" aria-labelledby="parts-title">
+        <div class="section-head"><span class="step">03</span><h2 id="parts-title">部品の責務</h2></div>
+        <div class="card-grid">
+          <article class="card yellow"><small class="mono">INPUT / OWNER</small><h3>MidiInputManager</h3><p>実機の購読、BindingManagerとInputAdapterの保持、現在ページのLED差分更新を担う。専用UIウィンドウは持たない。</p><a class="path" href="../../Common/Scripts/Midi/Input/MidiInputManager.cs">Input/MidiInputManager.cs ↗</a></article>
+          <article class="card blue"><small class="mono">DEVICE / TRANSLATION</small><h3>ApcMiniMk2InputAdapter</h3><p>パッド、トラック、Shift、CCを <code>MidiControl</code> に変換。押下中のNoteは押したページを保持する。</p><a class="path" href="../../Common/Scripts/Midi/Devices/ApcMiniMk2/ApcMiniMk2InputAdapter.cs">Devices/ApcMiniMk2/ApcMiniMk2InputAdapter.cs ↗</a></article>
+          <article class="card mint"><small class="mono">ROUTING / PERSISTENCE</small><h3>BindingManager + Repository</h3><p>Param IDと操作子を1対1で対応させる。Learn、解除、PrefsGUIへの割当て・LED色保存を担当。</p><a class="path" href="../../Common/Scripts/Midi/Bindings/MidiBindingManager.cs">Bindings/MidiBindingManager.cs ↗</a></article>
+          <article class="card pink"><small class="mono">UI / PER PARAM</small><h3>MidiBindingUi</h3><p>各Param横の「MIDI」ランチャーからLearn / Cancel / Clear / LED色 / Saveを表示。設定ウィンドウは同時に1つ。</p><a class="path" href="../../Common/Scripts/Midi/Views/MidiBindingUi.cs">Views/MidiBindingUi.cs ↗</a></article>
+          <article class="card red"><small class="mono">SIMULATOR / SAME PATH</small><h3>ApcMiniMk2Simulator</h3><p>RosettaUI上にパッド、ページ、トラック、Shift、縦フェーダーを再現。入力は実機と同じAdapterへ渡す。</p><a class="path" href="../../Common/Scripts/Midi/Devices/ApcMiniMk2/ApcMiniMk2Simulator.cs">Devices/ApcMiniMk2/ApcMiniMk2Simulator.cs ↗</a></article>
+          <article class="card yellow"><small class="mono">OUTPUT / WORKER</small><h3>OutputAdapter + MidiOutput</h3><p>LED用のNote / RGB SysExを生成し、RtMidiのワーカースレッドへキューで渡す。切断時は再接続を試みる。</p><a class="path" href="../../Common/Scripts/Midi/Output/MidiOutput.cs">Output/MidiOutput.cs ↗</a></article>
+        </div>
+      </section>
+
+      <section id="contracts" aria-labelledby="contracts-title">
+        <div class="section-head"><span class="step">04</span><h2 id="contracts-title">インターフェース契約</h2></div>
+        <p class="section-intro">Scene内のコンポーネント間で使う入口を明示する。インターフェースが保証する範囲と、具象クラスにだけ存在する機能を分けて読む。</p>
+        <div class="table-wrap">
+          <table class="technical-table">
+            <thead><tr><th>契約</th><th>実装 → 利用者</th><th>公開メンバーと意味</th></tr></thead>
+            <tbody>
+              <tr><td><a href="../../Common/Scripts/Midi/Bindings/IMidiBindingProvider.cs">IMidiBindingProvider</a></td><td><code>MidiInputManager</code> → <code>MidiBindingUi</code>、<code>ParamSampleComponent</code></td><td><code>MidiBindingManager Bindings { get; }</code>。Param登録、Learn、割当て参照を同じManagerへ集約する。現在の既定生成経路ではRepositoryもManagerが生成する。</td></tr>
+              <tr><td><a href="../../Common/Scripts/Midi/Devices/ApcMiniMk2/IApcMiniMk2Surface.cs">IApcMiniMk2Surface</a></td><td><code>MidiInputManager</code> → <code>ApcMiniMk2Simulator</code></td><td><code>Adapter</code>、<code>FaderModes</code>、Pad／Track／Shiftの表示状態。Simulatorは入力をAdapterへ送り、表示とモード設定は同じ実行状態から読む。</td></tr>
+              <tr><td><a href="../../Common/Scripts/Midi/Views/IMidiBindingUi.cs">IMidiBindingUi</a></td><td><code>MidiBindingUi</code> → Paramを表示するコンポーネント</td><td><code>Element CreateButton(string paramId, string displayName)</code>。指定ParamのRosettaUIランチャーを返す。呼び出し側はParam操作欄の隣に配置する。</td></tr>
+              <tr><td><a href="../../Common/Scripts/Midi/Actions/IMidiAction.cs">IMidiAction</a></td><td>各Action → <code>MidiBindingManager</code></td><td><code>Kind</code>と<code>DisplayName</code>が登録種別を公開し、MIDI設定ウインドウにも表示される。<code>Execute</code>が入力を処理し、<code>ResolveLedColor</code>がAction固有色を返す。</td></tr>
+              <tr><td><a href="../../Common/Scripts/Midi/Output/IMidiOutput.cs">IMidiOutput</a></td><td><code>MidiOutput</code> → <code>ApcMiniMk2OutputAdapter</code></td><td><code>IsConnected</code>、<code>SendNoteOn</code>、<code>SendNoteOff</code>、<code>SendCc</code>、<code>SendRaw(ReadOnlySpan&lt;byte&gt;)</code>。APC専用のLED符号化はOutputAdapter側に置く。</td></tr>
+              <tr><td><a href="../../Common/Scripts/Views/IUiTarget.cs">IUiTarget</a> <span class="small-label">UI共通</span></td><td><code>ParamSampleComponent</code> / <code>ApcMiniMk2Simulator</code> → <code>UiBuilder</code></td><td><code>Element CreateElement()</code>。トップレベルのUIランチャー対象。<code>MidiInputManager</code> はこの契約を実装しない。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="interface-grid spaced-block">
+          <article class="contract-card yellow">
+            <span class="small-label">BINDING PORT</span><h3>IMidiBindingProvider</h3>
+            <pre class="code-block"><code>MidiBindingManager Bindings { get; }</code></pre>
+            <p>参照先は <code>MidiInputManager</code> が遅延生成して保持する同一インスタンス。Param側の <code>Register</code>、UI側の <code>Learn</code>、実機入力の <code>Receive</code> がここで合流する。</p>
+          </article>
+          <article class="contract-card blue">
+            <span class="small-label">SIMULATOR PORT</span><h3>IApcMiniMk2Surface</h3>
+            <pre class="code-block"><code>ApcMiniMk2InputAdapter Adapter { get; }
+Color GetPadColor(int note);
+bool GetTrackLed(int index);
+Color GetShiftColor();</code></pre>
+            <p>SimulatorのUI入力は <code>Adapter.OnNoteOn / OnNoteOff / OnControlChange</code> を呼ぶ。LED表示は実機への送信済み値ではなく、現在の希望状態を読む。</p>
+          </article>
+          <article class="contract-card pink">
+            <span class="small-label">PARAM UI PORT</span><h3>IMidiBindingUi</h3>
+            <pre class="code-block"><code>Element CreateButton(
+    string paramId,
+    string displayName);</code></pre>
+            <p>戻り値は <code>UI.WindowLauncher</code>。割当てがないと「MIDI」、割当てがあると「MIDI ●」と表示する。Param自体が未登録なら操作不可。</p>
+          </article>
+          <article class="contract-card mint">
+            <span class="small-label">OUTPUT PORT</span><h3>IMidiOutput</h3>
+            <pre class="code-block"><code>bool IsConnected { get; }
+void SendNoteOn(int noteNumber, int velocity,
+                int channel = 0);
+void SendNoteOff(int noteNumber, int channel = 0);
+void SendCc(int number, int value,
+            int channel = 0);
+void SendRaw(ReadOnlySpan&lt;byte&gt; message);</code></pre>
+            <p>Note / CCのデータバイトは0–127、channelは0–15に検証される。未接続時の <code>SendRaw</code> は送信せず、接続時のNative呼び出しはワーカースレッドで行う。</p>
+          </article>
+        </div>
+        <div class="callout"><p><strong>具象型への依存:</strong> <code>MidiInputManager</code> は <code>MidiOutput.ConnectionChanged</code> を購読するため、出力インターフェースではなく同じGameObject上の <code>MidiOutput</code> 具象型を取得している。<code>[RequireComponent(typeof(MidiOutput))]</code> がその配置を保証する。</p></div>
+      </section>
+
+      <section id="model" aria-labelledby="model-title">
+        <div class="section-head"><span class="step">05</span><h2 id="model-title">データモデルと保存</h2></div>
+        <p class="section-intro">入力の識別子、1回の入力、Paramへの結線は別の型。特に <code>MidiControl.Channel</code> はAPC mini mk2では物理MIDIチャンネルではなく、アプリ内の論理ページとして使う。</p>
+        <div class="detail-grid">
+          <article class="contract-card blue"><span class="small-label">VALUE OBJECT</span><h3>MidiControl</h3><pre class="code-block"><code>MidiMessageType Type
+int Channel
+int Number
+Page =&gt; Channel</code></pre><p>Bindingの比較キー。<code>Type</code> はNoteかControlChange、<code>Number</code> はNote/CC番号。Padは <code>Number = y × 8 + x</code>、<code>Page</code> は0–7。3項目すべてが一致したときだけ同じ操作子とみなす。</p><a class="path" href="../../Common/Scripts/Midi/Core/MidiControl.cs">Core/MidiControl.cs ↗</a></article>
+          <article class="contract-card yellow"><span class="small-label">EVENT DATA</span><h3>MidiMessage</h3><pre class="code-block"><code>MidiControl Control
+float Value
+bool IsPressed
+bool IsReleased</code></pre><p>Note Onは <code>IsPressed=true</code>、Note Offは <code>IsReleased=true</code>。CCは両方falseで <code>Value</code> に0–1を持つ。ページ選択ボタンはここへ来る前にAdapterで処理される。</p><a class="path" href="../../Common/Scripts/Midi/Core/MidiMessage.cs">Core/MidiMessage.cs ↗</a></article>
+          <article class="contract-card mint"><span class="small-label">REGISTERED ROUTE</span><h3>MidiBinding</h3><pre class="code-block"><code>string ParamId
+MidiControl? Control
+IMidiAction Action
+PrefsColor LedColor</code></pre><p>Controlがnullなら未割当て。<code>Action.Kind</code>は機械判定用、<code>Action.DisplayName</code>はUI表示用。radio／sequenceの子Bindingはoption／step位置も表示する。</p><a class="path" href="../../Common/Scripts/Midi/Bindings/MidiBinding.cs">Bindings/MidiBinding.cs ↗</a></article>
+          <article class="contract-card pink"><span class="small-label">PARAM STATE</span><h3>Param&lt;T&gt;</h3><pre class="code-block"><code>T Value { get; }
+event Action&lt;T&gt; Changed;
+void SetValue(T value);</code></pre><p>値が変わったときだけ <code>Changed</code> を発火。UI、MIDI Action、ほかの処理が同じParamを読み書きする。<code>ToggleMidiAction</code> はbool、<code>FloatMidiAction</code> はfloatを扱う。</p><a class="path" href="../../Common/Scripts/Midi/Core/Param.cs">Core/Param.cs ↗</a></article>
+        </div>
+        <div class="table-wrap spaced-block">
+          <table class="compact-table">
+            <thead><tr><th>PrefsGUIキー</th><th>型 / 値</th><th>用途</th></tr></thead>
+            <tbody>
+              <tr><td><code>Midi.Binding.{paramId}.Type</code></td><td><code>PrefsInt</code>、未割当ては <code>-1</code></td><td>Note / ControlChangeの区別。</td></tr>
+              <tr><td><code>Midi.Binding.{paramId}.Channel</code></td><td><code>PrefsInt</code></td><td>APCでは論理ページ。UIでの表示名はPage。</td></tr>
+              <tr><td><code>Midi.Binding.{paramId}.Number</code></td><td><code>PrefsInt</code>、未割当ては <code>-1</code></td><td>Note / CC番号。</td></tr>
+              <tr><td><code>Midi.Binding.{paramId}.LedColor</code></td><td><code>PrefsColor</code>、初期色はシアン</td><td>RGB Padの点灯色。false時は各RGB成分の25%。</td></tr>
+              <tr><td><code>Midi.Action.{id}.*</code></td><td>bool / int / string</td><td>toggle、radio、state、sequenceパターンの状態。</td></tr>
+              <tr><td><code>Midi.Fader.{0..7}.*</code></td><td>割当て種別 + 有効状態</td><td>各チャンネルフェーダーのmute/random割当てとnormal切替状態。初期割当ては全てmute。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout"><p><strong>保存と解除:</strong> <code>MidiBindingRepository.Save</code> はPrefs値を書き換える。UIの <code>Save</code> またはUiBuilderの保存操作は <code>Prefs.Save</code> を呼ぶ。<code>Unbind</code> は保存上のTypeとNumberを-1にし、<code>Unregister</code> はScene内の登録だけを外して保存値を残す。</p></div>
+      </section>
+
+      <section id="lifecycle" aria-labelledby="lifecycle-title">
+        <div class="section-head"><span class="step">06</span><h2 id="lifecycle-title">生成・寿命・メソッド</h2></div>
+        <p class="section-intro">SceneContainerの注入は参照を結ぶ。状態オブジェクトの生成とイベント購読は各MonoBehaviourが持ち、Scene破棄時に解除する。</p>
+        <div class="table-wrap">
+          <table class="technical-table">
+            <thead><tr><th>所有者</th><th>生成・参照</th><th>破棄・解除</th></tr></thead>
+            <tbody>
+              <tr><td><code>MidiInputManager</code></td><td><code>Bindings</code> と <code>Adapter</code> を初回アクセスで生成。<code>Awake</code> で同一GameObjectの <code>MidiOutput</code> とOutputAdapterを取得／生成。<code>OnEnable</code> で既存Minisデバイスとデバイス変更通知を購読。</td><td><code>OnDisable</code> で実機・出力の通知を解除。<code>OnDestroy</code> でBindingとページ変更通知を解除。</td></tr>
+              <tr><td><code>MidiOutput</code></td><td><code>OnEnable</code> で背景ワーカーを開始。ポート名に「APC mini mk2」を含む出力を探し、失敗時は設定間隔（初期2秒）で再試行。</td><td><code>OnDisable</code> で停止要求し、最大100ms待ってキューを空にする。<code>ConnectionChanged</code> は <code>Update</code> からUnityメインスレッドで通知。</td></tr>
+              <tr><td><code>MidiBindingUi</code></td><td><code>Construct</code> でProviderのManagerを参照。<code>CreateButton</code> ごとにランチャーと設定Windowを作成し、開閉購読を保持。</td><td><code>OnDestroy</code> でBindingChangedと開閉購読を解除。別ParamのWindowが開いたら前のWindowを閉じる。</td></tr>
+              <tr><td><code>ParamSampleComponent</code></td><td>全Actionに加え、動的Prefs list→radio、float→別レンジの接続例を登録。Sequenceは1〜16個の横スクロールボタンでpatternを編集し、無効／有効／現在位置を3色表示する。</td><td><code>OnDestroy</code> で各Action IDを <code>UnregisterAction</code>。削除した動的要素／stepを含め、Prefsの割当て記録は保持される。</td></tr>
+              <tr><td><code>UiBuilder</code></td><td>注入された <code>IEnumerable&lt;IUiTarget&gt;</code> を <code>Start</code> でWindowLauncher化。</td><td>UIルートの寿命に従う。<code>MidiInputManager</code> は列挙対象ではない。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="subheading">MidiBindingManager の操作契約</h3>
+        <div class="table-wrap">
+          <table class="compact-table">
+            <thead><tr><th>メソッド / 通知</th><th>条件と副作用</th></tr></thead>
+            <tbody>
+              <tr><td><code>RegisterToggle / RegisterRadio / RegisterOneShot / RegisterMomentary / RegisterState / RegisterSequence / RegisterFloat</code></td><td>C#登録時に種別を固定。radioとsequenceは子Bindingをまとめて所有し、永続状態とAction固有LEDを復元する。</td></tr>
+              <tr><td><code>Learn(paramId)</code> / <code>CancelLearn()</code></td><td>登録済みIDに対してLearn対象を1件保持。Cancelは対象をnullへ戻す。ページボタンはAdapter内で消費されるためLearn対象にならない。</td></tr>
+              <tr><td><code>Receive(message)</code></td><td>Learn中はNote Offを無視し、Note OnまたはCCでLearnを終了して <code>Bind</code>。通常時はControlが等しいBindingを探し、最初のActionだけ実行。</td></tr>
+              <tr><td><code>Bind(paramId, control)</code></td><td>同じControlの前所有者を解除し、Prefsと各Bindingを更新する。変更ごとに <code>BindingChanged(paramId, control)</code> を通知。</td></tr>
+              <tr><td><code>Unbind(paramId)</code></td><td>登録は残してControlをnullにし、Prefs上のType/Numberを-1にして変更通知。</td></tr>
+              <tr><td><code>Unregister(paramId)</code></td><td>Scene内の登録だけを除去。Learn対象ならCancel。保存済みマッピングと色は削除しない。</td></tr>
+              <tr><td><code>GetBinding(paramId)</code> / <code>GetControl(paramId)</code></td><td>未登録ならnull。UIは前者でランチャーの有効状態、後者で表示とLED色欄の可否を決める。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="subheading">デバイス境界の操作契約</h3>
+        <div class="table-wrap">
+          <table class="compact-table">
+            <thead><tr><th>クラス / API</th><th>動作と境界条件</th></tr></thead>
+            <tbody>
+              <tr><td><code>ApcMiniMk2InputAdapter.OnNoteOn / OnNoteOff</code></td><td>Sideはページ選択、Trackは対応フェーダーのモード切替、Padは押下時ページを保持、Shiftは常にグローバルページとして配送する。</td></tr>
+              <tr><td><code>ApcMiniMk2InputAdapter.OnControlChange</code></td><td>CC 48–56の物理値を保持。F0–F7はnormalなら物理値、muteなら0、randomならbeat同期の0/1を現在ページへ送る。Masterは常に物理値。</td></tr>
+              <tr><td><code>ApcMiniMk2OutputAdapter.SetPad / SetPadRange</code></td><td>Pad 0–63をRGB SysExへ変換。色の8-bit各成分を2つの7-bitデータバイトに分割。範囲外なら送信しない。</td></tr>
+              <tr><td><code>ApcMiniMk2OutputAdapter.SetButton</code></td><td>Track 100–107とPage 112–119だけNoteでオン／オフ。RGB色は扱わない。</td></tr>
+              <tr><td><code>MidiOutput.SendRaw</code></td><td>未接続・空データ・停止中は送らない。接続中はバイト列をコピーしてキューへ積む。キューが512件を超えると古いものを捨てる。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout"><p><strong>LED更新の頻度:</strong> <code>MidiInputManager.Update</code> は希望色を毎フレーム再計算する。実機への送出は最大15Hzで、差分パッドは1回につき最大32件。ページ切替／再接続／Binding変更時は64パッドを一度消してから現在ページを再描画する。</p></div>
+      </section>
+
+      <section id="operation" aria-labelledby="operation-title">
+        <div class="section-head"><span class="step">07</span><h2 id="operation-title">Learn → 操作 → LED</h2></div>
+        <div class="sequence">
+          <article class="card yellow"><span class="number">01</span><h3>ParamのMIDIを開く</h3><p>各操作欄の「MIDI」からLearnを押し、実機またはシミュレーターの操作子を動かす。Noteは押下時、フェーダーはCC入力時に確定する。</p></article>
+          <article class="card blue"><span class="number">02</span><h3>一致するActionを実行</h3><p>保存された <code>(type, page, number)</code> が一致したときだけActionへ届く。種別はUIではなくC#登録時に決まり、radio／sequenceは各要素を個別にLearnする。</p></article>
+          <article class="card mint"><span class="number">03</span><h3>現在ページを再表示</h3><p>パッドはtrueで設定色、falseで25%の明るさ。ページ変更時は旧LEDを消し、選択ページの状態で塗り直す。</p></article>
+        </div>
+        <div class="note">MIDI Outの色はRGBパッド用。トラックボタンは単色、フェーダーには可動モーターがないため、UIでParamを変えても実機フェーダー位置は動かない。</div>
+      </section>
+
+      <section id="scene" aria-labelledby="scene-title">
+        <div class="section-head"><span class="step">08</span><h2 id="scene-title">Sceneでの接続</h2></div>
+        <p class="section-intro">現在のシーンでは <code>SceneContainer</code> がコンポーネントを注入し、<code>UiBuilder</code> が <code>IUiTarget</code> のウィンドウを作る。MIDIの状態表示ウィンドウは登録されない。</p>
+        <div class="scene-list">
+          <div class="card blue"><h3>Common側</h3><ul><li><code>MidiOutput</code> — RtMidi出力ポート</li><li><code>MidiInputManager</code> — 入力、Action更新、LED同期</li><li><code>MidiBindingUi</code> — Bindingごとの設定UI</li><li><code>ApcMiniMk2Simulator</code> — 画面上の実機パネルとフェーダーモード設定</li><li><code>ParamSampleComponent</code> — Action種別と代表的なUI変換例をスクロール表示</li></ul></div>
+          <div class="card pink"><h3>UI側</h3><ul><li><code>SceneContainer</code> が各インターフェースを注入</li><li><code>UiBuilder</code> + <code>RosettaUIRoot</code> が各 <code>IUiTarget</code> を表示</li><li>各サンプルParam横に「MIDI」ランチャー</li><li>Simulatorのパッド／フェーダーからもLearnできる</li></ul></div>
+        </div>
+        <pre class="code-block spaced-block"><code>SceneContainer ── inject ──┬─ MidiInputManager : IMidiBindingProvider, IApcMiniMk2Surface
+                           │    ├─ MidiBindingManager ── MidiBindingRepository
+                           │    ├─ ApcMiniMk2InputAdapter
+                           │    └─ ApcMiniMk2OutputAdapter ── IMidiOutput (MidiOutput)
+                           ├─ MidiBindingUi : IMidiBindingUi
+                           ├─ ParamSampleComponent : IUiTarget
+                           └─ ApcMiniMk2Simulator : IUiTarget
+
+UiBuilder ── collects IUiTarget ── ParamSampleComponent / Simulator</code></pre>
+      </section>
+
+      <section id="extension" aria-labelledby="extension-title">
+        <div class="section-head"><span class="step">09</span><h2 id="extension-title">Paramを追加するとき</h2></div>
+        <p class="section-intro">新しい操作対象は、Paramの所有者となるSceneコンポーネントが安定したIDでActionを登録し、同じIDのMIDIランチャーを操作欄へ配置する。Scene破棄時には登録を解除する。</p>
+        <div class="sequence">
+          <article class="card yellow"><span class="number">01</span><h3>状態とAction</h3><p>用途に合わせてtyped register APIを選ぶ。<code>random</code> はMidiActionではなくフェーダーモードだけに存在する。</p></article>
+          <article class="card blue"><span class="number">02</span><h3>登録とUI</h3><p><code>Bindings.RegisterToggle(id, param)</code> などで登録し、単一Bindingまたはradio／sequenceの子IDにMIDIランチャーを置く。IDは保存キーになる。</p></article>
+          <article class="card mint"><span class="number">03</span><h3>保存と破棄</h3><p>状態変更はPrefsキャッシュだけを更新し、ディスク保存は既存の <code>Prefs.Save</code> 操作時だけ行う。破棄時は <code>UnregisterAction(id)</code> を呼ぶ。</p></article>
+        </div>
+        <div class="callout"><p><strong>実装例:</strong> <a href="../../Common/Scripts/Sample/ParamSampleComponent.cs">ParamSampleComponent.cs</a> が各Action種別、永続ID付き動的Radioリスト、Sequenceグリッド、値レンジ変換、解除をまとめて示している。</p></div>
+      </section>
+    </main>
+
+    <footer><span class="mono">KRAB / MIDI SYSTEM / CURRENT CODE</span><a href="DESIGN_GUIDE.md">DESIGN GUIDE</a><a href="#main">↑ TOP</a></footer>
+  </div>
+</body>
+</html>
