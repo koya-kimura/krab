@@ -1,0 +1,81 @@
+# 図形シンセ：調査・段階的実装計画
+
+2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。今回はPhase 1のみ実装。
+
+## 既存構成と接続点
+
+- `Common/Scripts/Timing/BPMManager.cs` は `IBPMManager`、`IUiTarget` を実装。`Time.deltaTime` で `Beat` を積算し、PrefsFloatからのBPM変更を次の拍境界で適用する。`OnBeat` はフレーム内で複数拍を跨いでも一回。新シンセの経過時間にはこのイベントや累積Beatを使わない。
+- 今回追加した `IBPMManager.CurrentBpm` は予約値でなく現在有効なBPM。既存の変更タイミング・積算・MIDI動作は変更していない。実装クラスは現在BPMManagerのみ。将来のテスト用実装にもプロパティが必要。
+- 時間源はゲーム時間 `UnityEngine.Time.timeAsDouble` を選ぶ。既存の `deltaTime` と同じtimeScaleの影響を受け、timeScale=0で止まる。アプリ非アクティブ時はUnityの更新設定に従う。unscaled/壁時計とは混ぜない。停止・再開の製品仕様を変える場合はUnity側の時刻供給箇所で変更する。
+- `Common/Scripts/Midi/Input/MidiInputManager.cs` は `[UnitySimpleContainer.Inject] Construct(IBPMManager)` で注入し、既存のAction/Bindingへ渡す。`Midi/Core/Param<T>` はMIDI用の値と変更通知。新シンセのParameterをここへ直結せず、後続のTriggerアダプターで接続する。別パスの未追跡 `Midi/MidiInputManager.cs` 等の作業中変更は今回触れていない。
+- `Common/Scripts/Views/IUiTarget.cs` の `CreateElement()` を `UiBuilder` が `IEnumerable<IUiTarget>` 注入で集約。RosettaUIのウィンドウを構築しボタン・入力から `Prefs.Save()`。既存のPrefsFloat/PrefsInt/PrefsBool等の利用方式に合わせる。
+- `Common/Scripts/Output/OutputTextureProvider.cs` はCameraのRenderTextureを作成し、`IOutputTextureContainer.Texture` と `TextureChanged` を公開。`SyphonController` は注入された出力を消費。新しい出力Managerを作らずこのCameraへ描画する。
+- 既存は `Assets/Krab/Common`、`Performances`、`Docs`、namespace `Krab.Common.*` 等。既存Krabコードにはasmdefなし。新機能は `Assets/Krab/ShapeSynth` / `Krab.ShapeSynth.*` に配置し、Coreだけ `noEngineReferences` のasmdefで隔離した。Assembly-CSharp側からCoreを利用可能。CoreからCommonを参照しない。
+- Test Framework 1.6.0はmanifestに導入済み。既存Krabテスト/テストasmdefは見つからない。今回Editor専用のNUnitテストアセンブリを追加。
+- p5.Uniteは解決済み `net.sbm.unite@81559d3daad3`、package.json version 0.1.0。`Runtime/Canvas/Rectangle.cs` にRect、`Ellipse.cs` にCircle、`ShapePath.cs` にBeginShape、`Transform.cs` にPush/Pop・Translate・Rotate（ラジアン）・Scaleがある。UCanvasはpartial class。Coreから参照せずAdapterだけで使用。Krab内に描画実装はまだない。既存のReports内の調査資料は今回上書きしていない。
+
+## Phase 1：時間とADSR（今回）
+
+追加ファイル：
+
+- `ShapeSynth/Core/VoiceTime.cs`：開始秒・開始BPMの不変スナップショット。`max(0, (now-start)*bpm/60)`。
+- `ShapeSynth/Core/AdsrDefinition.cs`：共有可能な不変設定。時間単位は拍、SustainLevelのみ無次元。
+- `ShapeSynth/Core/AdsrInstance.cs`：時刻指定の純粋な評価と終了判定、Instanceごとの外部Release履歴。Update不要。
+- `ShapeSynth/Core/Krab.ShapeSynth.Core.asmdef`：Unity/UI/描画依存を禁止。
+- `ShapeSynth/Tests/Editor/AdsrTests.cs` とテストasmdef：NUnit EditModeテスト。
+- 既存TimingのBPMManager/IBPMManagerにはCurrentBpmの読み取り口だけ追加。
+
+将来のTrigger処理からの接続例（今回MonoBehaviourやVoice管理は追加しない）：
+
+```csharp
+// IBPMManagerを既存DIから受け取る。Awake完了後にTriggerする。
+var time = new VoiceTime(UnityEngine.Time.timeAsDouble, bpm.CurrentBpm);
+var envelope = new AdsrInstance(definition, time);
+var value = envelope.Evaluate(UnityEngine.Time.timeAsDouble);
+// 同じGroupの全Modulatorへ同じtimeを渡す。
+// 外部NoteOff時：envelope.Release(UnityEngine.Time.timeAsDouble);
+```
+
+`autoRelease: false` を生成時に指定するとSustainTimeによる自動Releaseを抑制し、外部Releaseを待つ。モード列挙型は不要。DefinitionはInstanceと分離し、後のUI編集は新しいDefinitionに置き換える。既存Instanceには生成時設定が残る。
+
+値は線形補間。0拍の区間は即座に通過し、境界は後続区間に属する。全区間0ならTrigger時点で値0・終了。Release時はその時点のAttack/Decay/Sustain値から0へ進む。外部Releaseは最初のイベントのみ記録し、自然Releaseの方が早ければ自然Releaseを優先する。Release中の再イベントで延長しない。評価は状態を進めないため、飛び越し・同時刻再評価・過去時刻評価が可能。外部イベントは時系列順で渡す契約（イベントログの編集/巻き戻しは今回の対象外）。
+
+不正値は補正せず例外：時間設定は有限かつ非負、SustainLevelは有限の0〜1、合計時間も有限、BPMは有限で正、時刻は有限。負の絶対時刻も同じ時計なら許容。開始前の評価値/経過拍は0、終了はfalse。開始前のReleaseと未初期化VoiceTimeは拒否。Parameter全般へのClamp方針とは別にADSRの設定を検証する。
+
+完了条件：境界・0拍・外部Release・BPM固定・Instance独立性を数値テストし、CoreにUnity依存がないこと。Unity側の実接続・シーン変更は後続Phase。
+
+## 後続フェーズ
+
+候補ファイルはすべて `Assets/Krab/ShapeSynth` 配下。必要になった時点で追加する。
+
+| 段階 | 責務と候補ファイル | 依存・既存接続 | テストと完了条件 |
+|---|---|---|---|
+| 2 LFO / Parameter / Binding | Core/LfoDefinition, LfoInstance, ParameterDefinition, BindingDefinition, ReferenceContext | Phase 1のVoiceTimeを共有。`Reference × (Base + ΣDepth×Signal)`。Modulator状態はBindingごとに複製しない | 位相・周波数単位、複数Binding、同一信号の分岐、リサイズ時Referenceを数値テスト。Clampせず期待式通り |
+| 3 Shape / Group / Transform | Core/ShapeDefinition, GroupDefinition, Transform2D, DrawItem | Phase 2。Group再帰と中心原点・右X/上Y。親子行列を合成。Unityから独立した数値表現を選ぶ | ネスト、Pivot、回転/Scale/Position合成を検証。描画なしでワールド形状データを評価可能 |
+| 4 最小描画 | Unity/UniteShapeAdapter, ShapeSynthPreview | Phase 3。UCanvasへDrawItemを変換。既存Camera/OutputTextureProviderを利用。Adapterは当初Assembly-CSharpに置く | Circle/Rectangle/Polygonとネストを画面で確認。中心/座標方向/RT解像度/カメラ/URP設定を検証。ShapeごとのGameObject不要 |
+| 5 Voice / Trigger / 寿命 | Core/VoiceInstance, VoiceCollection、Unity/ShapeSynthController | Phase 1〜3。DIのIBPMManagerとUnity時計をTriggerでスナップショット。Rendererは4 | 同時Spawn、BPM変更前後の異なる速度、全ADSR終了で削除、Restartを検証。1 Modulatorにつき1 Instance、子へ同じ開始時刻 |
+| 6 Variation / Layout | Core/VariationContext, VariationEvaluator, LayoutDefinition | Phase 2/3/5。Definitionを変えず生成時に個体設定を解決 | Indexの偶奇反転、seed再現性、Position由来差、Base/Depth/ADSRへの適用。共有Definitionの汚染なし |
+| 7 編集 / 保存 | Unity/ShapeSynthSettings, ShapeSynthUi, ShapeSynthPrefsAdapter、Editor/ShapeSynthSettingsEditor | Coreを独立維持。Inspector用DTO→Runtime Definition変換、IUiTarget、既存PrefsGUI。Apply to Inspectorは明示操作 | 保存→再起動復元、Runtime編集、明示ApplyとUndoを検証。Coreへのシリアライズ属性不要 |
+| 8 MIDI / 出力 / 性能 | Unity/ShapeSynthMidiAdapter、検証用Performanceシーン | Phase 4/5/7。既存MIDI ActionからTrigger/Release、既存Camera→RT→Syphon | MIDI押下/解放、Note重複、解像度変更、複数Voiceの負荷とGCを測定。想定最大数/FPSに合意して達成 |
+
+Phase 5のVoice計算テストはPhase 4と独立して先行可能。描画・編集・MIDIの各AdapterだけがCoreと既存サービスをつなぐ。Coreに新しいManager/汎用グラフ/シーケンサーは作らない。
+
+## 今後合意が必要な判断
+
+1. **ADSRのないGroupと無限Sustain/LFOの寿命**：自動破棄・明示停止・固定寿命のどれか。Voice管理の前に決定する。現状のIsFinishedはRelease終了のみで、値0だけを寿命判定にしない。
+2. **演奏中のDefinition編集**：現時点は生成時スナップショット。既存Voiceへライブ反映を求めるなら、時間継続やRelease値の保持を含めて合意する。
+3. **RestartとMIDI NoteOffの対象**：どのVoiceを置換/解放するか、同音重複やGroup単位の対応をPhase 5/8前に決める。
+4. **停止時間の扱い**：今回は既存同様のゲーム時間。実時間追従や明示トランスポートを求める場合は時刻供給境界で設計変更する。BPM変更と同フレームのTriggerは呼出順の有効BPMを取得するため、厳密な拍同期が必要なら呼出順を定義する。
+
+Referenceの単位、LFOの波形/位相、Polygonの表現、加算後の描画制約、最大Voice数は該当Phaseで決める。描画Adapterが負のサイズ等をどう扱うかを定義し、Coreの一般Parameterには一律Clampを加えない。
+
+## 検証結果
+
+後述の実行結果を参照。Unity Test Runnerは既存Editorが同プロジェクトを開いているためバッチ実行不可。既存EditorのTest Runnerから `Krab.ShapeSynth.Tests` を実行する必要がある。PlayMode・実MIDI・描画・Syphon・timeScale実動作は今回未検証。
+
+
+- .NET 10の一時コンソールハーネスでCoreと同じ `AdsrTests.cs` をコンパイルし、Unity同梱の `nunit.framework.dll` の実Assertを使ってTest/TestCaseを呼び出した結果：**25成功、0失敗**。NuGetへの依存なし。これはUnity Test Runnerの検出・アセンブリロード検証を代替しない。
+- 対象：ADSR全境界、SustainTime=0、各0拍区間/全0拍、Attack/Decay/Sustain中の外部Release、再評価と終了、大きな時間ジャンプ、60/120BPMの独立Instance、仮想グローバルBPM変更、手動保持、重複/遅延Release、不正設定。
+- BPMManager自体を動かした統合テストは未実施。BPM変更テストは生成に渡すBPMを変更する純粋数値テスト。
+- Unity 6000.3.12f1の `-batchmode -nographics -runTests -testPlatform EditMode -testFilter Krab.ShapeSynth.Tests` は「another Unity instance is running with this project open」で中止。テスト失敗として数えていない。
+- 変更したTimingファイルへの `git diff --check` は成功。作業開始時から存在する `Midi.meta` の空白警告は今回の変更対象外。

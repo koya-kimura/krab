@@ -1,0 +1,7 @@
+{
+  "name": "Krab.ShapeSynth.Core.Tests",
+  "references": ["Krab.ShapeSynth.Core"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": true
+}

@@ -43,6 +43,9 @@ namespace Krab.Common.Timing
 
         public double Beat { get; private set; }
 
+        // Effective tempo; pending edits take effect at the next beat boundary.
+        public float CurrentBpm => _currentBpm;
+
         public void SetBpm(float bpm)
         {
             if (bpm < _minBpm || _maxBpm < bpm) return;

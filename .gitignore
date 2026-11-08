@@ -192,3 +192,9 @@ DerivedData/
 # Playgrounds
 timeline.xctimeline
 playground.xcworkspace
+
+### Local validation output
+# Keep test source and durable documentation in Git; ignore generated reports.
+/Reports/
+/test-results.xml
+/test-results.junit.xml
