@@ -84,11 +84,14 @@ namespace Krab.ShapeSynth.Samples.Editor
 
             var synth = new GameObject("ShapeSynth");
             SceneManager.MoveGameObjectToScene(synth, scene);
-            var sketchObject = new GameObject("ADSR Circle", typeof(UCanvas));
+            var sketchObject = new GameObject("Modulator Comparison", typeof(UCanvas));
             sketchObject.transform.SetParent(synth.transform, false);
             var sketch = sketchObject.AddComponent<ShapeSynthSmokeTest>();
             var serialized = new SerializedObject(sketch);
             serialized.FindProperty("_outputCamera").objectReferenceValue = camera;
+            serialized.FindProperty("_lfoCyclesPerBeat").floatValue = 0.25f;
+            serialized.FindProperty("_lfoPhaseOffset").floatValue = 0;
+            serialized.FindProperty("_lfoWaveform").enumValueIndex = 0;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             // Resolving Single above also validates the copied reference's BPM/output cardinality.

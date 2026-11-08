@@ -529,7 +529,7 @@ GameObject:
   - component: {fileID: 705261710}
   - component: {fileID: 705261709}
   m_Layer: 0
-  m_Name: ADSR Circle
+  m_Name: Modulator Comparison
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -572,6 +572,12 @@ MonoBehaviour:
   _maxDiameterFraction: 0.7
   _circleColor: {r: 0.1, g: 0.9, b: 0.85, a: 1}
   _autoRepeat: 1
+  _lfoCyclesPerBeat: 0.25
+  _lfoPhaseOffset: 0
+  _lfoWaveform: 0
+  _lfoTravelFraction: 0.14
+  _lfoDiameterFraction: 0.18
+  _lfoColor: {r: 1, g: 0.5, b: 0.15, a: 1}
 --- !u!114 &705261710
 MonoBehaviour:
   m_ObjectHideFlags: 0

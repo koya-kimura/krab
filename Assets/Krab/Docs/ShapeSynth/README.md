@@ -1,5 +1,6 @@
 # ShapeSynth ドキュメント
 
+- [LFO仕様とPhase 2bの設計案](LfoAndPhase2bPlan.md)：Phase 2aの仕様、Parameter/Bindingの候補比較（後者は未実装）。
 - [実装計画](ShapeSynthImplementationPlan.md)：既存krabとの接続、段階的実装、Phase 1の仕様。
 - [既存システムの設計調査](ShapeSynthArchitectureAudit-2026-11-08.md)：p5側の既存資産と設計上の検討事項。
 - [p5.Unite API調査](P5UniteApiAndShapeSynthReport-2026-11-08.md)：導入済みパッケージのAPIと描画Adapterの検討。

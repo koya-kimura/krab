@@ -1,6 +1,6 @@
 # 図形シンセ：調査・段階的実装計画
 
-2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。今回はPhase 1のみ実装。
+2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。正式Parameter/Bindingは未実装で、仕様と次段階の案は `LfoAndPhase2bPlan.md` を参照。
 
 ## 既存構成と接続点
 
