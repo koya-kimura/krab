@@ -84,7 +84,7 @@ Space=ADSRを再開始、R=外部Release、L=LFOを再開始（旧/新デモそ�
 
 ## 後続のVoice / Variation / Prefsへ残す判断
 
-Voiceの寿命方針は [実装計画の寿命仕様](ShapeSynthImplementationPlan.md#voiceの寿命仕様合意済みphase-5で実装) に更新した。Trigger対象の階層全体にADSRまたはTimerを必須とし、すべてのLifetimeの終了でVoiceを破棄する。TimerとILifetimeの実装は後続Phase 5で行い、Phase 3の挙動は変更しない。
+Voiceの寿命方針は [実装計画の寿命仕様](VoiceAndLifetime.md) に更新した。Trigger対象の階層全体にADSRまたはTimerを必須とし、すべてのLifetimeの終了でVoiceを破棄する。TimerとILifetimeの実装は後続Phase 5で行い、Phase 3の挙動は変更しない。
 
 - Definitionの永続的識別・複製と参照のリマップ、出現箇所のIDは未決定。現状は不変オブジェクトの参照と子順だけを使う。
 - Group内のModulator所有者/スコープ、Group階層とVoice階層の関係は未決定。現在は呼出側がスロット一覧を渡す。将来は評価器構築の参照解決境界にスコープ/出現箇所ごとのResolverを追加できる。

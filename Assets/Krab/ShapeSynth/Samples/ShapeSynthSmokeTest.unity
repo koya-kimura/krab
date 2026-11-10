@@ -861,6 +861,7 @@ Transform:
   - {fileID: 705261708}
   - {fileID: 389599403}
   - {fileID: 388052882}
+  - {fileID: 1476844016}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1198394092 stripped
@@ -878,6 +879,82 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6528996959683893036, guid: a925864594c02480a91553e26e1df28d, type: 3}
   m_PrefabInstance: {fileID: 4490146487073735911}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1476844015
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1476844016}
+  - component: {fileID: 1476844019}
+  - component: {fileID: 1476844018}
+  - component: {fileID: 1476844017}
+  m_Layer: 0
+  m_Name: Voice Lifetime
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1476844016
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476844015}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 988999215}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1476844017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476844015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43c60d28e826e4af78d30f0c46cd706d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.ShapeSynth.Samples.VoiceSmokeTest
+  _timerBeats: 8
+  _showInstructions: 1
+--- !u!114 &1476844018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476844015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c4ac3c267d304c25ad282c81a0ab72c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Krab.ShapeSynth.Unity::Krab.ShapeSynth.Unity.ShapeSynthController
+  _outputCamera: {fileID: 330585545}
+  _invertTargetY: 1
+--- !u!114 &1476844019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476844015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bccddeebb2a464d35bec7539968b310b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Krab.ShapeSynth.Unity::Krab.ShapeSynth.Unity.TargetCameraCanvas
+  _shaderLibrary: {fileID: 11400000, guid: 620af193329c432da3205918ea693f73, type: 2}
+  _targetCamera: {fileID: 330585545}
 --- !u!4 &1526238192 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1063438450763107932, guid: b12fcbe667e2f4718a888de1c7710a41, type: 3}

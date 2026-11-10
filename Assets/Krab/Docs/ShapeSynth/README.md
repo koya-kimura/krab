@@ -1,6 +1,7 @@
 # ShapeSynth ドキュメント
 
 - [p5.Unite描画Adapter](RenderingAdapter.md)：Phase 4のAPI、Camera限定、座標と描画制約。
+- [Voiceと寿命](VoiceAndLifetime.md)：Phase 5のTrigger、Groupごとのsignal scope、Lifetimeと検証Scene。
 
 - [Shape / Group / Transform](ShapeGroupTransform.md)：Phase 3のCore階層、行列合成、Draw ItemとAdapter。
 - [Parameter / Binding](ParameterAndBinding.md)：Phase 2bの実装API、Reference、共有と後続フェーズの境界。
@@ -8,7 +9,7 @@
 - [実装計画](ShapeSynthImplementationPlan.md)：既存krabとの接続、段階的実装、Phase 1の仕様。
 - [既存システムの設計調査](ShapeSynthArchitectureAudit-2026-11-08.md)：p5側の既存資産と設計上の検討事項。
 - [p5.Unite API調査](P5UniteApiAndShapeSynthReport-2026-11-08.md)：導入済みパッケージのAPIと描画Adapterの検討。
-- [検証Sceneの操作手順](../../ShapeSynth/Samples/README.md)：ADSR Circleデモの起動と操作。
+- [検証Sceneの操作手順](../../ShapeSynth/Samples/README.md)：各Phaseの比較デモとVoice寿命デモの起動・操作。
 
 各調査文書は記載日時点の結果。後続のUnity Pipeline検証ではPhase 1のEditModeテスト25件が成功し、専用Sceneの保存・Play・RT描画を確認済み。
 

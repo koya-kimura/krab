@@ -7,10 +7,16 @@ namespace Krab.ShapeSynth.Core
     public sealed class GroupDefinition : INodeDefinition
     {
         public TransformDefinition Transform { get; }
+        public GroupRuntimeDefinition Runtime { get; }
         public IReadOnlyList<INodeDefinition> Children { get; }
 
         public GroupDefinition(TransformDefinition transform = null, params INodeDefinition[] children)
+            : this(transform, null, children) { }
+
+        public GroupDefinition(TransformDefinition transform, GroupRuntimeDefinition runtime,
+            params INodeDefinition[] children)
         {
+            Runtime = runtime;
             if (children == null) throw new ArgumentNullException(nameof(children));
             var copy = (INodeDefinition[])children.Clone();
             foreach (var child in copy)

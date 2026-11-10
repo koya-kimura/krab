@@ -3,7 +3,7 @@ using System;
 namespace Krab.ShapeSynth.Core
 {
     /// <summary>One trigger's state. Sampling is side-effect free; release events use absolute seconds.</summary>
-    public sealed class AdsrInstance : IModulator
+    public sealed class AdsrInstance : IModulator, ILifetime
     {
         public AdsrDefinition Definition { get; }
         public VoiceTime Time { get; }

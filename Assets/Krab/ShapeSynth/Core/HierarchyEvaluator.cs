@@ -10,10 +10,14 @@ namespace Krab.ShapeSynth.Core
         private readonly EvaluatedNode _root;
 
         public HierarchyEvaluator(GroupDefinition definition, IReadOnlyList<IModulator> modulators)
+            : this(definition, modulators, null) { }
+
+        internal HierarchyEvaluator(GroupDefinition definition, IReadOnlyList<IModulator> modulators,
+            Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope)
         {
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             if (modulators == null) throw new ArgumentNullException(nameof(modulators));
-            _root = Compile(definition, modulators, new HashSet<INodeDefinition>());
+            _root = Compile(definition, modulators, new HashSet<INodeDefinition>(), resolveScope);
         }
 
         public IReadOnlyList<DrawItem> Evaluate(double nowSeconds, ReferenceContext context)
@@ -25,7 +29,8 @@ namespace Krab.ShapeSynth.Core
         }
 
         private static EvaluatedNode Compile(INodeDefinition definition, IReadOnlyList<IModulator> modulators,
-            HashSet<INodeDefinition> activePath)
+            HashSet<INodeDefinition> activePath,
+            Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope)
         {
             if (definition == null) throw new ArgumentException("Null node.", nameof(definition));
             if (!activePath.Add(definition)) throw new ArgumentException("Group hierarchy contains a cycle.", nameof(definition));
@@ -33,8 +38,9 @@ namespace Krab.ShapeSynth.Core
             {
                 if (definition is ShapeDefinition shape) return new EvaluatedNode(shape, modulators, Array.Empty<EvaluatedNode>());
                 if (!(definition is GroupDefinition group)) throw new ArgumentException("Unsupported node definition.", nameof(definition));
+                if (resolveScope != null) modulators = resolveScope(group, modulators);
                 var children = new EvaluatedNode[group.Children.Count];
-                for (var i = 0; i < children.Length; i++) children[i] = Compile(group.Children[i], modulators, activePath);
+                for (var i = 0; i < children.Length; i++) children[i] = Compile(group.Children[i], modulators, activePath, resolveScope);
                 return new EvaluatedNode(group, modulators, children);
             }
             finally { activePath.Remove(definition); }

@@ -66,3 +66,16 @@ Inspectorの「Parameter / Binding comparison」でBase・ADSR Depth・LFO Depth
 ## Phase 4の描画確認
 
 上端の3図形と下端の非等方/負Scale・半透明の重なりを追加。既存の変調/階層デモは維持する。各デモはTargetCameraCanvasでOutput Cameraだけへ送信する。Sceneを開いてPlayすれば動作する。詳細は `Assets/Krab/Docs/ShapeSynth/RenderingAdapter.md`。
+
+## Phase 5のVoice / Lifetime
+
+`ShapeSynth/Voice Lifetime` にTargetCameraCanvas、ShapeSynthController、VoiceSmokeTestを配置済み。Main Cameraと既存RT出力を使い、以前のデモを維持する。Play開始時に青のTimer-only CircleとピンクのADSR+Timer Groupを1つずつSpawnする。追加デモは上端3図形と既存デモの間の行に表示する。
+
+- **Z**：青CircleをSpawn。LFOで移動し、初期設定8拍のTimerで終了。
+- **X**：ピンクGroupをSpawn。ADSRは8拍、Timerは2拍。Timerが先に終了してもADSR終了まで残る。
+- **V**：Xの演奏対象だけをRestart。青と黄色のVoiceには影響しない。
+- **C**：黄色の保持ADSR+Timer GroupをSpawn。Timerが終了しても残る。
+- **H**：Cから生まれたVoiceのADSRをRelease。即時削除せずRelease完了で終了する。
+- **D**：既存BPM UIを表示。BPMを変更し、次拍で有効になってからZ/X/Cで再Spawnすると、新旧Voiceはそれぞれの開始時BPMで動く。
+
+Game View左上にVoice数・現在BPM・最後のTrigger BPMと操作キーを表示する。これはサンプルのOnGUIであり、SyphonのRTには描かない。従来のSpace/R/Lは従来デモだけに作用する。検証用のBPM変更は保存せず、確認後に元へ戻す。Voice Pooling・自動反復・Voice数制限は実装していない。詳しいAPIとscopeは `Assets/Krab/Docs/ShapeSynth/VoiceAndLifetime.md` を参照。
