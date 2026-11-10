@@ -143,10 +143,13 @@ namespace Krab.ShapeSynth.Samples
             // Use the output camera's dimensions, not UCanvas's last-rendered camera (Scene View etc.).
             var width = _outputCamera.pixelWidth;
             var height = _outputCamera.pixelHeight;
-            var paneSize = Mathf.Min(width * 0.5f, height * 0.42f);
+            // Keep the original four modulation demos together in the left panel.
+            var legacyWidth = width * 0.55f;
+            var legacyOffset = width * 0.08f;
+            var paneSize = Mathf.Min(legacyWidth * 0.5f, height * 0.42f);
             SampleDiameterPixels = (float)SampleValue * _maxDiameterFraction * paneSize;
             LfoSampleValue = _lfo.Evaluate(now);
-            LfoPositionX = width * 0.75f + (float)LfoSampleValue * width * _lfoTravelFraction;
+            LfoPositionX = legacyOffset + legacyWidth * 0.75f + (float)LfoSampleValue * legacyWidth * _lfoTravelFraction;
             var context = new ReferenceContext(width, height);
             BoundDiameterPixels = _boundDiameter.Evaluate(now, context);
             BoundOpacity = _boundOpacity.Evaluate(now, context);
@@ -159,15 +162,15 @@ namespace Krab.ShapeSynth.Samples
             _canvas.NoStroke();
             _canvas.Fill(_circleColor);
             if (SampleDiameterPixels > 0)
-                _canvas.Circle(width * 0.25f, upperY, SampleDiameterPixels);
+                _canvas.Circle(legacyOffset + legacyWidth * 0.25f, upperY, SampleDiameterPixels);
             _canvas.Fill(_lfoColor);
             _canvas.Circle(LfoPositionX, upperY, paneSize * _lfoDiameterFraction);
             // Geometry/opacity constraints belong to the drawing boundary, not ParameterEvaluator.
             _canvas.Fill(new Color(0.7f, 0.3f, 1, 1));
             if (BoundDiameterPixels > 0)
-                _canvas.Circle(width * 0.25f, lowerY, (float)BoundDiameterPixels);
+                _canvas.Circle(legacyOffset + legacyWidth * 0.25f, lowerY, (float)BoundDiameterPixels);
             _canvas.Fill(new Color(0.2f, 1, 0.4f, Mathf.Clamp01((float)BoundOpacity)));
-            _canvas.Circle(width * 0.75f, lowerY, (float)fixedDiameter);
+            _canvas.Circle(legacyOffset + legacyWidth * 0.75f, lowerY, (float)fixedDiameter);
             SubmittedFrameCount++;
         }
     }

@@ -51,3 +51,14 @@ SceneはEditorで作成・保存済み。再生成が必要な場合は既存の
 下段左の紫の円は、ADSRとLFOを同じDiameter Parameterへ接続して加算する。下段右の緑の円は、紫の円と**同じADSR Instance**をOpacity Parameterへ接続して明滅する。直径は一定。上段の従来表示は比較用として維持する。
 
 Inspectorの「Parameter / Binding comparison」でBase・ADSR Depth・LFO Depth・短辺に対するReference係数を変更可能。ParameterのCore出力はClampせず、OpacityのClampは描画時のみ。詳細APIは `Assets/Krab/Docs/ShapeSynth/ParameterAndBinding.md` を参照。
+
+
+## Phase 3のGroup表示
+
+従来の4つの円は左パネルへまとめ、右側にGroupデモを追加している。`ShapeSynth/Group Hierarchy` にUCanvasとHierarchySmokeTestがあり、図形ごとのGameObjectは不要。
+
+- 右上A：2図形が同一Pivotの周りに回転。
+- 右中央B：親子GroupのTransform合成。Rectangleと三角形に非等方/負Scaleを含む。
+- 右下C：LFOでGroup Rotation、共有ADSRでCircle DiameterとRectangle Position Xを変調。
+
+灰色の点はPivot。Space/R/L/Dは従来通りで、新デモもSpace/R/Lを受け取る。Core座標はCanvas中央原点・Y上向き。新AdapterはこのRT/Preview出力向けにY反転を明示設定し、合成済み行列を一度だけ適用する。詳細は `Assets/Krab/Docs/ShapeSynth/ShapeGroupTransform.md`。

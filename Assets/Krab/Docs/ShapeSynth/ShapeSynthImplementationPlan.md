@@ -1,6 +1,6 @@
 # 図形シンセ：調査・段階的実装計画
 
-2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。最新APIは `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
+2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
 
 ## 既存構成と接続点
 
@@ -53,19 +53,36 @@ var value = envelope.Evaluate(UnityEngine.Time.timeAsDouble);
 | 2 LFO / Parameter / Binding | Core/LfoDefinition, LfoInstance, ParameterDefinition, BindingDefinition, ReferenceContext | Phase 1のVoiceTimeを共有。`Reference × (Base + ΣDepth×Signal)`。Modulator状態はBindingごとに複製しない | 位相・周波数単位、複数Binding、同一信号の分岐、リサイズ時Referenceを数値テスト。Clampせず期待式通り |
 | 3 Shape / Group / Transform | Core/ShapeDefinition, GroupDefinition, Transform2D, DrawItem | Phase 2。Group再帰と中心原点・右X/上Y。親子行列を合成。Unityから独立した数値表現を選ぶ | ネスト、Pivot、回転/Scale/Position合成を検証。描画なしでワールド形状データを評価可能 |
 | 4 最小描画 | Unity/UniteShapeAdapter, ShapeSynthPreview | Phase 3。UCanvasへDrawItemを変換。既存Camera/OutputTextureProviderを利用。Adapterは当初Assembly-CSharpに置く | Circle/Rectangle/Polygonとネストを画面で確認。中心/座標方向/RT解像度/カメラ/URP設定を検証。ShapeごとのGameObject不要 |
-| 5 Voice / Trigger / 寿命 | Core/VoiceInstance, VoiceCollection、Unity/ShapeSynthController | Phase 1〜3。DIのIBPMManagerとUnity時計をTriggerでスナップショット。Rendererは4 | 同時Spawn、BPM変更前後の異なる速度、全ADSR終了で削除、Restartを検証。1 Modulatorにつき1 Instance、子へ同じ開始時刻 |
+| 5 Voice / Trigger / 寿命 | Core/ILifetime, TimerDefinition, TimerInstance, VoiceInstance, VoiceCollection、Unity/ShapeSynthController | Phase 1〜3。DIのIBPMManagerとUnity時計をTriggerでスナップショット。Rendererは4。寿命仕様は下記 | 同時Spawn、BPM固定、階層全体のLifetime必須・全終了で削除、Restartを検証。共有するModulatorは同じInstanceを参照し、子とTimerへ同じVoiceTimeを渡す |
 | 6 Variation / Layout | Core/VariationContext, VariationEvaluator, LayoutDefinition | Phase 2/3/5。Definitionを変えず生成時に個体設定を解決 | Indexの偶奇反転、seed再現性、Position由来差、Base/Depth/ADSRへの適用。共有Definitionの汚染なし |
 | 7 編集 / 保存 | Unity/ShapeSynthSettings, ShapeSynthUi, ShapeSynthPrefsAdapter、Editor/ShapeSynthSettingsEditor | Coreを独立維持。Inspector用DTO→Runtime Definition変換、IUiTarget、既存PrefsGUI。Apply to Inspectorは明示操作 | 保存→再起動復元、Runtime編集、明示ApplyとUndoを検証。Coreへのシリアライズ属性不要 |
 | 8 MIDI / 出力 / 性能 | Unity/ShapeSynthMidiAdapter、検証用Performanceシーン | Phase 4/5/7。既存MIDI ActionからTrigger/Release、既存Camera→RT→Syphon | MIDI押下/解放、Note重複、解像度変更、複数Voiceの負荷とGCを測定。想定最大数/FPSに合意して達成 |
 
 Phase 5のVoice計算テストはPhase 4と独立して先行可能。描画・編集・MIDIの各AdapterだけがCoreと既存サービスをつなぐ。Coreに新しいManager/汎用グラフ/シーケンサーは作らない。
 
+## Voiceの寿命仕様（合意済み・Phase 5で実装）
+
+2026-11-10更新。ADSRをVoiceの必須要素とする方針は採用しない。値の生成と終了判定を独立した小さなインターフェースで表す。
+
+| 要素 | 値の生成：IModulator | 終了判定：ILifetime | Bindingの接続対象 |
+|---|---|---|---|
+| ADSR | あり | あり | 対象 |
+| LFO | あり | なし | 対象 |
+| Timer | なし | あり | 対象外 |
+
+- 既存の `IModulator.Evaluate(double nowSeconds)` は維持する。`ILifetime` は既存ADSRの `bool IsFinished(double nowSeconds)` に合わせる案を第一候補とし、具体的な形は後続実装時に既存API・戻り値型・テストと整合させる。ADSRは両インターフェース、LFOはIModulatorのみ、TimerはILifetimeのみを実装する。
+- Trigger対象のGroupとその全子孫を含む階層全体に、ADSRまたはTimerが少なくとも1つ必要。各Groupに個別のADSRを要求しない。Timerだけでも有効だが、LFOだけの階層はTrigger条件を満たさない。
+- Voiceは配下のすべてのLifetime要素が終了したときに破棄する。信号値が0かどうかでは判定しない。Timerの終了は他のLifetimeを強制終了せず、ADSRのReleaseも発火しない。外部Releaseを待つADSRが残っていれば、Timer終了後もVoiceは存続する。
+- TimerのDurationは拍数で指定する。Voice開始時のBPMを固定した `VoiceTime` で評価し、Trigger後のグローバルBPM変更には追従しない。値を生成せず、Bindingの信号スロットには登録しない。
+- Phase 5では階層全体のLifetime有無、Timerの拍境界とBPM固定、ADSRとTimerの終了順が異なる場合の全終了判定、Timer終了後も保持中ADSRが存続することを数値テストする。Durationの不正値・0拍・開始前評価も既存Coreの規約に合わせて仕様化・検証する。
+
+Phase 3ではこの計画のみを更新する。Timer、ILifetime、Voice寿命管理はまだ実装しない。既存ADSR・LFO・Parameter・Binding・TransformのAPIと挙動は変更しない。Lifetimeの階層内での配置・所有・参照解決は後続のVoice設計で具体化する。
+
 ## 今後合意が必要な判断
 
-1. **ADSRのないGroupと無限Sustain/LFOの寿命**：自動破棄・明示停止・固定寿命のどれか。Voice管理の前に決定する。現状のIsFinishedはRelease終了のみで、値0だけを寿命判定にしない。
-2. **演奏中のDefinition編集**：現時点は生成時スナップショット。既存Voiceへライブ反映を求めるなら、時間継続やRelease値の保持を含めて合意する。
-3. **RestartとMIDI NoteOffの対象**：どのVoiceを置換/解放するか、同音重複やGroup単位の対応をPhase 5/8前に決める。
-4. **停止時間の扱い**：今回は既存同様のゲーム時間。実時間追従や明示トランスポートを求める場合は時刻供給境界で設計変更する。BPM変更と同フレームのTriggerは呼出順の有効BPMを取得するため、厳密な拍同期が必要なら呼出順を定義する。
+1. **演奏中のDefinition編集**：現時点は生成時スナップショット。既存Voiceへライブ反映を求めるなら、時間継続やRelease値の保持を含めて合意する。
+2. **RestartとMIDI NoteOffの対象**：どのVoiceを置換/解放するか、同音重複やGroup単位の対応をPhase 5/8前に決める。
+3. **停止時間の扱い**：今回は既存同様のゲーム時間。実時間追従や明示トランスポートを求める場合は時刻供給境界で設計変更する。BPM変更と同フレームのTriggerは呼出順の有効BPMを取得するため、厳密な拍同期が必要なら呼出順を定義する。
 
 Referenceの単位、LFOの波形/位相、Polygonの表現、加算後の描画制約、最大Voice数は該当Phaseで決める。描画Adapterが負のサイズ等をどう扱うかを定義し、Coreの一般Parameterには一律Clampを加えない。
 

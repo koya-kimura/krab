@@ -20,7 +20,7 @@ var value = parameter.Evaluate(nowSeconds, new ReferenceContext(1920, 1080));
 
 計算は `Reference × (Base + Σ Depth × Signal)`。例の信号がADSR=0.8、LFO=-0.5なら320。加算はBindingの順序通りで、正規化やClampはしない。
 
-- `IModulator.Evaluate(double nowSeconds)`：数値出力だけの共通API。既存ADSR/LFOはこのインターフェースを実装するだけで、従来の振る舞いとAPIを維持する。Release/寿命はADSR固有のまま。
+- `IModulator.Evaluate(double nowSeconds)`：数値出力だけの共通API。既存ADSR/LFOはこのインターフェースを実装するだけで、従来の振る舞いとAPIを維持する。ReleaseはADSR固有のまま。寿命判定は後続Voiceフェーズで別の `ILifetime` に分離する予定（[実装計画](ShapeSynthImplementationPlan.md)）。Timerは値を生成せず、Bindingには接続しない。
 - `BindingDefinition(int modulatorIndex, double depth)`：呼出側が用意する小さな配列/リストのスロット番号とDepth。実行状態なし。
 - `ParameterDefinition(ReferenceDefinition reference, double baseValue, params BindingDefinition[] bindings)`：不変の数値レシピ。Binding配列を複製して読み取り専用で公開する。
 - `ParameterEvaluator(ParameterDefinition definition, IReadOnlyList<IModulator> modulators)`：生成時にBindingのスロットを既存Instanceへの参照として解決し保持する。Instanceの新規生成・複製・Releaseは行わない。

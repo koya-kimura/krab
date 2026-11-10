@@ -1,5 +1,6 @@
 # ShapeSynth ドキュメント
 
+- [Shape / Group / Transform](ShapeGroupTransform.md)：Phase 3のCore階層、行列合成、Draw ItemとAdapter。
 - [Parameter / Binding](ParameterAndBinding.md)：Phase 2bの実装API、Reference、共有と後続フェーズの境界。
 - [LFO仕様とPhase 2bの設計案](LfoAndPhase2bPlan.md)：Phase 2aの仕様、Parameter/Bindingの候補比較（後者は未実装）。
 - [実装計画](ShapeSynthImplementationPlan.md)：既存krabとの接続、段階的実装、Phase 1の仕様。

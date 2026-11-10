@@ -10,6 +10,9 @@ namespace Krab.ShapeSynth.Core
         public double BaseValue { get; }
         public IReadOnlyList<BindingDefinition> Bindings { get; }
 
+        public static ParameterDefinition Constant(double value) =>
+            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), value);
+
         public ParameterDefinition(ReferenceDefinition reference, double baseValue, params BindingDefinition[] bindings)
         {
             Reference = reference ?? throw new ArgumentNullException(nameof(reference));
