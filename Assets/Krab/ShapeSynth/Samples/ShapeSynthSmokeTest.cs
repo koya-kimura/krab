@@ -31,6 +31,18 @@ namespace Krab.ShapeSynth.Samples
         [SerializeField, Range(0.05f, 0.3f)] private float _lfoDiameterFraction = 0.18f;
         [SerializeField] private Color _lfoColor = new(1, 0.5f, 0.15f, 1);
 
+        [Header("Parameter / Binding comparison")]
+        [SerializeField] private float _bindingBase = 0.2f;
+        [SerializeField] private float _bindingAdsrDepth = 0.65f;
+        [SerializeField] private float _bindingLfoDepth = 0.15f;
+        [SerializeField, Range(0.05f, 0.4f)] private float _bindingSizeFraction = 0.2f;
+
+        private ParameterEvaluator _boundDiameter;
+        private ParameterEvaluator _boundOpacity;
+        private ParameterEvaluator _fixedDiameter;
+        public double BoundDiameterPixels { get; private set; }
+        public double BoundOpacity { get; private set; }
+
         private IBPMManager _bpm;
         private UCanvas _canvas;
         private AdsrInstance _envelope;
@@ -82,6 +94,7 @@ namespace Krab.ShapeSynth.Samples
                 (definition.Attack + definition.Decay + definition.SustainTime + definition.Release +
                  _pauseBeats) * 60 / time.StartBpm;
             TriggerCount++;
+            RefreshBindings();
         }
 
         private void OnValidate() => _lfoSettingsChanged = true;
@@ -97,6 +110,21 @@ namespace Krab.ShapeSynth.Samples
         {
             _lfo = new LfoInstance(new LfoDefinition(_lfoCyclesPerBeat, _lfoPhaseOffset, _lfoWaveform), time);
             _lfoSettingsChanged = false;
+            RefreshBindings();
+        }
+
+        private void RefreshBindings()
+        {
+            if (_envelope == null || _lfo == null) return;
+            // Both evaluators resolve slot 0 to this exact envelope, not another ADSR instance.
+            var signals = new IModulator[] { _envelope, _lfo };
+            _boundDiameter = new ParameterEvaluator(new ParameterDefinition(
+                new ReferenceDefinition(ReferenceSource.MinDimension, _bindingSizeFraction), _bindingBase,
+                new BindingDefinition(0, _bindingAdsrDepth), new BindingDefinition(1, _bindingLfoDepth)), signals);
+            _boundOpacity = new ParameterEvaluator(new ParameterDefinition(
+                new ReferenceDefinition(ReferenceSource.Absolute), 0, new BindingDefinition(0, 1)), signals);
+            _fixedDiameter = new ParameterEvaluator(new ParameterDefinition(
+                new ReferenceDefinition(ReferenceSource.MinDimension, 0.18), 1), signals);
         }
 
         private void Update()
@@ -115,17 +143,31 @@ namespace Krab.ShapeSynth.Samples
             // Use the output camera's dimensions, not UCanvas's last-rendered camera (Scene View etc.).
             var width = _outputCamera.pixelWidth;
             var height = _outputCamera.pixelHeight;
-            var paneSize = Mathf.Min(width * 0.5f, height);
+            var paneSize = Mathf.Min(width * 0.5f, height * 0.42f);
             SampleDiameterPixels = (float)SampleValue * _maxDiameterFraction * paneSize;
             LfoSampleValue = _lfo.Evaluate(now);
             LfoPositionX = width * 0.75f + (float)LfoSampleValue * width * _lfoTravelFraction;
+            var context = new ReferenceContext(width, height);
+            BoundDiameterPixels = _boundDiameter.Evaluate(now, context);
+            BoundOpacity = _boundOpacity.Evaluate(now, context);
+            var fixedDiameter = _fixedDiameter.Evaluate(now, context);
+            // Through this ScreenOverlay -> RT -> Preview path, smaller Y appears higher.
+            // Keep this display placement separate from Reference evaluation and future local transforms.
+            var upperY = height * 0.38f;
+            var lowerY = height * 0.63f;
             _canvas.ResetMatrix();
             _canvas.NoStroke();
             _canvas.Fill(_circleColor);
             if (SampleDiameterPixels > 0)
-                _canvas.Circle(width * 0.25f, height * 0.5f, SampleDiameterPixels);
+                _canvas.Circle(width * 0.25f, upperY, SampleDiameterPixels);
             _canvas.Fill(_lfoColor);
-            _canvas.Circle(LfoPositionX, height * 0.5f, paneSize * _lfoDiameterFraction);
+            _canvas.Circle(LfoPositionX, upperY, paneSize * _lfoDiameterFraction);
+            // Geometry/opacity constraints belong to the drawing boundary, not ParameterEvaluator.
+            _canvas.Fill(new Color(0.7f, 0.3f, 1, 1));
+            if (BoundDiameterPixels > 0)
+                _canvas.Circle(width * 0.25f, lowerY, (float)BoundDiameterPixels);
+            _canvas.Fill(new Color(0.2f, 1, 0.4f, Mathf.Clamp01((float)BoundOpacity)));
+            _canvas.Circle(width * 0.75f, lowerY, (float)fixedDiameter);
             SubmittedFrameCount++;
         }
     }

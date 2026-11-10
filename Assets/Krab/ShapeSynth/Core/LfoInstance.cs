@@ -3,7 +3,7 @@ using System;
 namespace Krab.ShapeSynth.Core
 {
     /// <summary>One trigger's LFO. Sampling has no side effects and uses the captured BPM.</summary>
-    public sealed class LfoInstance
+    public sealed class LfoInstance : IModulator
     {
         public LfoDefinition Definition { get; }
         public VoiceTime Time { get; }

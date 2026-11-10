@@ -1,6 +1,6 @@
 # Shape Synth Smoke Test
 
-`ShapeSynthSmokeTest.unity` を開いてPlayする。Game Viewの左にシアンのADSR円、右にオレンジのLFO円が現れる。左は直径が拡大・減衰・保持・縮小し、右は一定の直径で左右に往復する。
+`ShapeSynthSmokeTest.unity` を開いてPlayする。Game Viewの上段左にシアンのADSR円、上段右にオレンジのLFO円が現れる。左は直径が拡大・減衰・保持・縮小し、右は一定の直径で左右に往復する。
 
 - Space：再Trigger（Game Viewにキーボードフォーカスが必要）
 - R：ADSRを現在値から外部Release
@@ -13,7 +13,7 @@
 
 初期値はAttack=1拍、Decay=0.5拍、SustainLevel=0.35、SustainTime=1拍、Release=1拍、反復前の休止=1拍。BPM120なら1周期2.25秒。
 
-描画はUCanvasのScreenOverlay/Indirect、ピクセル単位。左下原点・X右・Y上から出力Cameraの半幅/半高へ配置する。一般的なシンセ座標系への変換は将来の正式Adapterで実装する。
+描画はUCanvasのScreenOverlay/Indirect、ピクセル単位。検証用の画面配置は出力Cameraの寸法から計算する。このRT/Preview経路では小さいYが画面上側に見えるため、表示用の配置をそれに合わせている。中央原点・X右/Y上というCore側の座標方針と、一般的な座標変換は将来の正式Adapterで扱う。
 
 出力経路：UCanvas → Main Camera → 既存OutputTextureProviderのRT → 既存OutputPreviewDisplay/RawImage → Game View。既存SyphonController/Serverも同じRTにTextureモードで接続する。Syphonクライアントでの受信は別途確認が必要。
 
@@ -44,3 +44,10 @@ ShapeSynth
 `ShapeSynthSmokeTest.cs` は正式なShape/Binding/Voice管理を代替するものではない。Coreをそのまま使用し、ADSRから直径、LFOから左右座標への変換だけをサンプル内で行う。最初は同じVoiceTimeで開始するが、ADSRの自動反復/SpaceはLFOをリセットしない。
 
 SceneはEditorで作成・保存済み。再生成が必要な場合は既存の検証Sceneを退避してから `Krab > Shape Synth > Create Smoke Test Scene` を実行する。作成ツールは既存ファイルの上書きを拒否する。参考Sceneを一時コピーして構築し、保存後に元のSceneを復元する。意図的な再構築に限りEditorから `ShapeSynthSmokeSceneBuilder.BuildFromReference(true)` を呼び出せる。参考Sceneまたは既存の検証Sceneに未保存変更がある場合は上書きを拒否する。
+
+
+## Phase 2bのBinding表示
+
+下段左の紫の円は、ADSRとLFOを同じDiameter Parameterへ接続して加算する。下段右の緑の円は、紫の円と**同じADSR Instance**をOpacity Parameterへ接続して明滅する。直径は一定。上段の従来表示は比較用として維持する。
+
+Inspectorの「Parameter / Binding comparison」でBase・ADSR Depth・LFO Depth・短辺に対するReference係数を変更可能。ParameterのCore出力はClampせず、OpacityのClampは描画時のみ。詳細APIは `Assets/Krab/Docs/ShapeSynth/ParameterAndBinding.md` を参照。

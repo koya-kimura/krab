@@ -92,6 +92,10 @@ namespace Krab.ShapeSynth.Samples.Editor
             serialized.FindProperty("_lfoCyclesPerBeat").floatValue = 0.25f;
             serialized.FindProperty("_lfoPhaseOffset").floatValue = 0;
             serialized.FindProperty("_lfoWaveform").enumValueIndex = 0;
+            serialized.FindProperty("_bindingBase").floatValue = 0.2f;
+            serialized.FindProperty("_bindingAdsrDepth").floatValue = 0.65f;
+            serialized.FindProperty("_bindingLfoDepth").floatValue = 0.15f;
+            serialized.FindProperty("_bindingSizeFraction").floatValue = 0.2f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             // Resolving Single above also validates the copied reference's BPM/output cardinality.
