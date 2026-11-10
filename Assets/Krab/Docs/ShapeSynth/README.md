@@ -1,5 +1,7 @@
 # ShapeSynth ドキュメント
 
+- [Variation](Variation.md)：Phase 6の配置Index、Seed付きRandom、Base/Depthの生成時解決。
+
 - [p5.Unite描画Adapter](RenderingAdapter.md)：Phase 4のAPI、Camera限定、座標と描画制約。
 - [Voiceと寿命](VoiceAndLifetime.md)：Phase 5のTrigger、Groupごとのsignal scope、Lifetimeと検証Scene。
 

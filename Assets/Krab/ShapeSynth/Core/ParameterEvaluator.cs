@@ -9,10 +9,19 @@ namespace Krab.ShapeSynth.Core
         public ParameterDefinition Definition { get; }
         private readonly IModulator[] _signals;
 
+        public ParameterEvaluator(ParameterDefinition definition, IReadOnlyList<IModulator> modulators,
+            VariationContext context, ulong parameterKey)
+            : this(VariationResolver.Resolve(definition, context, parameterKey), modulators) { }
+
         public ParameterEvaluator(ParameterDefinition definition, IReadOnlyList<IModulator> modulators)
         {
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             if (modulators == null) throw new ArgumentNullException(nameof(modulators));
+            if (definition.BaseVariation != null)
+                throw new ArgumentException("Resolve Variation with a placement context before evaluating.", nameof(definition));
+            foreach (var binding in definition.Bindings)
+                if (binding.DepthVariation != null)
+                    throw new ArgumentException("Resolve Variation with a placement context before evaluating.", nameof(definition));
             _signals = new IModulator[definition.Bindings.Count];
             for (var i = 0; i < _signals.Length; i++)
             {

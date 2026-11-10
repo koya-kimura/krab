@@ -8,17 +8,19 @@ namespace Krab.ShapeSynth.Core
     {
         public TriggerTarget Target { get; }
         public VoiceTime Time { get; }
+        public int VoiceSeed { get; }
         public IReadOnlyList<IModulator> Modulators { get; }
         public IReadOnlyList<ILifetime> Lifetimes { get; }
         private readonly HierarchyEvaluator _evaluator;
         private bool _stopped;
         private readonly List<AdsrInstance> _envelopes = new List<AdsrInstance>();
 
-        public VoiceInstance(TriggerTarget target, VoiceTime time)
+        public VoiceInstance(TriggerTarget target, VoiceTime time, int voiceSeed = 0)
         {
             Target = target ?? throw new ArgumentNullException(nameof(target));
             time.ElapsedBeats(time.StartSeconds);
             Time = time;
+            VoiceSeed = voiceSeed;
             var modulators = new List<IModulator>();
             var lifetimes = new List<ILifetime>();
             _evaluator = new HierarchyEvaluator(target.Definition, Array.Empty<IModulator>(), (group, inherited) =>
@@ -50,7 +52,7 @@ namespace Krab.ShapeSynth.Core
                     if (signal is AdsrInstance envelope) _envelopes.Add(envelope);
                 }
                 return Array.AsReadOnly(scope);
-            });
+            }, voiceSeed);
             if (lifetimes.Count == 0)
                 throw new ArgumentException("A triggered Group hierarchy needs at least one ADSR or Timer.", nameof(target));
             Modulators = modulators.AsReadOnly();

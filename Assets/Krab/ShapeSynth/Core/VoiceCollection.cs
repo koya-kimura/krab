@@ -10,17 +10,17 @@ namespace Krab.ShapeSynth.Core
         public IReadOnlyList<VoiceInstance> Voices { get; }
         public VoiceCollection() => Voices = _voices.AsReadOnly();
 
-        public VoiceInstance Spawn(TriggerTarget target, double nowSeconds, double bpm)
+        public VoiceInstance Spawn(TriggerTarget target, double nowSeconds, double bpm, int voiceSeed = 0)
         {
-            var voice = new VoiceInstance(target, new VoiceTime(nowSeconds, bpm));
+            var voice = new VoiceInstance(target, new VoiceTime(nowSeconds, bpm), voiceSeed);
             _voices.Add(voice);
             return voice;
         }
 
-        public VoiceInstance Restart(TriggerTarget target, double nowSeconds, double bpm)
+        public VoiceInstance Restart(TriggerTarget target, double nowSeconds, double bpm, int voiceSeed = 0)
         {
             // Validate/compile the replacement before removing any live voices.
-            var replacement = new VoiceInstance(target, new VoiceTime(nowSeconds, bpm));
+            var replacement = new VoiceInstance(target, new VoiceTime(nowSeconds, bpm), voiceSeed);
             foreach (var voice in _voices)
                 if (ReferenceEquals(voice.Target, target)) voice.Stop();
             _voices.RemoveAll(voice => ReferenceEquals(voice.Target, target));

@@ -30,11 +30,11 @@ namespace Krab.ShapeSynth.Unity
             _canvas.Initialize(_outputCamera);
         }
 
-        public VoiceInstance Spawn(TriggerTarget target, double currentBpm) =>
-            Collection.Spawn(target, Time.timeAsDouble, currentBpm);
+        public VoiceInstance Spawn(TriggerTarget target, double currentBpm, int voiceSeed = 0) =>
+            Collection.Spawn(target, Time.timeAsDouble, currentBpm, voiceSeed);
 
-        public VoiceInstance Restart(TriggerTarget target, double currentBpm) =>
-            Collection.Restart(target, Time.timeAsDouble, currentBpm);
+        public VoiceInstance Restart(TriggerTarget target, double currentBpm, int voiceSeed = 0) =>
+            Collection.Restart(target, Time.timeAsDouble, currentBpm, voiceSeed);
 
         private void Update()
         {

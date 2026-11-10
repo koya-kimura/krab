@@ -10,14 +10,17 @@ namespace Krab.ShapeSynth.Core
         private readonly EvaluatedNode _root;
 
         public HierarchyEvaluator(GroupDefinition definition, IReadOnlyList<IModulator> modulators)
-            : this(definition, modulators, null) { }
+            : this(definition, modulators, null, 0) { }
+
+        public HierarchyEvaluator(GroupDefinition definition, IReadOnlyList<IModulator> modulators, int voiceSeed)
+            : this(definition, modulators, null, voiceSeed) { }
 
         internal HierarchyEvaluator(GroupDefinition definition, IReadOnlyList<IModulator> modulators,
-            Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope)
+            Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope, int voiceSeed = 0)
         {
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             if (modulators == null) throw new ArgumentNullException(nameof(modulators));
-            _root = Compile(definition, modulators, new HashSet<INodeDefinition>(), resolveScope);
+            _root = Compile(definition, modulators, new HashSet<INodeDefinition>(), resolveScope, new VariationContext(voiceSeed));
         }
 
         public IReadOnlyList<DrawItem> Evaluate(double nowSeconds, ReferenceContext context)
@@ -30,18 +33,18 @@ namespace Krab.ShapeSynth.Core
 
         private static EvaluatedNode Compile(INodeDefinition definition, IReadOnlyList<IModulator> modulators,
             HashSet<INodeDefinition> activePath,
-            Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope)
+            Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope, VariationContext context)
         {
             if (definition == null) throw new ArgumentException("Null node.", nameof(definition));
             if (!activePath.Add(definition)) throw new ArgumentException("Group hierarchy contains a cycle.", nameof(definition));
             try
             {
-                if (definition is ShapeDefinition shape) return new EvaluatedNode(shape, modulators, Array.Empty<EvaluatedNode>());
+                if (definition is ShapeDefinition shape) return new EvaluatedNode(shape, modulators, Array.Empty<EvaluatedNode>(), context);
                 if (!(definition is GroupDefinition group)) throw new ArgumentException("Unsupported node definition.", nameof(definition));
                 if (resolveScope != null) modulators = resolveScope(group, modulators);
                 var children = new EvaluatedNode[group.Children.Count];
-                for (var i = 0; i < children.Length; i++) children[i] = Compile(group.Children[i], modulators, activePath, resolveScope);
-                return new EvaluatedNode(group, modulators, children);
+                for (var i = 0; i < children.Length; i++) children[i] = Compile(group.Children[i], modulators, activePath, resolveScope, context.Child(i));
+                return new EvaluatedNode(group, modulators, children, context);
             }
             finally { activePath.Remove(definition); }
         }
@@ -55,23 +58,23 @@ namespace Krab.ShapeSynth.Core
             private readonly ParameterEvaluator _opacity;
             private readonly EvaluatedNode[] _children;
 
-            public EvaluatedNode(INodeDefinition definition, IReadOnlyList<IModulator> modulators, EvaluatedNode[] children)
+            public EvaluatedNode(INodeDefinition definition, IReadOnlyList<IModulator> modulators, EvaluatedNode[] children, VariationContext context)
             {
                 var transform = definition.Transform;
                 _transform = new[]
                 {
-                    new ParameterEvaluator(transform.PositionX, modulators),
-                    new ParameterEvaluator(transform.PositionY, modulators),
-                    new ParameterEvaluator(transform.RotationDegrees, modulators),
-                    new ParameterEvaluator(transform.ScaleX, modulators),
-                    new ParameterEvaluator(transform.ScaleY, modulators)
+                    new ParameterEvaluator(transform.PositionX, modulators, context, 1),
+                    new ParameterEvaluator(transform.PositionY, modulators, context, 2),
+                    new ParameterEvaluator(transform.RotationDegrees, modulators, context, 3),
+                    new ParameterEvaluator(transform.ScaleX, modulators, context, 4),
+                    new ParameterEvaluator(transform.ScaleY, modulators, context, 5)
                 };
                 _children = children;
                 _shape = definition as ShapeDefinition;
                 if (_shape == null) return;
-                _width = new ParameterEvaluator(_shape.Width, modulators);
-                _height = new ParameterEvaluator(_shape.Height, modulators);
-                _opacity = new ParameterEvaluator(_shape.Opacity, modulators);
+                _width = new ParameterEvaluator(_shape.Width, modulators, context, 6);
+                _height = new ParameterEvaluator(_shape.Height, modulators, context, _shape.Kind == ShapeKind.Circle ? 6UL : 7UL);
+                _opacity = new ParameterEvaluator(_shape.Opacity, modulators, context, 8);
             }
 
             public void Append(double now, ReferenceContext context, Affine2D parent, List<DrawItem> output)

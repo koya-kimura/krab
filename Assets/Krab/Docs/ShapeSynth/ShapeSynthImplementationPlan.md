@@ -1,6 +1,6 @@
 # 図形シンセ：調査・段階的実装計画
 
-2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。Phase 4で既存Adapterを正式化し、Camera限定と描画検証を追加（`RenderingAdapter.md`）。Phase 5でVoice/Trigger/Lifetimeを実装（`VoiceAndLifetime.md`）。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
+2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。Phase 4で既存Adapterを正式化し、Camera限定と描画検証を追加（`RenderingAdapter.md`）。Phase 5でVoice/Trigger/Lifetimeを実装（`VoiceAndLifetime.md`）。Phase 6でIndex/RandomのBase/Depth Variationを実装（`Variation.md`）、LayoutやADSR/LFO設定へのVariationは後続。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
 
 ## 既存構成と接続点
 
@@ -54,7 +54,7 @@ var value = envelope.Evaluate(UnityEngine.Time.timeAsDouble);
 | 3 Shape / Group / Transform | Core/ShapeDefinition, GroupDefinition, Transform2D, DrawItem | Phase 2。Group再帰と中心原点・右X/上Y。親子行列を合成。Unityから独立した数値表現を選ぶ | ネスト、Pivot、回転/Scale/Position合成を検証。描画なしでワールド形状データを評価可能 |
 | 4 最小描画 | Unity/UniteShapeAdapter, TargetCameraCanvas | Phase 3。UCanvasへDrawItemを変換。既存Camera/OutputTextureProviderを利用。Adapter専用asmdefでCore/Unite.Runtimeへ接続 | Circle/Rectangle/Polygonとネストを画面で確認。中心/座標方向/RT解像度/カメラ/URP設定を検証。ShapeごとのGameObject不要 |
 | 5 Voice / Trigger / 寿命 | Core/ILifetime, TimerDefinition, TimerInstance, VoiceInstance, VoiceCollection、Unity/ShapeSynthController | Phase 1〜3。DIのIBPMManagerとUnity時計をTriggerでスナップショット。Rendererは4。寿命仕様は下記 | 同時Spawn、BPM固定、階層全体のLifetime必須・全終了で削除、Restartを検証。共有するModulatorは同じInstanceを参照し、子とTimerへ同じVoiceTimeを渡す |
-| 6 Variation / Layout | Core/VariationContext, VariationEvaluator, LayoutDefinition | Phase 2/3/5。Definitionを変えず生成時に個体設定を解決 | Indexの偶奇反転、seed再現性、Position由来差、Base/Depth/ADSRへの適用。共有Definitionの汚染なし |
+| 6 Variation（Layoutは後続） | Core/VariationContext, VariationDefinition, VariationResolver | Phase 2/3/5。Definitionを変えず生成時に個体設定を解決 | Indexの偶奇反転、Seed/配置パス/Parameterごとの再現性、Base/Depthへの適用。共有Definitionの汚染なし。Position由来・ADSR設定・Layoutは対象外 |
 | 7 編集 / 保存 | Unity/ShapeSynthSettings, ShapeSynthUi, ShapeSynthPrefsAdapter、Editor/ShapeSynthSettingsEditor | Coreを独立維持。Inspector用DTO→Runtime Definition変換、IUiTarget、既存PrefsGUI。Apply to Inspectorは明示操作 | 保存→再起動復元、Runtime編集、明示ApplyとUndoを検証。Coreへのシリアライズ属性不要 |
 | 8 MIDI / 出力 / 性能 | Unity/ShapeSynthMidiAdapter、検証用Performanceシーン | Phase 4/5/7。既存MIDI ActionからTrigger/Release、既存Camera→RT→Syphon | MIDI押下/解放、Note重複、解像度変更、複数Voiceの負荷とGCを測定。想定最大数/FPSに合意して達成 |
 

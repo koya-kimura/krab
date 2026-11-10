@@ -119,6 +119,83 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &164898581
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 164898582}
+  - component: {fileID: 164898585}
+  - component: {fileID: 164898584}
+  - component: {fileID: 164898583}
+  m_Layer: 0
+  m_Name: Variation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &164898582
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164898581}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 988999215}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &164898583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164898581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4cc2256be89d4400a59a26a93849753, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.ShapeSynth.Samples.VariationSmokeTest
+  _seed: 1234
+  _lifetimeBeats: 128
+  _showInstructions: 1
+--- !u!114 &164898584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164898581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c4ac3c267d304c25ad282c81a0ab72c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Krab.ShapeSynth.Unity::Krab.ShapeSynth.Unity.ShapeSynthController
+  _outputCamera: {fileID: 330585545}
+  _invertTargetY: 1
+--- !u!114 &164898585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 164898581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bccddeebb2a464d35bec7539968b310b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Krab.ShapeSynth.Unity::Krab.ShapeSynth.Unity.TargetCameraCanvas
+  _shaderLibrary: {fileID: 11400000, guid: 620af193329c432da3205918ea693f73, type: 2}
+  _targetCamera: {fileID: 330585545}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -862,6 +939,7 @@ Transform:
   - {fileID: 389599403}
   - {fileID: 388052882}
   - {fileID: 1476844016}
+  - {fileID: 164898582}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1198394092 stripped
