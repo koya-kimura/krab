@@ -62,3 +62,7 @@ Inspectorの「Parameter / Binding comparison」でBase・ADSR Depth・LFO Depth
 - 右下C：LFOでGroup Rotation、共有ADSRでCircle DiameterとRectangle Position Xを変調。
 
 灰色の点はPivot。Space/R/L/Dは従来通りで、新デモもSpace/R/Lを受け取る。Core座標はCanvas中央原点・Y上向き。新AdapterはこのRT/Preview出力向けにY反転を明示設定し、合成済み行列を一度だけ適用する。詳細は `Assets/Krab/Docs/ShapeSynth/ShapeGroupTransform.md`。
+
+## Phase 4の描画確認
+
+上端の3図形と下端の非等方/負Scale・半透明の重なりを追加。既存の変調/階層デモは維持する。各デモはTargetCameraCanvasでOutput Cameraだけへ送信する。Sceneを開いてPlayすれば動作する。詳細は `Assets/Krab/Docs/ShapeSynth/RenderingAdapter.md`。

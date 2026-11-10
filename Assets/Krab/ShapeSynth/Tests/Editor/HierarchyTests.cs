@@ -57,10 +57,11 @@ namespace Krab.ShapeSynth.Tests
             var root = new GroupDefinition(null, nested, second, new GroupDefinition());
             var items = Evaluate(root);
             Assert.That(items, Has.Count.EqualTo(2));
-            Assert.That(items[0].Shape, Is.SameAs(first));
             Assert.That(items[0].Kind, Is.EqualTo(ShapeKind.Circle));
-            Assert.That(items[1].Shape, Is.SameAs(second));
+            Assert.That(items[0].Width, Is.EqualTo(2));
             Assert.That(items[1].Kind, Is.EqualTo(ShapeKind.Rectangle));
+            Assert.That(items[1].Width, Is.EqualTo(3));
+            Assert.That(items[1].Height, Is.EqualTo(4));
         }
 
         [Test]
@@ -73,8 +74,10 @@ namespace Krab.ShapeSynth.Tests
             var items = Evaluate(new GroupDefinition(null, leftParent, rightParent));
 
             Assert.That(items, Has.Count.EqualTo(2));
-            Assert.That(items[0].Shape, Is.SameAs(shared));
-            Assert.That(items[1].Shape, Is.SameAs(shared));
+            Assert.That(items[0].Kind, Is.EqualTo(ShapeKind.Circle));
+            Assert.That(items[1].Kind, Is.EqualTo(ShapeKind.Circle));
+            Assert.That(items[0].Width, Is.EqualTo(2));
+            Assert.That(items[1].Width, Is.EqualTo(2));
             AssertPoint(items[0].WorldTransform.TransformPoint(new Point2(0, 0)), 10, 0);
             AssertPoint(items[1].WorldTransform.TransformPoint(new Point2(0, 0)), 0, 20);
         }

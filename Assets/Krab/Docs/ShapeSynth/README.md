@@ -1,5 +1,7 @@
 # ShapeSynth ドキュメント
 
+- [p5.Unite描画Adapter](RenderingAdapter.md)：Phase 4のAPI、Camera限定、座標と描画制約。
+
 - [Shape / Group / Transform](ShapeGroupTransform.md)：Phase 3のCore階層、行列合成、Draw ItemとAdapter。
 - [Parameter / Binding](ParameterAndBinding.md)：Phase 2bの実装API、Reference、共有と後続フェーズの境界。
 - [LFO仕様とPhase 2bの設計案](LfoAndPhase2bPlan.md)：Phase 2aの仕様、Parameter/Bindingの候補比較（後者は未実装）。

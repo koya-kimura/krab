@@ -51,7 +51,7 @@ Referenceは評価時のCanvas寸法のみを参照し、座標変換は行わ�
 
 `HierarchyEvaluator(groupDefinition, modulators)` は階層の**出現箇所ごと**にParameterEvaluatorを生成する。同じDefinitionを複数箇所へ置いても、親行列を取り違えるキャッシュは持たない。既存の外部Modulatorスロットを解決するだけで、Voice/Modulatorを生成・所有しない。
 
-`Evaluate(nowSeconds, context)` は深さ優先の子順でShapeを並べた読み取り専用スナップショットを返す。DrawItemにはShape参照、種類、WorldTransform、評価済みWidth/Height/Opacity、固定Color/Verticesがある。Geometryはローカルに保ち、AdapterがWorldTransformを**一度だけ**適用する。以前返したDraw Itemは後続評価で変わらない。
+`Evaluate(nowSeconds, context)` は深さ優先の子順でShapeを並べた読み取り専用スナップショットを返す。DrawItemには種類、WorldTransform、評価済みWidth/Height/Opacity、固定Color/Verticesがある。Geometryはローカルに保ち、AdapterがWorldTransformを**一度だけ**適用する。以前返したDraw Itemは後続評価で変わらない。
 
 同じDefinitionから別々の評価器を作り、別のModulator一覧を渡せばADSRのRelease状態なども独立する。1つの評価器内で同じスロットを使えば、明示的に同じ外部Instanceを共有する。Definitionの再利用だけでModulatorの複製/新規Voiceを暗黙に生成しない。
 
@@ -67,6 +67,8 @@ RootのCanvas中央への移動と出力先Y反転だけをAdapterで処理す�
 
 0以下のサイズは描画省略、Opacity×Color Alphaは描画時に0〜1へClamp。floatへ変換できない値は明示的に拒否する。Coreはdoubleの有限値を扱い続ける。
 
+Phase 4の正式な描画境界・Camera限定と現在のAPIは [描画Adapter](RenderingAdapter.md) を参照。
+
 ## 検証Scene
 
 `Assets/Krab/ShapeSynth/Samples/ShapeSynthSmokeTest.unity` を開いてPlayする。Common/Camera/RT/Preview/Syphonを維持。
@@ -76,7 +78,7 @@ RootのCanvas中央への移動と出力先Y反転だけをAdapterで処理す�
 - 右中央B：親GroupのRotationと、子GroupのPosition/Rotation/非等方Scale/負Scaleを合成。さらに内側のGroupに三角形を配置する。
 - 右下C：Group RotationにLFO、Circle DiameterとRectangle Position Xに同じADSRをBinding。自動で反復する。
 
-追加GameObjectは `ShapeSynth/Group Hierarchy` の1つだけ。UCanvasとHierarchySmokeTestを付け、Camera参照とInspector値を保存する。ShapeごとのGameObjectは作らない。
+追加GameObjectは `ShapeSynth/Group Hierarchy` の1つだけ。TargetCameraCanvas（UCanvas派生）とHierarchySmokeTestを付け、Camera参照とInspector値を保存する。ShapeごとのGameObjectは作らない。
 
 Space=ADSRを再開始、R=外部Release、L=LFOを再開始（旧/新デモそれぞれが入力を受け取る）。D=既存共通UI切替。新デモのRotation Cycles Per Beatは初期0.0625（16拍で1周期）。単純なサンプル用の再生成処理であり、正式なTrigger伝播/Voice管理ではない。
 

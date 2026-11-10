@@ -10,7 +10,7 @@ using UnitySimpleContainer;
 
 namespace Krab.ShapeSynth.Samples
 {
-    [RequireComponent(typeof(UCanvas))]
+    [RequireComponent(typeof(TargetCameraCanvas))]
     public sealed class HierarchySmokeTest : MonoBehaviour
     {
         [SerializeField] private Camera _outputCamera;
@@ -44,7 +44,7 @@ namespace Krab.ShapeSynth.Samples
                 enabled = false;
                 return;
             }
-            _canvas.CreateCanvas(DrawingMode.ScreenOverlay);
+            ((TargetCameraCanvas)_canvas).Initialize(_outputCamera);
             _definition = BuildDefinition();
             Trigger();
             RestartLfo();

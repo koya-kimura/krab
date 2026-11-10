@@ -1,6 +1,6 @@
 # 図形シンセ：調査・段階的実装計画
 
-2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
+2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。Phase 4で既存Adapterを正式化し、Camera限定と描画検証を追加（`RenderingAdapter.md`）。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
 
 ## 既存構成と接続点
 
@@ -52,7 +52,7 @@ var value = envelope.Evaluate(UnityEngine.Time.timeAsDouble);
 |---|---|---|---|
 | 2 LFO / Parameter / Binding | Core/LfoDefinition, LfoInstance, ParameterDefinition, BindingDefinition, ReferenceContext | Phase 1のVoiceTimeを共有。`Reference × (Base + ΣDepth×Signal)`。Modulator状態はBindingごとに複製しない | 位相・周波数単位、複数Binding、同一信号の分岐、リサイズ時Referenceを数値テスト。Clampせず期待式通り |
 | 3 Shape / Group / Transform | Core/ShapeDefinition, GroupDefinition, Transform2D, DrawItem | Phase 2。Group再帰と中心原点・右X/上Y。親子行列を合成。Unityから独立した数値表現を選ぶ | ネスト、Pivot、回転/Scale/Position合成を検証。描画なしでワールド形状データを評価可能 |
-| 4 最小描画 | Unity/UniteShapeAdapter, ShapeSynthPreview | Phase 3。UCanvasへDrawItemを変換。既存Camera/OutputTextureProviderを利用。Adapterは当初Assembly-CSharpに置く | Circle/Rectangle/Polygonとネストを画面で確認。中心/座標方向/RT解像度/カメラ/URP設定を検証。ShapeごとのGameObject不要 |
+| 4 最小描画 | Unity/UniteShapeAdapter, TargetCameraCanvas | Phase 3。UCanvasへDrawItemを変換。既存Camera/OutputTextureProviderを利用。Adapter専用asmdefでCore/Unite.Runtimeへ接続 | Circle/Rectangle/Polygonとネストを画面で確認。中心/座標方向/RT解像度/カメラ/URP設定を検証。ShapeごとのGameObject不要 |
 | 5 Voice / Trigger / 寿命 | Core/ILifetime, TimerDefinition, TimerInstance, VoiceInstance, VoiceCollection、Unity/ShapeSynthController | Phase 1〜3。DIのIBPMManagerとUnity時計をTriggerでスナップショット。Rendererは4。寿命仕様は下記 | 同時Spawn、BPM固定、階層全体のLifetime必須・全終了で削除、Restartを検証。共有するModulatorは同じInstanceを参照し、子とTimerへ同じVoiceTimeを渡す |
 | 6 Variation / Layout | Core/VariationContext, VariationEvaluator, LayoutDefinition | Phase 2/3/5。Definitionを変えず生成時に個体設定を解決 | Indexの偶奇反転、seed再現性、Position由来差、Base/Depth/ADSRへの適用。共有Definitionの汚染なし |
 | 7 編集 / 保存 | Unity/ShapeSynthSettings, ShapeSynthUi, ShapeSynthPrefsAdapter、Editor/ShapeSynthSettingsEditor | Coreを独立維持。Inspector用DTO→Runtime Definition変換、IUiTarget、既存PrefsGUI。Apply to Inspectorは明示操作 | 保存→再起動復元、Runtime編集、明示ApplyとUndoを検証。Coreへのシリアライズ属性不要 |

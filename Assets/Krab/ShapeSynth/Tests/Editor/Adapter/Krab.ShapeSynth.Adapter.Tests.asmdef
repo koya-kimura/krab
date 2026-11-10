@@ -1,0 +1,12 @@
+{
+  "name": "Krab.ShapeSynth.Adapter.Tests",
+  "rootNamespace": "Krab.ShapeSynth.Tests",
+  "references": [
+    "Krab.ShapeSynth.Unity",
+    "Krab.ShapeSynth.Core",
+    "Unite.Runtime"
+  ],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}

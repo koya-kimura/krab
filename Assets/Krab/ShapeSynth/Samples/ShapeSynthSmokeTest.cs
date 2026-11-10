@@ -1,5 +1,6 @@
 using Krab.Common.Timing;
 using Krab.ShapeSynth.Core;
+using Krab.ShapeSynth.Unity;
 using Unite.Canvas;
 using Unite.Drawing;
 using UnityEngine;
@@ -9,7 +10,7 @@ using UnitySimpleContainer;
 namespace Krab.ShapeSynth.Samples
 {
     /// <summary>Disposable integration sketch, not the production synth renderer.</summary>
-    [RequireComponent(typeof(UCanvas))]
+    [RequireComponent(typeof(TargetCameraCanvas))]
     public sealed class ShapeSynthSmokeTest : MonoBehaviour
     {
         [SerializeField] private Camera _outputCamera;
@@ -77,7 +78,7 @@ namespace Krab.ShapeSynth.Samples
                 return;
             }
 
-            _canvas.CreateCanvas(DrawingMode.ScreenOverlay);
+            ((TargetCameraCanvas)_canvas).Initialize(_outputCamera);
             Trigger();
             CreateLfo(_envelope.Time);
         }

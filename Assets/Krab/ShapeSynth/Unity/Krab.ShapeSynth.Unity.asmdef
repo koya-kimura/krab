@@ -1,0 +1,17 @@
+{
+  "name": "Krab.ShapeSynth.Unity",
+  "rootNamespace": "Krab.ShapeSynth.Unity",
+  "references": [
+    "Krab.ShapeSynth.Core",
+    "Unite.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

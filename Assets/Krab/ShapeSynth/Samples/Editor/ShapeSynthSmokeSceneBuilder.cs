@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Krab.Common.Output;
 using Krab.Common.Timing;
+using Krab.ShapeSynth.Unity;
 using Unite.Canvas;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -84,8 +85,9 @@ namespace Krab.ShapeSynth.Samples.Editor
 
             var synth = new GameObject("ShapeSynth");
             SceneManager.MoveGameObjectToScene(synth, scene);
-            var sketchObject = new GameObject("Modulator Comparison", typeof(UCanvas));
+            var sketchObject = new GameObject("Modulator Comparison", typeof(TargetCameraCanvas));
             sketchObject.transform.SetParent(synth.transform, false);
+            sketchObject.GetComponent<TargetCameraCanvas>().TargetCamera = camera;
             var sketch = sketchObject.AddComponent<ShapeSynthSmokeTest>();
             var serialized = new SerializedObject(sketch);
             serialized.FindProperty("_outputCamera").objectReferenceValue = camera;
@@ -98,14 +100,24 @@ namespace Krab.ShapeSynth.Samples.Editor
             serialized.FindProperty("_bindingSizeFraction").floatValue = 0.2f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            var hierarchyObject = new GameObject("Group Hierarchy", typeof(UCanvas));
+            var hierarchyObject = new GameObject("Group Hierarchy", typeof(TargetCameraCanvas));
             hierarchyObject.transform.SetParent(synth.transform, false);
+            hierarchyObject.GetComponent<TargetCameraCanvas>().TargetCamera = camera;
             var hierarchy = hierarchyObject.AddComponent<HierarchySmokeTest>();
             var hierarchySettings = new SerializedObject(hierarchy);
             hierarchySettings.FindProperty("_outputCamera").objectReferenceValue = camera;
             hierarchySettings.FindProperty("_rotationCyclesPerBeat").floatValue = 0.0625f;
             hierarchySettings.FindProperty("_invertTargetY").boolValue = true;
             hierarchySettings.ApplyModifiedPropertiesWithoutUndo();
+
+            var rendererObject = new GameObject("Renderer Checks", typeof(TargetCameraCanvas));
+            rendererObject.transform.SetParent(synth.transform, false);
+            rendererObject.GetComponent<TargetCameraCanvas>().TargetCamera = camera;
+            var renderer = rendererObject.AddComponent<RendererSmokeTest>();
+            var rendererSettings = new SerializedObject(renderer);
+            rendererSettings.FindProperty("_outputCamera").objectReferenceValue = camera;
+            rendererSettings.FindProperty("_invertTargetY").boolValue = true;
+            rendererSettings.ApplyModifiedPropertiesWithoutUndo();
 
             // Resolving Single above also validates the copied reference's BPM/output cardinality.
             if (!bpm) throw new InvalidOperationException("The reference has no BPMManager.");
