@@ -90,3 +90,11 @@ Game View左上にVoice数・現在BPM・最後のTrigger BPMと操作キーを�
 - **K**：Seedを1増やしてRestart。新しいRandom配置へ置換する。
 
 同じSeedでもLFOの位相は各Trigger時刻が基準。InspectorでSeedを変えても既存Voiceの係数は変わらず、次のTriggerから適用する。詳しくは `Assets/Krab/Docs/ShapeSynth/Variation.md`。
+
+## Phase 7：独立したPerformance Scene
+
+演奏用は `Assets/Krab/ShapeSynth/Samples/ShapeSynthPerformance.unity`。SmokeTestは回帰検証用として維持する。Play後にGame Viewで **Q** を押すと150個の赤/水色の円をSpawn。連打で別SeedのVoiceが重なり、ADSR完了で消える。初期画面は黒で、自動Triggerはしない。
+
+Settings → **ShapeSynthPerformance** を開き、ModulatorsのADSR/LFOを編集する。**Trigger FX01 (Q)** はキーボードと同じ演奏経路。編集は次のVoiceから反映し、既存Voiceは変化しない。UI編集中はQを抑止するため、演奏時はUI外のGame Viewへフォーカスを戻す。Dで共通UI切替。
+
+**Save ShapeSynth** / **Reload ShapeSynth** が専用JSONの保存/再読込。再Play・再起動でも自動復元する。共通SettingsのSaveとは別。保存先は `Application.persistentDataPath/ShapeSynth/Performance.v1.json`。詳細は `Assets/Krab/Docs/ShapeSynth/PerformanceAndModulators.md`。

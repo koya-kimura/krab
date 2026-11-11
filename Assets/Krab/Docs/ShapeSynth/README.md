@@ -1,5 +1,7 @@
 # ShapeSynth ドキュメント
 
+- [演奏サンプルとModulator UI](PerformanceAndModulators.md)：Phase 7のFX01、ID管理、編集と専用JSON保存。
+
 - [Variation](Variation.md)：Phase 6の配置Index、Seed付きRandom、Base/Depthの生成時解決。
 
 - [p5.Unite描画Adapter](RenderingAdapter.md)：Phase 4のAPI、Camera限定、座標と描画制約。
