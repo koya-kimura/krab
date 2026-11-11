@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace Krab.Common.Timing
 {
+    [UiTarget("Common/Timing", "BPM", 0)]
     public class BPMManager : MonoBehaviour, IBPMManager, IUiTarget
     {
         private const float _minBpm = 10f;

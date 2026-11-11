@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using PrefsGUI;
 using RosettaUI;
 using UnityEngine;
@@ -50,16 +52,51 @@ namespace Krab.Common.Views
 
         private Element CreateElement()
         {
-            List<Element> elements = new();
-            foreach (var target in _targets)
+            var entries = (_targets ?? new List<IUiTarget>())
+                .Select(target => new TargetEntry(target)).ToList();
+            var tabs = entries.GroupBy(entry => entry.Path[0])
+                .OrderBy(group => group.Min(entry => entry.Order))
+                .ThenBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => (group.Key, (Element)UI.Page(CreateCategory(group.ToList(), 1))));
+
+            return UI.Window(_title, UI.Tabs(tabs).SetWidth(360f), UI.Button("Save", Prefs.Save)).SetClosable(false);
+        }
+
+        private static IEnumerable<Element> CreateCategory(List<TargetEntry> entries, int depth)
+        {
+            // Categories use the lowest descendant order; equal orders sort by display name.
+            var items = entries.Where(entry => entry.Path.Length == depth)
+                .Select(entry => (entry.Order, Name: entry.Title, Element: CreateLauncher(entry)))
+                .Concat(entries.Where(entry => entry.Path.Length > depth)
+                    .GroupBy(entry => entry.Path[depth])
+                    .Select(group => (group.Min(entry => entry.Order), Name: group.Key,
+                        Element: (Element)UI.Fold(group.Key, CreateCategory(group.ToList(), depth + 1)))));
+            return items.OrderBy(item => item.Item1)
+                .ThenBy(item => item.Name, StringComparer.Ordinal)
+                .Select(item => item.Element).ToList();
+        }
+
+        private static Element CreateLauncher(TargetEntry entry) =>
+            UI.WindowLauncher(entry.Title, UI.Window(entry.Title, UI.Page(entry.Target.CreateElement())));
+
+        private sealed class TargetEntry
+        {
+            public IUiTarget Target { get; }
+            public string[] Path { get; }
+            public string Title { get; }
+            public int Order { get; }
+
+            public TargetEntry(IUiTarget target)
             {
-                var title = target.GetType().Name;
-                elements.Add(UI.WindowLauncher(title, UI.Window(title, UI.Page(target.CreateElement()))));
+                Target = target;
+                var type = target.GetType();
+                var attribute = type.GetCustomAttribute<UiTargetAttribute>(true);
+                Path = (attribute?.CategoryPath ?? string.Empty).Split('/')
+                    .Select(segment => segment.Trim()).Where(segment => segment.Length > 0).ToArray();
+                if (Path.Length == 0) Path = new[] { "Other" };
+                Title = string.IsNullOrWhiteSpace(attribute?.Title) ? type.Name : attribute.Title;
+                Order = attribute?.Order ?? 0;
             }
-
-            elements.Add(UI.Button("Save", Prefs.Save));
-
-            return UI.Window(_title, elements).SetClosable(false);
         }
     }
 }

@@ -10,6 +10,7 @@ using UnitySimpleContainer;
 namespace Krab.Common.Output
 {
     [RequireComponent(typeof(SyphonServer))]
+    [UiTarget("Common/Output", "Syphon", 40)]
     public class SyphonController : MonoBehaviour, IUiTarget
     {
         private readonly PrefsString _syphonName = new("SpoutName", "krab");

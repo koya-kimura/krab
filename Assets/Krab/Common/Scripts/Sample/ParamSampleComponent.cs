@@ -17,6 +17,7 @@ namespace Krab.Common.Sample
     /// The examples intentionally keep conversion logic on the consumer side so the
     /// reusable MIDI API remains based on bool, int, and normalized float Params.
     /// </summary>
+    [UiTarget("Samples/MIDI", "Parameters", 300)]
     public class ParamSampleComponent : MonoBehaviour, IUiTarget
     {
         private static readonly Color SequenceInactiveColor = new(0.16f, 0.16f, 0.16f);

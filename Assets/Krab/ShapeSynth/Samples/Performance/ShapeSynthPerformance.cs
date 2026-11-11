@@ -12,6 +12,7 @@ namespace Krab.ShapeSynth.Samples.Performance
 {
     /// <summary>One performance input/UI boundary. Immutable Core snapshots are rebuilt only on Trigger.</summary>
     [RequireComponent(typeof(ShapeSynthController))]
+    [UiTarget("ShapeSynth/Performance", "Performance", 200)]
     public sealed partial class ShapeSynthPerformance : MonoBehaviour, IUiTarget
     {
         private IBPMManager _bpm;

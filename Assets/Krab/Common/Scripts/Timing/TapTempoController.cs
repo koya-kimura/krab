@@ -9,6 +9,7 @@ using UnitySimpleContainer;
 
 namespace Krab.Common.Timing
 {
+    [UiTarget("Common/Timing", "Tap Tempo", 10)]
     public class TapTempoController : MonoBehaviour, IUiTarget
     {
         private const double TapTimeoutSeconds = 2.0;

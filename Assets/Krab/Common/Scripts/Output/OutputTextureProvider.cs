@@ -8,6 +8,7 @@ using UnityEngine;
 namespace Krab.Common.Output
 {
     [RequireComponent(typeof(Camera))]
+    [UiTarget("Common/Output", "Output Texture", 30)]
     public class OutputTextureProvider : MonoBehaviour, IOutputTextureContainer, IUiTarget
     {
         private readonly PrefsVector2Int _resolution = new("OutputResolution", new Vector2Int(1920, 1080));

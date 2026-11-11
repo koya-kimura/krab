@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace Krab.Common.Timing
 {
+    [UiTarget("Common/Application", "Frame Rate", 20)]
     public class ApplicationFrameSettings : MonoBehaviour, IUiTarget, IFrameRateContainer
     {
         private const int MinTargetFrameRate = 15;

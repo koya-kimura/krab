@@ -11,6 +11,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
     /// An on-screen APC mini mk2. UI input uses the same adapter as the physical device,
     /// including the current page and MIDI Learn.
     /// </summary>
+    [UiTarget("MIDI/Devices", "APC mini mk2 Simulator", 100)]
     public sealed class ApcMiniMk2Simulator : MonoBehaviour, IUiTarget
     {
         private const float ButtonWidth = 43f;
