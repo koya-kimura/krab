@@ -1,5 +1,7 @@
 # ShapeSynth ドキュメント
 
+- [複数プリセットとStroke](MultiPresetPerformance.md)：Phase 8の5キー演奏、輪郭描画、v1 JSON互換補完。
+
 - [演奏サンプルとModulator UI](PerformanceAndModulators.md)：Phase 7のFX01、ID管理、編集と専用JSON保存。
 
 - [Variation](Variation.md)：Phase 6の配置Index、Seed付きRandom、Base/Depthの生成時解決。
@@ -31,3 +33,7 @@ Reports/                   実行結果・ログ・画像（ローカルのみ�
 ```
 
 `Reports/` には実行ごとのJSON/XML/PNGや検証ログを出力する。長期参照する設計資料はここに置く。テストコードや検証Sceneは検証を再現するためにGit管理を続ける。
+
+- Phase 9: [Runtime Preset Editor](PresetEditor.md) — Group/Shape/Parameter/Modulator/Bindingの編集、Preview、JSON保存と別Sceneでの演奏。
+
+- Phase 10: [Preset Editor Workspace](PresetEditorWorkspace.md) — Hierarchy/Preview/Inspector、選択連動、限定再構築、Zoom/Pan/Fit。

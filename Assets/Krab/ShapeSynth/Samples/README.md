@@ -98,3 +98,51 @@ Game View左上にVoice数・現在BPM・最後のTrigger BPMと操作キーを�
 Settings → **ShapeSynthPerformance** を開き、ModulatorsのADSR/LFOを編集する。**Trigger FX01 (Q)** はキーボードと同じ演奏経路。編集は次のVoiceから反映し、既存Voiceは変化しない。UI編集中はQを抑止するため、演奏時はUI外のGame Viewへフォーカスを戻す。Dで共通UI切替。
 
 **Save ShapeSynth** / **Reload ShapeSynth** が専用JSONの保存/再読込。再Play・再起動でも自動復元する。共通SettingsのSaveとは別。保存先は `Application.persistentDataPath/ShapeSynth/Performance.v1.json`。詳細は `Assets/Krab/Docs/ShapeSynth/PerformanceAndModulators.md`。
+
+## Phase 8：5キー演奏
+
+同じPerformance Sceneで **Q=FX01 / W=Pad01 / E=Snare01 / A=Lead01 / S=Lead03**。異なるプリセットも同じプリセットも重ねてSpawnできる。UI入力中は演奏キーを抑止し、DのUI表示切替は維持する。SettingsのShapeSynthタブ → Performanceカテゴリ → Performanceウィンドウから5つのTriggerボタンと独立したModulator編集を利用できる。
+
+Pad01はオレンジの同心輪郭円、Snare01は緑の放射三角形、Lead01は青い太い星形輪郭、Lead03は茶色の5×5矩形＋赤い円。旧JSONのFX01編集値は保持して新設定を補完する。ファイル名/Versionはv1のまま。Save ShapeSynth / Reload ShapeSynthも従来どおり。Strokeの非等方ScaleはPolygonで近似となる。詳細は `Assets/Krab/Docs/ShapeSynth/MultiPresetPerformance.md`。
+
+## Phase 9: Preset Editor
+
+`ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → Preset Editorを開く。Groupを選択して子を追加し、Inspector / Modulatorsで編集、Preview、Save Preset。Performance SceneのUser PresetsでRefresh後に選択・Triggerする。詳細と検証範囲は `Assets/Krab/Docs/ShapeSynth/PresetEditor.md`。
+
+## Phase 10: Preset Workspace
+
+`ShapeSynthPresetEditor.unity` をPlayすると独立したWorkspaceが開く。Visualタブは左Hierarchy、中央RT Preview（Beatスクラブ付き）、右Inspector（行内Binding）。ValuesタブはModulator一覧・出力グラフ・Signal設定。上部で保存/読込/Previewを操作し、Wheel Zoom・中央ドラッグPan・Fitに対応。1920×1080 / 1280×720で3領域、850px未満では左右を切り替える。詳細は `Assets/Krab/Docs/ShapeSynth/PresetEditorWorkspace.md`。
+
+## ディレクトリ構成
+
+Commonと同様にC#コードを`Scripts/`へ集約する。名前空間には`Scripts`を含めない。
+
+- `../Scripts/Core/`: Unity非依存の数値処理と定義（`Krab.ShapeSynth.Core`）。専用asmdefの`noEngineReferences`を維持する。
+- `../Scripts/Unity/`: Controller、描画アダプター、設定保存（`Krab.ShapeSynth.Unity`）。Coreとは別アセンブリ。
+- `Settings/`: サンプル用UI設定資産。
+- `Scripts/`: 検証用MonoBehaviour（`Krab.ShapeSynth.Samples`）。
+- `../Scripts/Performance/`: 正式な演奏操作・設定UI・ユーザープリセット（`Krab.ShapeSynth.Performance`）。
+- `../Scripts/PresetEditor/`: 正式なランタイム編集UI（`Krab.ShapeSynth.PresetEditor`）。検証SceneとScene構築コードはSamplesに置く。
+- `../Scripts/Editor/Scenes/`: Scene構築用Editorツール（`Krab.ShapeSynth.Editor.Scenes`）。
+- `../Tests/Editor/`: CoreのEditModeテスト（`Krab.ShapeSynth.Tests.Editor`）。`Adapter/`はUnity連携テストとその子名前空間。
+
+検証Sceneはこのディレクトリ直下に置く。資産移動時は`.meta`のGUIDとアセンブリ名を維持し、既存Sceneからの参照を保持する。
+
+### 責務ごとの名前空間
+
+ディレクトリ名と名前空間の末尾を一致させる。アセンブリの境界は変更しない。
+
+| ディレクトリ（Scriptsからの相対パス） | 名前空間 | 責務 |
+| --- | --- | --- |
+| `Core/Geometry/` | `Krab.ShapeSynth.Core.Geometry` | 座標・行列・色 |
+| `Core/Definitions/` | `Krab.ShapeSynth.Core.Definitions` | ノード・パラメーター・モジュレーターの定義 |
+| `Core/Evaluation/` | `Krab.ShapeSynth.Core.Evaluation` | 階層・パラメーター・変動の評価と参照コンテキスト |
+| `Core/Modulation/` | `Krab.ShapeSynth.Core.Modulation` | モジュレーターの実行状態とライブラリー |
+| `Core/Runtime/` | `Krab.ShapeSynth.Core.Runtime` | Voiceの時間・生成・寿命・描画データ |
+| `Core/Performance/` | `Krab.ShapeSynth.Core.Performance` | 演奏設定と保存用設定モデル |
+| `Core/Presets/` | `Krab.ShapeSynth.Core.Presets` | プリセット文書・コンパイル・標準カタログ |
+| `Unity/Rendering/` | `Krab.ShapeSynth.Unity.Rendering` | 描画アダプターと対象CameraのCanvas |
+| `Unity/Persistence/` | `Krab.ShapeSynth.Unity.Persistence` | 設定・プリセットの永続化 |
+| `Unity/Runtime/` | `Krab.ShapeSynth.Unity.Runtime` | Unityの時計とCoreを接続するController |
+
+Samplesのスクリプトは検証Scene専用の`*SmokeTest`のみ。正式機能は`Krab.ShapeSynth.Performance`・`Krab.ShapeSynth.PresetEditor`、Scene構築ツールは`Krab.ShapeSynth.Editor.Scenes`、テストは`Editor`・`Editor.Adapter`の分類を維持する。名前空間を変更したMonoBehaviourには`MovedFrom`を付け、以前のSceneの型参照を移行できるようにする。

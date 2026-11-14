@@ -21,9 +21,11 @@ KrabはUnity製の映像制作・ライブパフォーマンス用プロジェ�
 | `Assets/Krab/Common/Prefabs/` | 共通コンポーネントとSceneContainerなどのPrefab |
 | `Assets/Krab/Resources/ProjectContainer.prefab` | プロジェクト共通のDI構成 |
 | `Assets/Krab/Scenes/` / `Assets/Krab/Performances/` | Sceneと公演ごとの資産 |
-| `Assets/Krab/ShapeSynth/Core/` | Unity非依存の数値Core（VoiceTime、ADSRなど） |
+| `Assets/Krab/ShapeSynth/Scripts/Core/` | Unity非依存の数値Core（VoiceTime、ADSRなど） |
 | `Assets/Krab/ShapeSynth/Tests/Editor/` | CoreのNUnit EditModeテスト |
-| `Assets/Krab/ShapeSynth/Samples/` | 専用の検証Sceneとサンプル、Scene構築用Editorコード |
+| `Assets/Krab/ShapeSynth/Scripts/Performance/` / `Scripts/PresetEditor/` | 正式な演奏操作UIとプリセット編集UI |
+| `Assets/Krab/ShapeSynth/Scripts/Editor/Scenes/` | Scene構築・設定用Editorツール |
+| `Assets/Krab/ShapeSynth/Samples/` | 専用の検証SceneとSmokeTestコード |
 | `Assets/Krab/Docs/` | MIDI・ShapeSynthの設計資料と実装計画 |
 
 - DIはUnitySimpleContainerを使用。既存のContainer・`[Inject]` による注入方式を確認して接続する。

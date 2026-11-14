@@ -1,5 +1,7 @@
 # Phase 7：FX01演奏サンプルとModulator Library
 
+Phase 8で5キーとStrokeへ拡張した。最新の操作・JSON補完仕様は [複数プリセット](MultiPresetPerformance.md) を参照。
+
 ## 起動と操作
 
 `Assets/Krab/ShapeSynth/Samples/ShapeSynthPerformance.unity` を開いてPlay。Game Viewで **Q** を押すとFX01をSpawnする。連打で別SeedのVoiceを重ねる。初期状態は黒画面で、自動Triggerはしない。
@@ -30,7 +32,7 @@
 - TriggerごとにDTOを検証し、新しい不変Library/Groupを構築して既存ControllerへSpawnする。古いVoiceは以前のDefinitionを保持する。編集による既存Instanceの再生成、位相リセット、BPM追従は行わない。
 - Binding評価は従来のscope内 `ModulatorIndex` のまま。IDをCoreのBinding/Voice全体へ持ち込む再設計はしていない。別VoiceのInstanceは独立する。
 
-Libraryは名前・ID解決を担う汎用の小さなCore層。FX01は専用生成関数。入力・RosettaUI・永続保存の境界はSamples/PerformanceとUnityへ分離する。ModulatorごとのMonoBehaviourは作らない。
+Libraryは名前・ID解決を担う汎用の小さなCore層。FX01は専用生成関数。入力・RosettaUI・永続保存の境界はScripts/PerformanceとUnityへ分離する。ModulatorごとのMonoBehaviourは作らない。
 
 ## 保存
 

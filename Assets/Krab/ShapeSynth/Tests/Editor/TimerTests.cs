@@ -1,8 +1,10 @@
 using System;
-using Krab.ShapeSynth.Core;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Modulation;
+using Krab.ShapeSynth.Core.Runtime;
 using NUnit.Framework;
 
-namespace Krab.ShapeSynth.Tests
+namespace Krab.ShapeSynth.Tests.Editor
 {
     public class TimerTests
     {

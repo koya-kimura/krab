@@ -1,5 +1,6 @@
 {
   "name": "Krab.ShapeSynth.Core.Tests",
+  "rootNamespace": "Krab.ShapeSynth.Tests.Editor",
   "references": ["Krab.ShapeSynth.Core"],
   "includePlatforms": ["Editor"],
   "optionalUnityReferences": ["TestAssemblies"],

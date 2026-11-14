@@ -1,7 +1,10 @@
-using Krab.ShapeSynth.Core;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Evaluation;
+using Krab.ShapeSynth.Core.Geometry;
+using Krab.ShapeSynth.Core.Modulation;
 using NUnit.Framework;
 
-namespace Krab.ShapeSynth.Tests
+namespace Krab.ShapeSynth.Tests.Editor
 {
     public class DrawDataTests
     {

@@ -1,6 +1,6 @@
 {
   "name": "Krab.ShapeSynth.Adapter.Tests",
-  "rootNamespace": "Krab.ShapeSynth.Tests",
+  "rootNamespace": "Krab.ShapeSynth.Tests.Editor.Adapter",
   "references": [
     "Krab.ShapeSynth.Unity",
     "Krab.ShapeSynth.Core",

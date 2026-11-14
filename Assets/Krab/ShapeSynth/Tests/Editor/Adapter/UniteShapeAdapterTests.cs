@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
-using Krab.ShapeSynth.Core;
-using Krab.ShapeSynth.Unity;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Evaluation;
+using Krab.ShapeSynth.Core.Geometry;
+using Krab.ShapeSynth.Core.Modulation;
+using Krab.ShapeSynth.Core.Runtime;
+using Krab.ShapeSynth.Unity.Rendering;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Krab.ShapeSynth.Tests
+namespace Krab.ShapeSynth.Tests.Editor.Adapter
 {
     public sealed class UniteShapeAdapterTests
     {

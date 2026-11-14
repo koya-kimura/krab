@@ -1,6 +1,6 @@
 # 図形シンセ：調査・段階的実装計画
 
-2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。Phase 4で既存Adapterを正式化し、Camera限定と描画検証を追加（`RenderingAdapter.md`）。Phase 5でVoice/Trigger/Lifetimeを実装（`VoiceAndLifetime.md`）。Phase 6でIndex/RandomのBase/Depth Variationを実装（`Variation.md`）、LayoutやADSR/LFO設定へのVariationは後続。Phase 7でFX01演奏Scene、Modulator ID/編集UI/専用JSON保存を実装（`PerformanceAndModulators.md`）。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
+2026-11-08。現在のリポジトリと解決済みPackageCacheを調査した。初回はPhase 1を実装。後続のPhase 2aではLFO Coreと比較描画を追加済み。Phase 2bでParameter/BindingとReference評価も実装。Phase 3でShape/Group/Transformと最小描画Adapterも実装。Phase 4で既存Adapterを正式化し、Camera限定と描画検証を追加（`RenderingAdapter.md`）。Phase 5でVoice/Trigger/Lifetimeを実装（`VoiceAndLifetime.md`）。Phase 6でIndex/RandomのBase/Depth Variationを実装（`Variation.md`）、LayoutやADSR/LFO設定へのVariationは後続。Phase 7でFX01演奏Scene、Modulator ID/編集UI/専用JSON保存を実装（`PerformanceAndModulators.md`）。Phase 8で5プリセットとStroke、v1 JSONの補完読み込みを追加（`MultiPresetPerformance.md`）。最新APIは `ShapeGroupTransform.md` と `ParameterAndBinding.md` を参照し、Phase 2a時点の検討案は `LfoAndPhase2bPlan.md` に残す。
 
 ## 既存構成と接続点
 
@@ -18,10 +18,10 @@
 
 追加ファイル：
 
-- `ShapeSynth/Core/VoiceTime.cs`：開始秒・開始BPMの不変スナップショット。`max(0, (now-start)*bpm/60)`。
-- `ShapeSynth/Core/AdsrDefinition.cs`：共有可能な不変設定。時間単位は拍、SustainLevelのみ無次元。
-- `ShapeSynth/Core/AdsrInstance.cs`：時刻指定の純粋な評価と終了判定、Instanceごとの外部Release履歴。Update不要。
-- `ShapeSynth/Core/Krab.ShapeSynth.Core.asmdef`：Unity/UI/描画依存を禁止。
+- `ShapeSynth/Scripts/Core/Runtime/VoiceTime.cs`：開始秒・開始BPMの不変スナップショット。`max(0, (now-start)*bpm/60)`。
+- `ShapeSynth/Scripts/Core/Definitions/AdsrDefinition.cs`：共有可能な不変設定。時間単位は拍、SustainLevelのみ無次元。
+- `ShapeSynth/Scripts/Core/Modulation/AdsrInstance.cs`：時刻指定の純粋な評価と終了判定、Instanceごとの外部Release履歴。Update不要。
+- `ShapeSynth/Scripts/Core/Krab.ShapeSynth.Core.asmdef`：Unity/UI/描画依存を禁止。
 - `ShapeSynth/Tests/Editor/AdsrTests.cs` とテストasmdef：NUnit EditModeテスト。
 - 既存TimingのBPMManager/IBPMManagerにはCurrentBpmの読み取り口だけ追加。
 
@@ -55,8 +55,11 @@ var value = envelope.Evaluate(UnityEngine.Time.timeAsDouble);
 | 4 最小描画 | Unity/UniteShapeAdapter, TargetCameraCanvas | Phase 3。UCanvasへDrawItemを変換。既存Camera/OutputTextureProviderを利用。Adapter専用asmdefでCore/Unite.Runtimeへ接続 | Circle/Rectangle/Polygonとネストを画面で確認。中心/座標方向/RT解像度/カメラ/URP設定を検証。ShapeごとのGameObject不要 |
 | 5 Voice / Trigger / 寿命 | Core/ILifetime, TimerDefinition, TimerInstance, VoiceInstance, VoiceCollection、Unity/ShapeSynthController | Phase 1〜3。DIのIBPMManagerとUnity時計をTriggerでスナップショット。Rendererは4。寿命仕様は下記 | 同時Spawn、BPM固定、階層全体のLifetime必須・全終了で削除、Restartを検証。共有するModulatorは同じInstanceを参照し、子とTimerへ同じVoiceTimeを渡す |
 | 6 Variation（Layoutは後続） | Core/VariationContext, VariationDefinition, VariationResolver | Phase 2/3/5。Definitionを変えず生成時に個体設定を解決 | Indexの偶奇反転、Seed/配置パス/Parameterごとの再現性、Base/Depthへの適用。共有Definitionの汚染なし。Position由来・ADSR設定・Layoutは対象外 |
-| 7 FX01演奏 / Modulator編集 / 保存 | Core/ModulatorLibrary, PerformanceSettings, Fx01Preset、Samples/Performance、Unity/PerformanceSettingsStore | Coreを独立維持。編集/保存DTO→Trigger時の不変Definition、IUiTarget/RosettaUI、専用JSON保存。汎用Visual編集は後続 | ID/参照検証、旧Voice不変、編集後Trigger、JSON保存/復元を検証。汎用Visual編集とInspector Applyは後続 |
-| 8 MIDI / 出力 / 性能 | Unity/ShapeSynthMidiAdapter、検証用Performanceシーン | Phase 4/5/7。既存MIDI ActionからTrigger/Release、既存Camera→RT→Syphon | MIDI押下/解放、Note重複、解像度変更、複数Voiceの負荷とGCを測定。想定最大数/FPSに合意して達成 |
+| 7 FX01演奏 / Modulator編集 / 保存 | Core/ModulatorLibrary, PerformanceSettings, Fx01Preset、Scripts/Performance、Unity/PerformanceSettingsStore | Coreを独立維持。編集/保存DTO→Trigger時の不変Definition、IUiTarget/RosettaUI、専用JSON保存。汎用Visual編集は後続 | ID/参照検証、旧Voice不変、編集後Trigger、JSON保存/復元を検証。汎用Visual編集とInspector Applyは後続 |
+| 8 複数Preset / Stroke | Core/PresetCatalog, AdditionalPresets, ShapeStyle、Performance UI | Phase 4〜7。既存Voice/Renderer/UI/保存へ追加 | 5キー/ボタンの演奏、自然終了、Stroke、旧JSON補完を検証 |
+| 9 Preset Editor | Core/PresetDocument, PresetCompiler、Unity/PresetRepository、Scripts/PresetEditor | 既存Core/UI/Voice/描画を再利用。ランタイム編集→不変Definition、JSONでScene間共有 | 階層/Parameter/Binding/Modulator編集、Preview、保存とPerformanceからの読込。詳細は `PresetEditor.md` |
+| 10 Preset Editor UI | Scripts/PresetEditorの専用Workspace/View | Phase 9のCore/Compiler/Repositoryを維持。RosettaUI主体の3領域とRT Preview | フォーカス/Scroll維持、Zoom/Pan/Fit、実UI操作、1920/1280配置。`PresetEditorWorkspace.md` |
+| 11 MIDI / 出力 / 性能（後続） | Unity/ShapeSynthMidiAdapter、検証用Performanceシーン | Phase 4/5/7。既存MIDI ActionからTrigger/Release、既存Camera→RT→Syphon | MIDI押下/解放、Note重複、解像度変更、複数Voiceの負荷とGCを測定。想定最大数/FPSに合意して達成 |
 
 Phase 5のVoice計算テストはPhase 4と独立して先行可能。描画・編集・MIDIの各AdapterだけがCoreと既存サービスをつなぐ。Coreに新しいManager/汎用グラフ/シーケンサーは作らない。
 
@@ -96,3 +99,7 @@ Referenceの単位、LFOの波形/位相、Polygonの表現、加算後の描画
 - BPMManager自体を動かした統合テストは未実施。BPM変更テストは生成に渡すBPMを変更する純粋数値テスト。
 - Unity 6000.3.12f1の `-batchmode -nographics -runTests -testPlatform EditMode -testFilter Krab.ShapeSynth.Tests` は「another Unity instance is running with this project open」で中止。テスト失敗として数えていない。
 - 変更したTimingファイルへの `git diff --check` は成功。作業開始時から存在する `Midi.meta` の空白警告は今回の変更対象外。
+
+2026-11-11: Phase 9としてランタイムPreset Editorを追加。従来のPhase 9候補だったMIDI/出力/性能はPhase 10へ移動。今回MIDI等は実装していない。
+
+2026-11-12: Phase 10はPreset Editor UI改善。MIDI/出力/性能の後続候補はPhase 11へ移動し、今回は実装していない。

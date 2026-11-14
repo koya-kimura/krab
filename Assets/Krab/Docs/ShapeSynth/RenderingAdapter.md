@@ -44,3 +44,7 @@ OutputTextureProviderがRT生成・再生成・解放を所有する。Preview�
 数値テストとCamera送信確認はGPUの最終映像や演出の目視判断を代替しない。実行ごとの結果はgitignore対象のReportsへ記録する。
 
 2026-11-10の実行：Unityコンパイル成功、EditMode 94件成功・失敗0。Playで3Canvasの送信、別Cameraへの描画漏れなし、1920×1080→800×600の再生成とPreview/Syphon参照更新を確認し、元の解像度へ復元した。外部Syphon受信と最終的な目視判断は未実施。詳細は `Reports/Phase4Validation-2026-11-10.md`。
+
+## Phase 8のStroke拡張
+
+DrawItemに不変ShapeStyleを追加。Fill/Stroke/Stroke Width/任意StrokeColorを公開APIで描画する。Circle/Rectangleはローカル線幅を行列で変形し、Polygonは画面上の線分へ展開されるため面積Scaleの平方根で幅を換算する。等方Scaleでは一致、非等方Scale/shearでは近似。詳細は [複数プリセットとStroke](MultiPresetPerformance.md)。既存Fill-onlyは維持する。

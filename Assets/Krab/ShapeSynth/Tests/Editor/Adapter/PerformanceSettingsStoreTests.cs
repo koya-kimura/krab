@@ -1,10 +1,11 @@
 using System;
 using System.IO;
-using Krab.ShapeSynth.Core;
-using Krab.ShapeSynth.Unity;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Performance;
+using Krab.ShapeSynth.Unity.Persistence;
 using NUnit.Framework;
 
-namespace Krab.ShapeSynth.Tests
+namespace Krab.ShapeSynth.Tests.Editor.Adapter
 {
     public sealed class PerformanceSettingsStoreTests
     {

@@ -59,7 +59,7 @@ Referenceは評価時のCanvas寸法のみを参照し、座標変換は行わ�
 
 ## p5.Unite境界
 
-`Assets/Krab/ShapeSynth/Unity/UniteShapeAdapter.cs` は最小の描画Adapter。Draw Itemだけを受け取り、階層やBindingを再評価しない。
+`Assets/Krab/ShapeSynth/Scripts/Unity/Rendering/UniteShapeAdapter.cs` は最小の描画Adapter。Draw Itemだけを受け取り、階層やBindingを再評価しない。
 
 `UCanvas.ApplyMatrix(a,b,c,d,e,f)` の列順へ全アフィン行列を渡す。Unity TRSへの分解やp5.Rotateの再呼出しは行わない。RectMode/EllipseModeをCenterに設定し、Push/Popで状態を復元する。PolygonはBeginShape/Vertex/EndShape(Close)。
 
