@@ -17,34 +17,27 @@ namespace Krab.ShapeSynth.Samples
         [SerializeField] private bool _showInstructions = true;
         private IBPMManager _bpm;
         private ShapeSynthController _controller;
-        public TriggerTarget Target { get; private set; }
-        public int Seed => _seed;
-
-        [Inject]
-        public void Construct(IBPMManager bpm) => _bpm = bpm;
 
         private void Start()
         {
             _controller = GetComponent<ShapeSynthController>();
             if (_bpm == null || !_controller.enabled)
             {
-                Debug.LogError("Variation sample requires BPM injection and an output Camera.", this);
+                Debug.LogError(
+                    $"{nameof(VariationSmokeTest)} requires BPM injection and an output {nameof(Camera)}.", this);
                 enabled = false;
                 return;
             }
+
             Target = new TriggerTarget(BuildDefinition());
             SpawnCurrent();
         }
-
-        public VoiceInstance SpawnCurrent() => _controller.Spawn(Target, _bpm.CurrentBpm, _seed);
-        public VoiceInstance SpawnNext() { _seed = unchecked(_seed + 1); return SpawnCurrent(); }
-        public VoiceInstance RestartCurrent() => _controller.Restart(Target, _bpm.CurrentBpm, _seed);
-        public VoiceInstance RestartNext() { _seed = unchecked(_seed + 1); return RestartCurrent(); }
 
         private void Update()
         {
             var keys = Keyboard.current;
             if (keys == null) return;
+
             if (keys.nKey.wasPressedThisFrame) SpawnCurrent();
             if (keys.mKey.wasPressedThisFrame) SpawnNext();
             if (keys.jKey.wasPressedThisFrame) RestartCurrent();
@@ -59,6 +52,38 @@ namespace Krab.ShapeSynth.Samples
                 "N: same seed Spawn   M: next seed Spawn   J: Restart   K: next seed Restart");
         }
 
+        public TriggerTarget Target { get; private set; }
+
+        public int Seed => _seed;
+
+        [Inject]
+        public void Construct(IBPMManager bpm)
+        {
+            _bpm = bpm;
+        }
+
+        public VoiceInstance SpawnCurrent()
+        {
+            return _controller.Spawn(Target, _bpm.CurrentBpm, _seed);
+        }
+
+        public VoiceInstance SpawnNext()
+        {
+            _seed = unchecked(_seed + 1);
+            return SpawnCurrent();
+        }
+
+        public VoiceInstance RestartCurrent()
+        {
+            return _controller.Restart(Target, _bpm.CurrentBpm, _seed);
+        }
+
+        public VoiceInstance RestartNext()
+        {
+            _seed = unchecked(_seed + 1);
+            return RestartCurrent();
+        }
+
         private GroupDefinition BuildDefinition()
         {
             var cyan = new RgbaColor(0.25, 0.8, 1, 0.85);
@@ -68,6 +93,7 @@ namespace Krab.ShapeSynth.Samples
             var circle = ShapeDefinition.Circle(Size(0.014),
                 new TransformDefinition(positionX: AltSize(-0.025, 0.025)), color: cyan);
             var pair = new GroupDefinition(null, circle, circle);
+
             // Two manually placed rows, each sharing the same pair/shape definitions. No Layout system.
             var alternating = new GroupDefinition(Panel(0.28),
                 new GroupDefinition(new TransformDefinition(positionY: Size(0.024)), pair),
@@ -79,29 +105,45 @@ namespace Krab.ShapeSynth.Samples
                         new BindingDefinition(0, 0, VariationDefinition.Alternating(60, -60)))), color: pink);
             var opposite = new GroupDefinition(Panel(0.08), rectangle, rectangle);
 
-            var randomCircle = ShapeDefinition.Circle(Size(0).WithBaseVariation(VariationDefinition.Random(0.008, 0.018)),
+            var randomCircle = ShapeDefinition.Circle(
+                Size(0).WithBaseVariation(VariationDefinition.Random(0.008, 0.018)),
                 new TransformDefinition(
                     Size(0).WithBaseVariation(VariationDefinition.Random(-0.04, 0.04)),
-                    Size(0).WithBaseVariation(VariationDefinition.Random(-0.04, 0.04))), color: orange);
+                    Size(0).WithBaseVariation(VariationDefinition.Random(-0.04, 0.04))),
+                color: orange);
             var random = new GroupDefinition(Panel(-0.14), randomCircle, randomCircle, randomCircle,
                 randomCircle, randomCircle, randomCircle);
 
             var inner = ShapeDefinition.Circle(AltSize(0.009, 0.015),
                 new TransformDefinition(positionX: AltSize(-0.012, 0.012)), color: green);
-            var sharedGroup = new GroupDefinition(new TransformDefinition(positionX: AltSize(-0.033, 0.033),
-                rotationDegrees: ParameterDefinition.Constant(0).WithBaseVariation(VariationDefinition.Alternating(30, -30))), inner, inner);
+            var sharedRotation = ParameterDefinition.Constant(0)
+                .WithBaseVariation(VariationDefinition.Alternating(30, -30));
+            var sharedGroup = new GroupDefinition(
+                new TransformDefinition(positionX: AltSize(-0.033, 0.033), rotationDegrees: sharedRotation),
+                inner,
+                inner);
             var nested = new GroupDefinition(Panel(-0.34), sharedGroup, sharedGroup);
-            return new GroupDefinition(null, new GroupRuntimeDefinition(
-                    new[] { new ModulatorSlotDefinition(new LfoDefinition(0.125)) },
-                    new[] { new TimerDefinition(_lifetimeBeats) }), alternating, opposite, random, nested);
+            var runtime = new GroupRuntimeDefinition(
+                new[] { new ModulatorSlotDefinition(new LfoDefinition(0.125)) },
+                new[] { new TimerDefinition(_lifetimeBeats) });
+            return new GroupDefinition(null, runtime, alternating, opposite, random, nested);
         }
 
-        private static ParameterDefinition Size(double value) =>
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.MinDimension), value);
-        private static ParameterDefinition AltSize(double even, double odd) =>
-            Size(0).WithBaseVariation(VariationDefinition.Alternating(even, odd));
-        private static TransformDefinition Panel(double y) => new TransformDefinition(
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth), -0.45),
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight), y));
+        private static ParameterDefinition Size(double value)
+        {
+            return new ParameterDefinition(new ReferenceDefinition(ReferenceSource.MinDimension), value);
+        }
+
+        private static ParameterDefinition AltSize(double even, double odd)
+        {
+            return Size(0).WithBaseVariation(VariationDefinition.Alternating(even, odd));
+        }
+
+        private static TransformDefinition Panel(double y)
+        {
+            return new TransformDefinition(
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth), -0.45),
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight), y));
+        }
     }
 }

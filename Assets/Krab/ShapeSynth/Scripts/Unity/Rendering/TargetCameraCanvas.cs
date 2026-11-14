@@ -14,9 +14,45 @@ namespace Krab.ShapeSynth.Unity.Rendering
     public sealed class TargetCameraCanvas : UCanvas
     {
         [SerializeField] private Camera _targetCamera;
+
         private DrawingContext _context;
-        public Camera TargetCamera { get => _targetCamera; set => _targetCamera = value; }
+
+        // These messages deliberately replace UCanvas's private lifecycle messages.
+        private void OnEnable()
+        {
+            RenderPipelineManager.beginCameraRendering += RenderCamera;
+        }
+
+        private void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= RenderCamera;
+
+            // Discard pending and captured commands on disable.
+            _context?.CaptureCommands();
+            _context?.CaptureCommands();
+            ResetMatrix();
+        }
+
+        private void LateUpdate()
+        {
+            _context?.CaptureCommands();
+        }
+
+        private void OnDestroy()
+        {
+            RenderPipelineManager.beginCameraRendering -= RenderCamera;
+            _context?.Dispose();
+            _context = null;
+        }
+
+        public Camera TargetCamera
+        {
+            get => _targetCamera;
+            set => _targetCamera = value;
+        }
+
         public int SubmittedCameraFrames { get; private set; }
+
         public int IgnoredCameraFrames { get; private set; }
 
         public void Initialize(Camera camera)
@@ -25,22 +61,6 @@ namespace Krab.ShapeSynth.Unity.Rendering
             _context = CreateCanvas(DrawingMode.ScreenOverlay);
         }
 
-        // These messages deliberately replace UCanvas's private lifecycle messages.
-        private void OnEnable() => RenderPipelineManager.beginCameraRendering += RenderCamera;
-        private void OnDisable()
-        {
-            RenderPipelineManager.beginCameraRendering -= RenderCamera;
-            _context?.CaptureCommands();
-            _context?.CaptureCommands(); // Discard pending and captured commands on disable.
-            ResetMatrix();
-        }
-        private void LateUpdate() => _context?.CaptureCommands();
-        private void OnDestroy()
-        {
-            RenderPipelineManager.beginCameraRendering -= RenderCamera;
-            _context?.Dispose();
-            _context = null;
-        }
         private void RenderCamera(ScriptableRenderContext context, Camera camera)
         {
             if (!_targetCamera || camera != _targetCamera)
@@ -48,7 +68,9 @@ namespace Krab.ShapeSynth.Unity.Rendering
                 IgnoredCameraFrames++;
                 return;
             }
+
             if (_context == null) return;
+
             _context.Draw(camera);
             SubmittedCameraFrames++;
         }

@@ -44,9 +44,6 @@ namespace Krab.ShapeSynth.Samples
         private ParameterEvaluator _boundDiameter;
         private ParameterEvaluator _boundOpacity;
         private ParameterEvaluator _fixedDiameter;
-        public double BoundDiameterPixels { get; private set; }
-        public double BoundOpacity { get; private set; }
-
         private IBPMManager _bpm;
         private UCanvas _canvas;
         private AdsrInstance _envelope;
@@ -54,20 +51,9 @@ namespace Krab.ShapeSynth.Samples
         private LfoInstance _lfo;
         private bool _lfoSettingsChanged;
 
-        public double LfoSampleValue { get; private set; }
-        public float LfoPositionX { get; private set; }
-        public double LfoStartBpm => _lfo?.Time.StartBpm ?? 0;
-
-        public double SampleValue { get; private set; }
-        public float SampleDiameterPixels { get; private set; }
-        public int TriggerCount { get; private set; }
-        public int SubmittedFrameCount { get; private set; }
-        public double StartBpm => _envelope?.Time.StartBpm ?? 0;
-
-        [Inject]
-        public void Construct(IBPMManager bpm)
+        private void OnValidate()
         {
-            _bpm = bpm;
+            _lfoSettingsChanged = true;
         }
 
         private void Start()
@@ -75,7 +61,9 @@ namespace Krab.ShapeSynth.Samples
             _canvas = GetComponent<UCanvas>();
             if (!_outputCamera || _bpm == null)
             {
-                Debug.LogError("ShapeSynth smoke scene requires an output Camera and SceneContainer BPM injection.", this);
+                Debug.LogError(
+                    $"{nameof(ShapeSynthSmokeTest)} requires an output {nameof(Camera)} and SceneContainer BPM injection.",
+                    this);
                 _canvas.enabled = false;
                 enabled = false;
                 return;
@@ -86,28 +74,129 @@ namespace Krab.ShapeSynth.Samples
             CreateLfo(_envelope.Time);
         }
 
+        private void Update()
+        {
+            if (_envelope == null) return;
+
+            var now = Time.timeAsDouble;
+            var keyboard = Keyboard.current;
+            if ((_autoRepeat && now >= _nextTriggerSeconds)
+                || (keyboard != null && keyboard.spaceKey.wasPressedThisFrame))
+            {
+                Trigger();
+            }
+
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
+            {
+                _envelope.Release(now);
+            }
+
+            if (keyboard != null && keyboard.lKey.wasPressedThisFrame)
+            {
+                RestartLfo();
+            }
+
+            // Inspector edits keep the LFO's captured start time/BPM; they may jump phase.
+            if (_lfoSettingsChanged)
+            {
+                CreateLfo(_lfo.Time);
+            }
+
+            SampleValue = _envelope.Evaluate(now);
+            // Use the output camera's dimensions, not UCanvas's last-rendered camera (Scene View etc.).
+            var width = _outputCamera.pixelWidth;
+            var height = _outputCamera.pixelHeight;
+            // Keep the original four modulation demos together in the left panel.
+            var legacyWidth = width * 0.55f;
+            var legacyOffset = width * 0.08f;
+            var paneSize = Mathf.Min(legacyWidth * 0.5f, height * 0.42f);
+            SampleDiameterPixels = (float)SampleValue * _maxDiameterFraction * paneSize;
+            LfoSampleValue = _lfo.Evaluate(now);
+            LfoPositionX = legacyOffset + legacyWidth * 0.75f
+                + (float)LfoSampleValue * legacyWidth * _lfoTravelFraction;
+            var context = new ReferenceContext(width, height);
+            BoundDiameterPixels = _boundDiameter.Evaluate(now, context);
+            BoundOpacity = _boundOpacity.Evaluate(now, context);
+            var fixedDiameter = _fixedDiameter.Evaluate(now, context);
+
+            // Through this ScreenOverlay -> RT -> Preview path, smaller Y appears higher.
+            // Keep this display placement separate from Reference evaluation and future local transforms.
+            var upperY = height * 0.38f;
+            var lowerY = height * 0.63f;
+
+            _canvas.ResetMatrix();
+            _canvas.NoStroke();
+            _canvas.Fill(_circleColor);
+            if (SampleDiameterPixels > 0)
+            {
+                _canvas.Circle(legacyOffset + legacyWidth * 0.25f, upperY, SampleDiameterPixels);
+            }
+
+
+            _canvas.Fill(_lfoColor);
+            _canvas.Circle(LfoPositionX, upperY, paneSize * _lfoDiameterFraction);
+
+            // Geometry/opacity constraints belong to the drawing boundary, not ParameterEvaluator.
+            _canvas.Fill(new Color(0.7f, 0.3f, 1, 1));
+            if (BoundDiameterPixels > 0)
+            {
+                _canvas.Circle(legacyOffset + legacyWidth * 0.25f, lowerY, (float)BoundDiameterPixels);
+            }
+
+            _canvas.Fill(new Color(0.2f, 1, 0.4f, Mathf.Clamp01((float)BoundOpacity)));
+            _canvas.Circle(legacyOffset + legacyWidth * 0.75f, lowerY, (float)fixedDiameter);
+            SubmittedFrameCount++;
+        }
+
+        public double BoundDiameterPixels { get; private set; }
+
+        public double BoundOpacity { get; private set; }
+
+        public double LfoSampleValue { get; private set; }
+
+        public float LfoPositionX { get; private set; }
+
+        public double LfoStartBpm => _lfo?.Time.StartBpm ?? 0;
+
+        public double SampleValue { get; private set; }
+
+        public float SampleDiameterPixels { get; private set; }
+
+        public int TriggerCount { get; private set; }
+
+        public int SubmittedFrameCount { get; private set; }
+
+        public double StartBpm => _envelope?.Time.StartBpm ?? 0;
+
+        [Inject]
+        public void Construct(IBPMManager bpm)
+        {
+            _bpm = bpm;
+        }
+
         [ContextMenu("Trigger")]
         public void Trigger()
         {
             if (!Application.isPlaying || _bpm == null) return;
-            var definition = new AdsrDefinition(_attackBeats, _decayBeats, _sustainLevel,
-                _sustainBeats, _releaseBeats);
+
+            var definition = new AdsrDefinition(
+                _attackBeats, _decayBeats, _sustainLevel, _sustainBeats, _releaseBeats);
             var time = new VoiceTime(Time.timeAsDouble, _bpm.CurrentBpm);
             _envelope = new AdsrInstance(definition, time);
-            _nextTriggerSeconds = time.StartSeconds +
-                (definition.Attack + definition.Decay + definition.SustainTime + definition.Release +
-                 _pauseBeats) * 60 / time.StartBpm;
+            var totalBeats = definition.Attack + definition.Decay + definition.SustainTime + definition.Release
+                + _pauseBeats;
+            _nextTriggerSeconds = time.StartSeconds + totalBeats * 60 / time.StartBpm;
             TriggerCount++;
             RefreshBindings();
         }
-
-        private void OnValidate() => _lfoSettingsChanged = true;
 
         [ContextMenu("Restart LFO")]
         public void RestartLfo()
         {
             if (Application.isPlaying && _bpm != null)
+            {
                 CreateLfo(new VoiceTime(Time.timeAsDouble, _bpm.CurrentBpm));
+            }
         }
 
         private void CreateLfo(VoiceTime time)
@@ -120,62 +209,23 @@ namespace Krab.ShapeSynth.Samples
         private void RefreshBindings()
         {
             if (_envelope == null || _lfo == null) return;
+
             // Both evaluators resolve slot 0 to this exact envelope, not another ADSR instance.
             var signals = new IModulator[] { _envelope, _lfo };
-            _boundDiameter = new ParameterEvaluator(new ParameterDefinition(
-                new ReferenceDefinition(ReferenceSource.MinDimension, _bindingSizeFraction), _bindingBase,
-                new BindingDefinition(0, _bindingAdsrDepth), new BindingDefinition(1, _bindingLfoDepth)), signals);
-            _boundOpacity = new ParameterEvaluator(new ParameterDefinition(
-                new ReferenceDefinition(ReferenceSource.Absolute), 0, new BindingDefinition(0, 1)), signals);
-            _fixedDiameter = new ParameterEvaluator(new ParameterDefinition(
-                new ReferenceDefinition(ReferenceSource.MinDimension, 0.18), 1), signals);
-        }
-
-        private void Update()
-        {
-            if (_envelope == null) return;
-            var now = Time.timeAsDouble;
-            var keyboard = Keyboard.current;
-            if ((_autoRepeat && now >= _nextTriggerSeconds) ||
-                (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)) Trigger();
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame) _envelope.Release(now);
-            if (keyboard != null && keyboard.lKey.wasPressedThisFrame) RestartLfo();
-            // Inspector edits keep the LFO's captured start time/BPM; they may jump phase.
-            if (_lfoSettingsChanged) CreateLfo(_lfo.Time);
-
-            SampleValue = _envelope.Evaluate(now);
-            // Use the output camera's dimensions, not UCanvas's last-rendered camera (Scene View etc.).
-            var width = _outputCamera.pixelWidth;
-            var height = _outputCamera.pixelHeight;
-            // Keep the original four modulation demos together in the left panel.
-            var legacyWidth = width * 0.55f;
-            var legacyOffset = width * 0.08f;
-            var paneSize = Mathf.Min(legacyWidth * 0.5f, height * 0.42f);
-            SampleDiameterPixels = (float)SampleValue * _maxDiameterFraction * paneSize;
-            LfoSampleValue = _lfo.Evaluate(now);
-            LfoPositionX = legacyOffset + legacyWidth * 0.75f + (float)LfoSampleValue * legacyWidth * _lfoTravelFraction;
-            var context = new ReferenceContext(width, height);
-            BoundDiameterPixels = _boundDiameter.Evaluate(now, context);
-            BoundOpacity = _boundOpacity.Evaluate(now, context);
-            var fixedDiameter = _fixedDiameter.Evaluate(now, context);
-            // Through this ScreenOverlay -> RT -> Preview path, smaller Y appears higher.
-            // Keep this display placement separate from Reference evaluation and future local transforms.
-            var upperY = height * 0.38f;
-            var lowerY = height * 0.63f;
-            _canvas.ResetMatrix();
-            _canvas.NoStroke();
-            _canvas.Fill(_circleColor);
-            if (SampleDiameterPixels > 0)
-                _canvas.Circle(legacyOffset + legacyWidth * 0.25f, upperY, SampleDiameterPixels);
-            _canvas.Fill(_lfoColor);
-            _canvas.Circle(LfoPositionX, upperY, paneSize * _lfoDiameterFraction);
-            // Geometry/opacity constraints belong to the drawing boundary, not ParameterEvaluator.
-            _canvas.Fill(new Color(0.7f, 0.3f, 1, 1));
-            if (BoundDiameterPixels > 0)
-                _canvas.Circle(legacyOffset + legacyWidth * 0.25f, lowerY, (float)BoundDiameterPixels);
-            _canvas.Fill(new Color(0.2f, 1, 0.4f, Mathf.Clamp01((float)BoundOpacity)));
-            _canvas.Circle(legacyOffset + legacyWidth * 0.75f, lowerY, (float)fixedDiameter);
-            SubmittedFrameCount++;
+            _boundDiameter = new ParameterEvaluator(
+                new ParameterDefinition(
+                    new ReferenceDefinition(ReferenceSource.MinDimension, _bindingSizeFraction),
+                    _bindingBase,
+                    new BindingDefinition(0, _bindingAdsrDepth),
+                    new BindingDefinition(1, _bindingLfoDepth)),
+                signals);
+            _boundOpacity = new ParameterEvaluator(
+                new ParameterDefinition(
+                    new ReferenceDefinition(ReferenceSource.Absolute), 0, new BindingDefinition(0, 1)),
+                signals);
+            _fixedDiameter = new ParameterEvaluator(
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.MinDimension, 0.18), 1),
+                signals);
         }
     }
 }

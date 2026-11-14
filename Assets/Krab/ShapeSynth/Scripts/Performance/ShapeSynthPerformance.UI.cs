@@ -19,21 +19,34 @@ namespace Krab.ShapeSynth.Performance
                 BuildPresetTriggers(),
                 BuildUserPresets(),
                 UI.Fold("FX01 settings", UI.Column(
-                    UI.Field("Circle count", () => Settings.Fx01.CircleCount, value => Settings.Fx01.CircleCount = value),
-                    UI.Field("Initial seed", () => Settings.Fx01.Seed, value => { Settings.Fx01.Seed = value; ResetSeed("fx01"); }),
+                    UI.Field("Circle count", () => Settings.Fx01.CircleCount,
+                        value => Settings.Fx01.CircleCount = value),
+                    UI.Field("Initial seed", () => Settings.Fx01.Seed, SetFx01Seed),
                     UI.Label(() => $"Envelope ID: {Settings.Fx01.EnvelopeId} / LFO ID: {Settings.Fx01.OscillatorId}"),
                     UI.Label("FX01 settings apply on the next Trigger."))),
                 UI.DynamicElementOnStatusChanged(() => Settings, _ => BuildPresetSettings()),
                 UI.Label(() => $"Active Voices: {VoiceCount}"),
-                UI.Row(UI.Button("Save ShapeSynth", () => SaveSettings()), UI.Button("Reload ShapeSynth", () => ReloadSettings())),
+                UI.Row(
+                    UI.Button("Save ShapeSynth", () => SaveSettings()),
+                    UI.Button("Reload ShapeSynth", () => ReloadSettings())),
                 UI.Label(() => _status));
+        }
+
+        private void SetFx01Seed(int value)
+        {
+            Settings.Fx01.Seed = value;
+            ResetSeed("fx01");
         }
 
         private Element BuildPresetTriggers()
         {
             var buttons = new List<Element>();
             foreach (var preset in PresetCatalog.Entries)
-                buttons.Add(UI.Button($"Trigger {preset.Name} ({char.ToUpperInvariant(preset.Key)})", () => TriggerPreset(preset.Id)));
+            {
+                var title = $"Trigger {preset.Name} ({char.ToUpperInvariant(preset.Key)})";
+                buttons.Add(UI.Button(title, () => TriggerPreset(preset.Id)));
+            }
+
             return UI.Column(buttons);
         }
 
@@ -41,9 +54,16 @@ namespace Krab.ShapeSynth.Performance
         {
             var rows = new List<Element>();
             foreach (var preset in Settings.Presets)
+            {
                 rows.Add(UI.Fold(preset.Id, UI.Column(
-                    UI.Field("Initial seed", () => preset.Seed, value => { preset.Seed = value; ResetSeed(preset.Id); }),
+                    UI.Field("Initial seed", () => preset.Seed, value =>
+                    {
+                        preset.Seed = value;
+                        ResetSeed(preset.Id);
+                    }),
                     UI.Label(() => $"Envelope: {preset.EnvelopeId} / LFO: {preset.OscillatorId ?? "none"}"))));
+            }
+
             return UI.Column(rows);
         }
 
@@ -67,7 +87,10 @@ namespace Krab.ShapeSynth.Performance
                 }
                 else
                 {
-                    fields.Add(UI.Dropdown("Waveform", () => (int)model.Waveform, value => model.Waveform = (LfoWaveform)value,
+                    fields.Add(UI.Dropdown(
+                        "Waveform",
+                        () => (int)model.Waveform,
+                        value => model.Waveform = (LfoWaveform)value,
                         Enum.GetNames(typeof(LfoWaveform))));
                     fields.Add(Number("Cycles per beat", () => model.CyclesPerBeat, value => model.CyclesPerBeat = value));
                     fields.Add(Number("Phase offset (cycles)", () => model.PhaseOffset, value => model.PhaseOffset = value));
@@ -77,7 +100,9 @@ namespace Krab.ShapeSynth.Performance
             return UI.Column(editors);
         }
 
-        private static Element Number(string label, Func<double> read, Action<double> write) =>
-            UI.Field(label, () => (float)read(), value => write(value));
+        private static Element Number(string label, Func<double> read, Action<double> write)
+        {
+            return UI.Field(label, () => (float)read(), value => write(value));
+        }
     }
 }

@@ -20,6 +20,7 @@ namespace Krab.ShapeSynth.Samples
         [SerializeField] private Camera _outputCamera;
         [SerializeField, Min(0)] private float _rotationCyclesPerBeat = 0.0625f;
         [SerializeField] private bool _invertTargetY = true;
+
         private IBPMManager _bpm;
         private UCanvas _canvas;
         private GroupDefinition _definition;
@@ -29,25 +30,24 @@ namespace Krab.ShapeSynth.Samples
         private double _nextTriggerSeconds;
         private bool _settingsChanged;
 
-        public IReadOnlyList<DrawItem> LastItems { get; private set; }
-        public int SubmittedFrameCount { get; private set; }
-        public double AdsrValue { get; private set; }
-        public double LfoValue { get; private set; }
-
-        [Inject]
-        public void Construct(IBPMManager bpm) => _bpm = bpm;
-        private void OnValidate() => _settingsChanged = true;
+        private void OnValidate()
+        {
+            _settingsChanged = true;
+        }
 
         private void Start()
         {
             _canvas = GetComponent<UCanvas>();
             if (!_outputCamera || _bpm == null)
             {
-                Debug.LogError("Hierarchy smoke test requires an output Camera and SceneContainer BPM injection.", this);
+                Debug.LogError(
+                    $"{nameof(HierarchySmokeTest)} requires an output {nameof(Camera)} and SceneContainer BPM injection.",
+                    this);
                 _canvas.enabled = false;
                 enabled = false;
                 return;
             }
+
             ((TargetCameraCanvas)_canvas).Initialize(_outputCamera);
             _definition = BuildDefinition();
             Trigger();
@@ -55,10 +55,57 @@ namespace Krab.ShapeSynth.Samples
             _settingsChanged = false;
         }
 
+        private void Update()
+        {
+            if (_evaluator == null) return;
+
+            var keyboard = Keyboard.current;
+            if (Time.timeAsDouble >= _nextTriggerSeconds
+                || (keyboard != null && keyboard.spaceKey.wasPressedThisFrame))
+            {
+                Trigger();
+            }
+
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
+            {
+                _adsr.Release(Time.timeAsDouble);
+            }
+
+            if (_settingsChanged || (keyboard != null && keyboard.lKey.wasPressedThisFrame))
+            {
+                RestartLfo();
+                _settingsChanged = false;
+            }
+
+            var now = Time.timeAsDouble;
+            var width = _outputCamera.pixelWidth;
+            var height = _outputCamera.pixelHeight;
+            AdsrValue = _adsr.Evaluate(now);
+            LfoValue = _lfo.Evaluate(now);
+            LastItems = _evaluator.Evaluate(now, new ReferenceContext(width, height));
+            UniteShapeAdapter.Draw(_canvas, LastItems, width, height, _invertTargetY);
+            SubmittedFrameCount++;
+        }
+
+        public IReadOnlyList<DrawItem> LastItems { get; private set; }
+
+        public int SubmittedFrameCount { get; private set; }
+
+        public double AdsrValue { get; private set; }
+
+        public double LfoValue { get; private set; }
+
+        [Inject]
+        public void Construct(IBPMManager bpm)
+        {
+            _bpm = bpm;
+        }
+
         [ContextMenu("Trigger ADSR")]
         public void Trigger()
         {
             if (!Application.isPlaying || _bpm == null) return;
+
             var time = new VoiceTime(Time.timeAsDouble, _bpm.CurrentBpm);
             _adsr = new AdsrInstance(new AdsrDefinition(2, 1, 0.35, 2, 2), time);
             _nextTriggerSeconds = time.StartSeconds + 8 * 60 / time.StartBpm;
@@ -69,7 +116,9 @@ namespace Krab.ShapeSynth.Samples
         public void RestartLfo()
         {
             if (!Application.isPlaying || _bpm == null) return;
-            _lfo = new LfoInstance(new LfoDefinition(_rotationCyclesPerBeat),
+
+            _lfo = new LfoInstance(
+                new LfoDefinition(_rotationCyclesPerBeat),
                 new VoiceTime(Time.timeAsDouble, _bpm.CurrentBpm));
             Rebind();
         }
@@ -77,26 +126,9 @@ namespace Krab.ShapeSynth.Samples
         private void Rebind()
         {
             if (_adsr != null && _lfo != null && _definition != null)
-                _evaluator = new HierarchyEvaluator(_definition, new IModulator[] { _adsr, _lfo });
-        }
-
-        private void Update()
-        {
-            if (_evaluator == null) return;
-            var keyboard = Keyboard.current;
-            if (Time.timeAsDouble >= _nextTriggerSeconds || (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)) Trigger();
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame) _adsr.Release(Time.timeAsDouble);
-            if (_settingsChanged || (keyboard != null && keyboard.lKey.wasPressedThisFrame))
             {
-                RestartLfo();
-                _settingsChanged = false;
+                _evaluator = new HierarchyEvaluator(_definition, new IModulator[] { _adsr, _lfo });
             }
-            var now = Time.timeAsDouble;
-            AdsrValue = _adsr.Evaluate(now);
-            LfoValue = _lfo.Evaluate(now);
-            LastItems = _evaluator.Evaluate(now, new ReferenceContext(_outputCamera.pixelWidth, _outputCamera.pixelHeight));
-            UniteShapeAdapter.Draw(_canvas, LastItems, _outputCamera.pixelWidth, _outputCamera.pixelHeight, _invertTargetY);
-            SubmittedFrameCount++;
         }
 
         private static GroupDefinition BuildDefinition()
@@ -107,13 +139,17 @@ namespace Krab.ShapeSynth.Samples
             var pivot = ShapeDefinition.Circle(Dimension(0.006), color: new RgbaColor(0.65, 0.65, 0.65));
 
             // A: centered circle and rectangle orbit the same fixed group origin.
-            var groupA = new GroupDefinition(Panel(0.2, 0.12, Angle(90)),
+            var groupA = new GroupDefinition(
+                Panel(0.2, 0.12, Angle(90)),
                 ShapeDefinition.Circle(Dimension(0.04), Local(-0.065, 0), color: cyan),
-                ShapeDefinition.Rectangle(Dimension(0.05), Dimension(0.035), Local(0.065, 0), color: orange), pivot);
+                ShapeDefinition.Rectangle(Dimension(0.05), Dimension(0.035), Local(0.065, 0), color: orange),
+                pivot);
 
             // B: nested local positions/rotations/scales, including reflection and non-uniform scale.
-            var deepest = new GroupDefinition(Local(0.035, 0.02, rotation: ParameterDefinition.Constant(-25)),
-                ShapeDefinition.Polygon(new[] { new Point2(-15, -10), new Point2(15, -10), new Point2(0, 20) }, color: pink));
+            var triangle = new[] { new Point2(-15, -10), new Point2(15, -10), new Point2(0, 20) };
+            var deepest = new GroupDefinition(
+                Local(0.035, 0.02, rotation: ParameterDefinition.Constant(-25)),
+                ShapeDefinition.Polygon(triangle, color: pink));
             var nested = new GroupDefinition(Local(0.055, 0, ParameterDefinition.Constant(45), -0.8, 0.7),
                 ShapeDefinition.Rectangle(Dimension(0.04), Dimension(0.025), color: orange), deepest, pivot);
             var groupB = new GroupDefinition(Panel(0.36, -0.08, Angle(-55)),
@@ -129,17 +165,38 @@ namespace Krab.ShapeSynth.Samples
             return new GroupDefinition(null, groupA, groupB, groupC);
         }
 
-        private static ParameterDefinition Dimension(double multiplier, double baseValue = 1, params BindingDefinition[] bindings) =>
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.MinDimension, multiplier), baseValue, bindings);
+        private static ParameterDefinition Dimension(
+            double multiplier, double baseValue = 1, params BindingDefinition[] bindings)
+        {
+            return new ParameterDefinition(
+                new ReferenceDefinition(ReferenceSource.MinDimension, multiplier), baseValue, bindings);
+        }
 
-        private static ParameterDefinition Angle(double amplitude) => new ParameterDefinition(
-            new ReferenceDefinition(ReferenceSource.Absolute, absoluteValue: amplitude), 0, new BindingDefinition(1, 1));
+        private static ParameterDefinition Angle(double amplitude)
+        {
+            return new ParameterDefinition(
+                new ReferenceDefinition(ReferenceSource.Absolute, absoluteValue: amplitude),
+                0,
+                new BindingDefinition(1, 1));
+        }
 
-        private static TransformDefinition Panel(double x, double y, ParameterDefinition rotation) => new TransformDefinition(
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth), x),
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight), y), rotation);
+        private static TransformDefinition Panel(double x, double y, ParameterDefinition rotation)
+        {
+            return new TransformDefinition(
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth), x),
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight), y),
+                rotation);
+        }
 
-        private static TransformDefinition Local(double x, double y, ParameterDefinition rotation = null, double sx = 1, double sy = 1) =>
-            new TransformDefinition(Dimension(x), Dimension(y), rotation, ParameterDefinition.Constant(sx), ParameterDefinition.Constant(sy));
+        private static TransformDefinition Local(
+            double x, double y, ParameterDefinition rotation = null, double sx = 1, double sy = 1)
+        {
+            return new TransformDefinition(
+                Dimension(x),
+                Dimension(y),
+                rotation,
+                ParameterDefinition.Constant(sx),
+                ParameterDefinition.Constant(sy));
+        }
     }
 }

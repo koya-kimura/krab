@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using Krab.ShapeSynth.Samples;
 using Krab.Common.Output;
+using Krab.ShapeSynth.Samples;
 using Krab.ShapeSynth.Unity.Rendering;
 using Krab.ShapeSynth.Unity.Runtime;
 using UnityEditor;
@@ -16,20 +16,34 @@ namespace Krab.ShapeSynth.Editor.Scenes
         public static void Upgrade()
         {
             var scene = SceneManager.GetActiveScene();
-            if (EditorApplication.isPlayingOrWillChangePlaymode || scene.path != ShapeSynthSmokeSceneBuilder.ScenePath || scene.isDirty)
+            if (EditorApplication.isPlayingOrWillChangePlaymode
+                || scene.path != ShapeSynthSmokeSceneBuilder.ScenePath
+                || scene.isDirty)
+            {
                 throw new InvalidOperationException("Open the saved smoke Scene in Edit Mode before upgrading.");
+            }
+
             var synth = scene.GetRootGameObjects().Single(root => root.name == "ShapeSynth");
-            var camera = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<OutputTextureProvider>(true))
-                .Single().GetComponent<Camera>();
+            var camera = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<OutputTextureProvider>(true))
+                .Single()
+                .GetComponent<Camera>();
             Configure(synth, camera);
             EditorSceneManager.MarkSceneDirty(scene);
-            if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Could not save smoke Scene.");
+            if (!EditorSceneManager.SaveScene(scene))
+            {
+                throw new InvalidOperationException("Could not save smoke Scene.");
+            }
         }
 
         public static void Configure(GameObject synth, Camera camera)
         {
             if (synth.GetComponentInChildren<VoiceSmokeTest>(true))
-                throw new InvalidOperationException("Voice demo already exists; existing Inspector settings are preserved.");
+            {
+                throw new InvalidOperationException(
+                    "Voice demo already exists; existing Inspector settings are preserved.");
+            }
+
             var go = new GameObject("Voice Lifetime", typeof(TargetCameraCanvas));
             go.transform.SetParent(synth.transform, false);
             go.GetComponent<TargetCameraCanvas>().TargetCamera = camera;

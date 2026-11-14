@@ -14,31 +14,22 @@ namespace Krab.ShapeSynth.Unity.Runtime
     {
         [SerializeField] private Camera _outputCamera;
         [SerializeField] private bool _invertTargetY = true;
+
         private TargetCameraCanvas _canvas;
-        public VoiceCollection Collection { get; } = new VoiceCollection();
-        public IReadOnlyList<DrawItem> LastItems { get; private set; } = Array.Empty<DrawItem>();
-        public HierarchyEvaluator StaticPreview { get; set; }
-        public int SubmittedFrameCount { get; private set; }
-        public Camera OutputCamera => _outputCamera;
 
         private void Awake()
         {
             _canvas = GetComponent<TargetCameraCanvas>();
             if (!_outputCamera)
             {
-                Debug.LogError("ShapeSynthController requires an output Camera.", this);
+                Debug.LogError($"{nameof(ShapeSynthController)} requires an output {nameof(Camera)}.", this);
                 enabled = false;
                 _canvas.enabled = false;
                 return;
             }
+
             _canvas.Initialize(_outputCamera);
         }
-
-        public VoiceInstance Spawn(TriggerTarget target, double currentBpm, int voiceSeed = 0) =>
-            Collection.Spawn(target, Time.timeAsDouble, currentBpm, voiceSeed);
-
-        public VoiceInstance Restart(TriggerTarget target, double currentBpm, int voiceSeed = 0) =>
-            Collection.Restart(target, Time.timeAsDouble, currentBpm, voiceSeed);
 
         private void Update()
         {
@@ -49,6 +40,26 @@ namespace Krab.ShapeSynth.Unity.Runtime
             LastItems = StaticPreview != null ? StaticPreview.Evaluate(0, context) : voices;
             UniteShapeAdapter.Draw(_canvas, LastItems, width, height, _invertTargetY);
             SubmittedFrameCount++;
+        }
+
+        public VoiceCollection Collection { get; } = new();
+
+        public IReadOnlyList<DrawItem> LastItems { get; private set; } = Array.Empty<DrawItem>();
+
+        public HierarchyEvaluator StaticPreview { get; set; }
+
+        public int SubmittedFrameCount { get; private set; }
+
+        public Camera OutputCamera => _outputCamera;
+
+        public VoiceInstance Spawn(TriggerTarget target, double currentBpm, int voiceSeed = 0)
+        {
+            return Collection.Spawn(target, Time.timeAsDouble, currentBpm, voiceSeed);
+        }
+
+        public VoiceInstance Restart(TriggerTarget target, double currentBpm, int voiceSeed = 0)
+        {
+            return Collection.Restart(target, Time.timeAsDouble, currentBpm, voiceSeed);
         }
     }
 }

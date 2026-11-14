@@ -21,83 +21,145 @@ namespace Krab.ShapeSynth.Performance
     [UnityEngine.Scripting.APIUpdating.MovedFrom("Krab.ShapeSynth.Samples.Performance")]
     public sealed partial class ShapeSynthPerformance : MonoBehaviour, IUiTarget
     {
+        private static readonly (Key Key, string Id)[] KeyBindings = PresetCatalog.Entries.Select(preset =>
+            ((Key)Enum.Parse(typeof(Key), preset.Key.ToString().ToUpperInvariant()), preset.Id)).ToArray();
+
+        private readonly Dictionary<string, int> _nextSeeds = new(StringComparer.Ordinal);
+
         private IBPMManager _bpm;
         private ShapeSynthController _controller;
         private PerformanceSettingsStore _store;
-        private readonly Dictionary<string, int> _nextSeeds = new Dictionary<string, int>(StringComparer.Ordinal);
-        private static readonly (Key Key, string Id)[] KeyBindings = PresetCatalog.Entries.Select(preset =>
-            ((Key)Enum.Parse(typeof(Key), preset.Key.ToString().ToUpperInvariant()), preset.Id)).ToArray();
         private string _status = "Edit Modulators, then Trigger a preset. Changes apply to new Voices.";
-        public PerformanceSettings Settings { get; private set; }
-        public VoiceInstance LastVoice { get; private set; }
-        public string Status => _status;
-        public string StoragePath => _store.Path;
-        public int VoiceCount => _controller ? _controller.Collection.Voices.Count : 0;
 
-        [Inject]
-        public void Construct(IBPMManager bpm) => _bpm = bpm;
+        private void Awake()
+        {
+            EnsureSettings();
+        }
 
-        private void Awake() => EnsureSettings();
         private void Start()
         {
             _controller = GetComponent<ShapeSynthController>();
-            if (_bpm == null) { Debug.LogError("ShapeSynth Performance requires BPM injection.", this); enabled = false; }
-        }
-
-        private void EnsureSettings()
-        {
-            if (Settings != null) return;
-            _store = new PerformanceSettingsStore();
-            Settings = PerformanceSettings.CreateForPerformance();
-            if (_store.Exists)
+            if (_bpm == null)
             {
-                try { Settings = _store.Load(); _status = "Loaded ShapeSynth settings."; }
-                catch (Exception e) { _status = "Could not load saved settings: " + e.Message; Debug.LogWarning(_status, this); }
+                Debug.LogError($"{nameof(ShapeSynthPerformance)} requires BPM injection.", this);
+                enabled = false;
             }
         }
 
         private void Update()
         {
             if (RosettaUIRoot.IsFocused || Keyboard.current == null) return;
+
             foreach (var binding in KeyBindings)
-                if (Keyboard.current[binding.Key].wasPressedThisFrame) TriggerPreset(binding.Id);
+            {
+                if (Keyboard.current[binding.Key].wasPressedThisFrame)
+                {
+                    TriggerPreset(binding.Id);
+                }
+            }
         }
 
-        public VoiceInstance TriggerFx01() => TriggerPreset("fx01");
-        private void ResetSeed(string id) => _nextSeeds.Remove(id);
+        public PerformanceSettings Settings { get; private set; }
+
+        public VoiceInstance LastVoice { get; private set; }
+
+        public string Status => _status;
+
+        public string StoragePath => _store.Path;
+
+        public int VoiceCount => _controller ? _controller.Collection.Voices.Count : 0;
+
+        [Inject]
+        public void Construct(IBPMManager bpm)
+        {
+            _bpm = bpm;
+        }
+
+        public VoiceInstance TriggerFx01()
+        {
+            return TriggerPreset("fx01");
+        }
 
         public VoiceInstance TriggerPreset(string presetId)
         {
             try
             {
                 EnsureSettings();
-                if (!_nextSeeds.TryGetValue(presetId, out var seed)) seed = PresetCatalog.SeedFor(Settings, presetId);
+                if (!_nextSeeds.TryGetValue(presetId, out var seed))
+                {
+                    seed = PresetCatalog.SeedFor(Settings, presetId);
+                }
+
                 var target = PresetCatalog.Build(Settings, presetId, seed);
                 LastVoice = _controller.Spawn(target, _bpm.CurrentBpm, seed);
                 _nextSeeds[presetId] = unchecked(seed + 1);
                 _status = $"{presetId}: seed {seed}. Active Voices: {VoiceCount}";
                 return LastVoice;
             }
-            catch (Exception e) { _status = "Trigger rejected: " + e.Message; return null; }
+            catch (Exception e)
+            {
+                _status = "Trigger rejected: " + e.Message;
+                return null;
+            }
         }
 
         public bool SaveSettings()
         {
-            try { EnsureSettings(); _store.Save(Settings); _status = "Saved ShapeSynth settings: " + _store.Path; return true; }
-            catch (Exception e) { _status = "Save rejected: " + e.Message; return false; }
+            try
+            {
+                EnsureSettings();
+                _store.Save(Settings);
+                _status = "Saved ShapeSynth settings: " + _store.Path;
+                return true;
+            }
+            catch (Exception e)
+            {
+                _status = "Save rejected: " + e.Message;
+                return false;
+            }
         }
 
         public bool ReloadSettings()
         {
             try
             {
-                var loaded = _store.Load(); // Validate completely before replacing the active edit model.
+                // Validate completely before replacing the active edit model.
+                var loaded = _store.Load();
                 Settings = loaded;
                 _nextSeeds.Clear();
                 _status = "Reloaded ShapeSynth settings. Existing Voices are unchanged.";
                 return true;
             }
-            catch (Exception e) { _status = "Reload rejected: " + e.Message; return false; }
+            catch (Exception e)
+            {
+                _status = "Reload rejected: " + e.Message;
+                return false;
+            }
+        }
+
+        private void EnsureSettings()
+        {
+            if (Settings != null) return;
+
+            _store = new PerformanceSettingsStore();
+            Settings = PerformanceSettings.CreateForPerformance();
+            if (!_store.Exists) return;
+
+            try
+            {
+                Settings = _store.Load();
+                _status = "Loaded ShapeSynth settings.";
+            }
+            catch (Exception e)
+            {
+                _status = "Could not load saved settings: " + e.Message;
+                Debug.LogWarning(_status, this);
+            }
+        }
+
+        private void ResetSeed(string id)
+        {
+            _nextSeeds.Remove(id);
         }
     }
 }

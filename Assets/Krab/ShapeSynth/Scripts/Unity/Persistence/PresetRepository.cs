@@ -27,27 +27,56 @@ namespace Krab.ShapeSynth.Unity.Persistence
         public PresetDocument Load(string id)
         {
             var path = GetFilePath(id);
-            if (!File.Exists(path)) throw new FileNotFoundException($"Preset '{id}' was not found.", path);
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"Preset '{id}' was not found.", path);
+            }
 
             var json = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(json)) throw new ArgumentException("Preset JSON is empty.", nameof(id));
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                throw new ArgumentException("Preset JSON is empty.", nameof(id));
+            }
+
             PresetDocument document;
             try
             {
                 using (var reader = new JsonTextReader(new StringReader(json)) { MaxDepth = 256 })
                 {
-                    var token = JObject.Load(reader, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
-                    if (reader.Read()) throw new ArgumentException("Unexpected content after preset JSON.");
+                    var loadSettings = new JsonLoadSettings
+                    {
+                        DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error
+                    };
+                    var token = JObject.Load(reader, loadSettings);
+                    if (reader.Read())
+                    {
+                        throw new ArgumentException("Unexpected content after preset JSON.");
+                    }
+
                     if (token["SchemaVersion"]?.Type != JTokenType.Integer)
+                    {
                         throw new ArgumentException("Preset JSON requires an integer SchemaVersion.");
+                    }
+
                     document = token.ToObject<PresetDocument>(JsonSerializer.Create(JsonSettings()));
                 }
             }
-            catch (JsonException exception) { throw new ArgumentException("Invalid preset JSON: " + exception.Message, exception); }
-            if (document == null) throw new ArgumentException("Preset JSON has no document.", nameof(id));
+            catch (JsonException exception)
+            {
+                throw new ArgumentException("Invalid preset JSON: " + exception.Message, exception);
+            }
+
+            if (document == null)
+            {
+                throw new ArgumentException("Preset JSON has no document.", nameof(id));
+            }
+
             document.Validate();
             if (!string.Equals(document.Id, id, StringComparison.Ordinal))
+            {
                 throw new ArgumentException("Preset document ID does not match its file name.", nameof(id));
+            }
+
             return document;
         }
 
@@ -86,7 +115,9 @@ namespace Krab.ShapeSynth.Unity.Persistence
         public void Save(PresetDocument document)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
-            document.Validate(); // Validate before touching the previous file.
+
+            // Validate before touching the previous file.
+            document.Validate();
             var path = GetFilePath(document.Id);
             var json = JsonConvert.SerializeObject(document, Formatting.Indented, JsonSettings());
             Directory.CreateDirectory(DirectoryPath);
@@ -94,8 +125,14 @@ namespace Krab.ShapeSynth.Unity.Persistence
             try
             {
                 File.WriteAllText(temporary, json);
-                if (File.Exists(path)) File.Replace(temporary, path, null);
-                else File.Move(temporary, path);
+                if (File.Exists(path))
+                {
+                    File.Replace(temporary, path, null);
+                }
+                else
+                {
+                    File.Move(temporary, path);
+                }
             }
             finally
             {
@@ -103,12 +140,15 @@ namespace Krab.ShapeSynth.Unity.Persistence
             }
         }
 
-        private static JsonSerializerSettings JsonSettings() => new JsonSerializerSettings
+        private static JsonSerializerSettings JsonSettings()
         {
-            MaxDepth = 256,
-            TypeNameHandling = TypeNameHandling.None,
-            MissingMemberHandling = MissingMemberHandling.Error
-        };
+            return new JsonSerializerSettings
+            {
+                MaxDepth = 256,
+                TypeNameHandling = TypeNameHandling.None,
+                MissingMemberHandling = MissingMemberHandling.Error
+            };
+        }
 
         private string GetFilePath(string id)
         {

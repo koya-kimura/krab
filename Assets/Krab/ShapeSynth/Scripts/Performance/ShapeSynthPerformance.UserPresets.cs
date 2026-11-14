@@ -15,7 +15,8 @@ namespace Krab.ShapeSynth.Performance
         private string _selectedUserPresetId;
         private int _userPresetRevision;
         private int _userSeed = 1234;
-        public PresetRepository UserPresetRepository => _presetRepository ?? (_presetRepository = new PresetRepository());
+
+        public PresetRepository UserPresetRepository => _presetRepository ??= new PresetRepository();
 
         public void RefreshUserPresets()
         {
@@ -25,7 +26,10 @@ namespace Krab.ShapeSynth.Performance
                 _userPresetStatus = $"{_userPresets.Count} user presets. " + string.Join("; ", errors);
                 _userPresetRevision++;
             }
-            catch (Exception exception) { _userPresetStatus = exception.Message; }
+            catch (Exception exception)
+            {
+                _userPresetStatus = exception.Message;
+            }
         }
 
         public VoiceInstance TriggerUserPreset(string id)
@@ -40,7 +44,11 @@ namespace Krab.ShapeSynth.Performance
                 _userPresetStatus = "Triggered " + document.Name;
                 return LastVoice;
             }
-            catch (Exception exception) { _userPresetStatus = "User preset rejected: " + exception.Message; return null; }
+            catch (Exception exception)
+            {
+                _userPresetStatus = "User preset rejected: " + exception.Message;
+                return null;
+            }
         }
 
         private Element BuildUserPresets()
@@ -49,17 +57,23 @@ namespace Krab.ShapeSynth.Performance
             return UI.Fold("User Presets", UI.Column(
                 UI.Button("Refresh User Presets", RefreshUserPresets),
                 UI.Field("User seed", () => _userSeed, value => _userSeed = value),
-                UI.DynamicElementOnStatusChanged(() => _userPresetRevision, _ =>
-                {
-                    var rows = new List<Element>();
-                    foreach (var document in _userPresets)
-                        rows.Add(UI.Row(
-                            UI.Button(UI.Label(() => (_selectedUserPresetId == document.Id ? "> " : "") + document.Name), () => _selectedUserPresetId = document.Id),
-                            UI.Button("Trigger", () => TriggerUserPreset(document.Id))));
-                    return UI.Column(rows);
-                }),
+                UI.DynamicElementOnStatusChanged(() => _userPresetRevision, _ => BuildUserPresetRows()),
                 UI.Button("Trigger Selected User Preset", () => TriggerUserPreset(_selectedUserPresetId)),
                 UI.Label(() => _userPresetStatus)));
+        }
+
+        private Element BuildUserPresetRows()
+        {
+            var rows = new List<Element>();
+            foreach (var document in _userPresets)
+            {
+                var label = UI.Label(() => (_selectedUserPresetId == document.Id ? "> " : "") + document.Name);
+                rows.Add(UI.Row(
+                    UI.Button(label, () => _selectedUserPresetId = document.Id),
+                    UI.Button("Trigger", () => TriggerUserPreset(document.Id))));
+            }
+
+            return UI.Column(rows);
         }
     }
 }

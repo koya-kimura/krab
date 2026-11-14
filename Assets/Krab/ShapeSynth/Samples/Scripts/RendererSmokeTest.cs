@@ -18,17 +18,16 @@ namespace Krab.ShapeSynth.Samples
         [SerializeField] private bool _invertTargetY = true;
         private TargetCameraCanvas _canvas;
         private HierarchyEvaluator _evaluator;
-        public IReadOnlyList<DrawItem> LastItems { get; private set; }
-        public int SubmittedFrameCount { get; private set; }
 
         private void Start()
         {
             if (!_outputCamera)
             {
-                Debug.LogError("Renderer smoke test requires its output Camera.", this);
+                Debug.LogError($"{nameof(RendererSmokeTest)} requires its output {nameof(Camera)}.", this);
                 enabled = false;
                 return;
             }
+
             _canvas = GetComponent<TargetCameraCanvas>();
             _canvas.Initialize(_outputCamera);
             _evaluator = new HierarchyEvaluator(BuildDefinition(), Array.Empty<IModulator>());
@@ -42,6 +41,10 @@ namespace Krab.ShapeSynth.Samples
             UniteShapeAdapter.Draw(_canvas, LastItems, width, height, _invertTargetY);
             SubmittedFrameCount++;
         }
+
+        public IReadOnlyList<DrawItem> LastItems { get; private set; }
+
+        public int SubmittedFrameCount { get; private set; }
 
         private static GroupDefinition BuildDefinition()
         {
@@ -64,11 +67,24 @@ namespace Krab.ShapeSynth.Samples
                 ShapeDefinition.Polygon(triangle, At(0.12, -0.41, Size(0.045), Size(0.045)), C(0.65), pink));
         }
 
-        private static ParameterDefinition C(double value) => ParameterDefinition.Constant(value);
-        private static ParameterDefinition Size(double value) =>
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.MinDimension), value);
-        private static TransformDefinition At(double x, double y, ParameterDefinition sx = null, ParameterDefinition sy = null) =>
-            new TransformDefinition(new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth), x),
-                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight), y), scaleX: sx, scaleY: sy);
+        private static ParameterDefinition C(double value)
+        {
+            return ParameterDefinition.Constant(value);
+        }
+
+        private static ParameterDefinition Size(double value)
+        {
+            return new ParameterDefinition(new ReferenceDefinition(ReferenceSource.MinDimension), value);
+        }
+
+        private static TransformDefinition At(
+            double x, double y, ParameterDefinition sx = null, ParameterDefinition sy = null)
+        {
+            return new TransformDefinition(
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth), x),
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight), y),
+                scaleX: sx,
+                scaleY: sy);
+        }
     }
 }
