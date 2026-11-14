@@ -75,6 +75,35 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
+        public void ParameterBindsAtMostOneValue()
+        {
+            var document = PresetDocument.CreateNew();
+            var opacity = document.RootGroup.Children[0].Opacity;
+            var adsrId = document.Modulators.Single().Id;
+            var lfo = new ModulatorSettings { Id = "lfo", Name = "LFO", Kind = ModulatorKind.Lfo, CyclesPerBeat = 1 };
+            document.Modulators.Add(lfo);
+
+            var binding = opacity.Bind(lfo.Id, 0.5);
+
+            Assert.That(opacity.Bindings, Has.Count.EqualTo(1));
+            Assert.That(opacity.GetBinding(), Is.SameAs(binding));
+            Assert.That(binding.ModulatorId, Is.EqualTo(lfo.Id));
+            Assert.That(binding.Depth, Is.EqualTo(0.5));
+            Assert.DoesNotThrow(document.Validate);
+
+            opacity.Bindings.Add(new PresetBinding { ModulatorId = adsrId, Depth = 1 });
+
+            var exception = Assert.Throws<ArgumentException>(document.Validate);
+            Assert.That(exception.Message, Does.Contain("at most one Value"));
+
+            opacity.Unbind();
+
+            Assert.That(opacity.GetBinding(), Is.Null);
+            Assert.DoesNotThrow(document.Validate);
+            Assert.Throws<ArgumentNullException>(() => opacity.Bind(null, 1));
+        }
+
+        [Test]
         public void ModulatorCannotBeDeletedWhileReferenced()
         {
             var document = PresetDocument.CreateNew();

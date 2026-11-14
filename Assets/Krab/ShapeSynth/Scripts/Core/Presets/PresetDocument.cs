@@ -258,7 +258,31 @@ namespace Krab.ShapeSynth.Core.Presets
     {
         public ReferenceSource Reference;
         public double Multiplier = 1, AbsoluteValue = 1, Base;
+
+        // Kept as a list for the JSON schema; a Document allows at most one Binding per Parameter.
         public List<PresetBinding> Bindings = new();
+
+        /// <summary>The bound Value, or null when the Parameter only uses Base.</summary>
+        public PresetBinding GetBinding()
+        {
+            return Bindings.Count == 0 ? null : Bindings[0];
+        }
+
+        /// <summary>Binds one Value, replacing any previous Binding.</summary>
+        public PresetBinding Bind(string modulatorId, double depth)
+        {
+            if (modulatorId == null) throw new ArgumentNullException(nameof(modulatorId));
+
+            var binding = new PresetBinding { ModulatorId = modulatorId, Depth = depth };
+            Bindings.Clear();
+            Bindings.Add(binding);
+            return binding;
+        }
+
+        public void Unbind()
+        {
+            Bindings.Clear();
+        }
     }
 
     [Serializable]

@@ -228,7 +228,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     UI.Row(fields).SetFlexWrap(true),
                     T.Text(description, 10, T.Muted).Styled(style => style.whiteSpace = WhiteSpace.Normal),
                     T.Text(
-                        () => BindingCount(model) > 0 ? "In use: remove its Bindings in the Visual Inspector before removing." : "",
+                        () => BindingCount(model) > 0 ? "In use: Unbind it from every Parameter in the Visual Inspector before removing." : "",
                         10,
                         T.Warning).Styled(style =>
                     {

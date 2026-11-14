@@ -13,8 +13,8 @@ Phase 8の作業ツリーを引き継いで追加した。Phase 8、Phase 9と�
 1. **New** は新しいPreset ID、Root Group、Default ADSR、OpacityにADSRをBindingしたCircleを作る。**Preset Name** で表示名を編集する。
 2. **Hierarchy** を開いてNodeを選ぶ。Groupを選び **+ Group / + Circle / + Rectangle / + Polygon** で子を追加する。子Groupを選べば入れ子になる。**Delete Selected** で子孫ごと削除する。Rootは削除できず、Shape選択中の子追加はエラーになる。兄弟は追加順に描画する。
 3. **Inspector** は選択Nodeを編集する。Node Name、Position X/Y、Rotation（度）、Scale X/Yを持つ。CircleはDiameter、RectangleはWidth/Height、Shape共通でOpacity、Color、Fill、Stroke、Stroke Width、Stroke Colorを持つ。Polygonはローカル座標半径100pxの三角形で開始し、Scale/Rotationで調整する。頂点の高度な編集は対象外。
-4. 各ParameterのFoldを開き、Reference / Base / Reference multiplier / Absolute valueを設定する。式は `Reference × (Base + Σ Depth × Signal)`。既定サイズはMinDimension比率、PositionはAbsolute（px）。Scale/Opacityは無次元。
-5. **+ ADSR / + LFO** で独立した信号源を追加する。Modulatorsを開き名前・ADSRの拍数とSustain level、LFOのWaveform/Cycles per beat/Phase offsetを編集する。Parameterの **+ Binding** で接続を追加し、Modulatorを選んでDepthを編集する。**Remove Binding** で解除する。参照中Modulatorの **Delete Modulator** は拒否する。先にすべてのBindingを外す。
+4. 各ParameterのFoldを開き、Reference / Base / Reference multiplier / Absolute valueを設定する。式は `Reference × (Base + Depth × Value)`。既定サイズはMinDimension比率、PositionはAbsolute（px）。Scale/Opacityは無次元。
+5. **+ ADSR / + LFO** で独立した信号源を追加する。Modulatorsを開き名前・ADSRの拍数とSustain level、LFOのWaveform/Cycles per beat/Phase offsetを編集する。1 Parameterに接続できるModulator（Value）は1つだけ。Parameterの **Bind** でValueを選んでDepthを編集し、**Unbind** で解除する（詳細は `PresetEditorWorkspace.md`）。参照中Modulatorの削除は拒否する。先にすべてのParameterからUnbindする。
 6. **Preview / Restart Preview** は新しくCompileする。**Static Preview** がONなら全信号を1に固定し、Voiceの寿命に影響されず配置を表示する。実際のアニメーションの途中時刻ではない。OFFならADSR/LFOを実行し、自然終了する。BPMとSeedを指定できる。**Auto update Preview** がONなら編集後に再CompileしてPreviewを置き換える。以前のPreview Voiceを停止し、重なり続けない。**Stop** で消す。
 7. **Save Preset** は構造と参照が正しいDocumentを保存する。ADSRがなく実行不能な下書きも保存できる。Preview/TriggerはADSR Lifetime不足を明示して拒否する。**Refresh / Open → Saved Presets → Open <name>** で読込。読込失敗時は現在のDocumentを維持する。New/OpenにはUndoや未保存確認はないため、必要な編集を先に保存する。
 
@@ -27,8 +27,8 @@ Phase 8の作業ツリーを引き継いで追加した。Phase 8、Phase 9と�
 - `CreateNew()` / `NewId()`、`Validate()`、`AddNode(parentId, kind)`、`DeleteNode(id)`、`DeleteModulator(id)`、`Nodes()`。
 - SchemaVersion=1、安定したId、変更可能なName、既存の `ModulatorSettings` 一覧、必須RootGroupを持つ。
 - `PresetNode` は明示的なKind（Group/Circle/Rectangle/Polygon）、Id、Name、順序付きChildren、Transform/Geometry/Opacityの `PresetParameter`、Color/Style、Polygon頂点を持つ。
-- `PresetParameter` はReference/Multiplier/AbsoluteValue/Baseと `PresetBinding(ModulatorId, Depth)` の一覧。編集モデルはPrefsGUIへ変換しない。
-- IDは先頭英数字、以降英数字・underscore・hyphen、1〜80文字。重複Node ID・重複Modulator ID、未知のBinding参照、null、非有限値、無効なenum/ADSR/LFO/Stroke設定を拒否する。IDと兄弟Indexは別概念。最大64階層・2000 Node、Modulator/Polygon頂点も上限2000。Root以外のShapeに子は持てない。
+- `PresetParameter` はReference/Multiplier/AbsoluteValue/Baseと `PresetBinding(ModulatorId, Depth)`。BindingはList形式で保存するが、1 Parameterにつき最大1件。編集モデルはPrefsGUIへ変換しない。
+- IDは先頭英数字、以降英数字・underscore・hyphen、1〜80文字。重複Node ID・重複Modulator ID、未知のBinding参照、1 Parameterに2件以上のBinding、null、非有限値、無効なenum/ADSR/LFO/Stroke設定を拒否する。IDと兄弟Indexは別概念。最大64階層・2000 Node、Modulator/Polygon頂点も上限2000。Root以外のShapeに子は持てない。
 
 ### PresetCompiler（Core）
 

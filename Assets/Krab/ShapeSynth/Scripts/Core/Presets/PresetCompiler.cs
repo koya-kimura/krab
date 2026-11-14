@@ -81,6 +81,8 @@ namespace Krab.ShapeSynth.Core.Presets
             {
                 if (parameter == null || parameter.Bindings == null)
                     throw new ArgumentException("Null Parameter or Bindings.");
+                if (parameter.Bindings.Count > 1)
+                    throw new ArgumentException("A Parameter can bind at most one Value.");
 
                 new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue);
                 VoiceTime.RequireFinite(parameter.Base, "Parameter Base");

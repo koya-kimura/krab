@@ -22,7 +22,6 @@ namespace Krab.ShapeSynth.PresetEditor
     public sealed partial class ShapeSynthPresetEditor : MonoBehaviour, IUiTarget
     {
         private readonly Dictionary<string, int> _childrenRevisions = new();
-        private readonly Dictionary<PresetParameter, int> _bindingRevisions = new();
         private readonly HashSet<string> _expandedGroups = new();
 
         private ShapeSynthController _controller;
@@ -264,11 +263,8 @@ namespace Krab.ShapeSynth.PresetEditor
             _selectedId = Document.RootGroup.Children.FirstOrDefault()?.Id ?? Document.RootGroup.Id;
             _selectedModulatorId = Document.Modulators.FirstOrDefault()?.Id;
             _childrenRevisions.Clear();
-            _bindingRevisions.Clear();
             _expandedGroups.Clear();
             _editingParameter = null;
-            _pendingSignals.Clear();
-            _pendingDepths.Clear();
             _expandedGroups.Add(Document.RootGroup.Id);
             _documentRevision++;
             _pendingAction = null;
@@ -278,17 +274,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private int ChildRevision(string id)
         {
             return _childrenRevisions.TryGetValue(id, out var revision) ? revision : 0;
-        }
-
-        private int BindingRevision(PresetParameter parameter)
-        {
-            return _bindingRevisions.TryGetValue(parameter, out var revision) ? revision : 0;
-        }
-
-        private void BindingStructureChanged(PresetParameter parameter)
-        {
-            _bindingRevisions[parameter] = BindingRevision(parameter) + 1;
-            Changed();
         }
     }
 }

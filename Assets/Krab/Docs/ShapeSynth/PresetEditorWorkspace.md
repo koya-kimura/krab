@@ -10,7 +10,7 @@
 - 左上: Hierarchy。Nodeをクリックして選択、矢印でGroupを開閉する。種類とネストを表示し、選択行を青で強調する。追加先Groupを選び、種類Dropdownと+ Add Childを押す。Shape選択中の追加とRoot削除は無効。Delete Nodeで選択した子孫も削除する。右クリックメニューのSelect/Add Group/Add Circle/Deleteもコード上で用意している。
 - 左下: Modulator一覧。+ ADSR / + LFOで追加し、行を選んで右側Inspectorで詳細を編集する。Visual階層には入れない。使用中Modulatorの削除は無効で、Binding解除の理由を表示する。
 - 右: 選択NodeまたはModulatorだけを表示する。NodeはTransform / Geometry / Styleを分離し、Position X/YとScale X/Yは同じ行。Colorは色付きスウォッチで確認する。
-- Parameterの横のBindボタンからPARAMETER BINDINGへ移動する。Parameterを選びRef / Base、Signal / Depth、接続を編集する。ReferenceのMultiplier/Absoluteは追加Foldへ収納。式は従来の `Reference × (Base + Σ Depth × Signal)`。
+- Parameterの横のBindボタンで行内のBinding詳細を開く。1 Parameterに接続できるValueは1つだけ（下記「追補: 1 Parameter = 1 Value」）。式は `Reference × (Base + Depth × Value)`。
 - 中央: 既存CameraのRenderTextureをUI.Imageで直接表示する。Fitは表示領域に収め、Wheelはカーソル位置を基準にZoom、中央ボタンドラッグはPan。ZoomはFitに対する倍率。画像の生成・所有は既存出力側のまま。
 - Staticは全Modulator信号を1に固定する配置確認。Animatedは既存Voiceの寿命に従って自然終了する。Staticの意味はStatusにも表示する。Preview / Restartは新しくCompileして古いPreview Voiceを置き換える。Stopで消す。
 
@@ -98,6 +98,8 @@ DynamicElementの監視は次のように限定する。
 
 ## 追補: ADSR Bindingの操作
 
+> 旧手順。現在の操作は「追補: 1 Parameter = 1 Value」を参照。
+
 PreviewのWheel/Middle dragの案内文字列を削除した。Zoom/Panの機能は維持する。
 
 ADSRをOpacityへ接続する基本手順:
@@ -121,14 +123,14 @@ DiameterはDepthがReferenceに対する割合になる。例: Ref=MinDimension�
 - 上部Header: `ShapeSynth / Preset Editor`、Visual / Valuesタブ、Preset名、未保存印、UI倍率、New / Open / Save。未保存確認とOpen BrowserはHeader直下の帯に表示する。
 - Visualタブ: 左Hierarchy（アイコン付きツリー、選択行ハイライト、`+ Group` / `+ Shape`、Shape種類、Delete）、中央Preview（Preview / Stop、モード、Beatスライダー、Fit、下部にAuto / BPM / Seed / 解像度・Zoom）、右Inspector。
 - 追加先: Group選択中はその子、Shape選択中は同じ親Groupへ兄弟として追加する（モックと同じ）。Drag & Drop、右クリックメニュー、Rootの削除不可は従来どおり。
-- Inspector: パラメータごとに「名前・現在の出力値 / Base・Reference・Bindボタン」。Bindボタンは接続中なら緑で先頭Value名を表示し、押すと行内にBinding詳細（Value、Depth、Remove、Add Value、+ Bind、Bind ADSR from 0、New ADSR、Multiplier / Absolute）を開く。出力値は `Reference × (Base + Σ Depth × Signal)` をStatic=1またはBeat時点の信号で計算する。
+- Inspector: パラメータごとに「名前・現在の出力値 / Base・Reference・Bindボタン」。Bindボタンは接続中なら緑でValue名を表示し、押すと行内にBinding詳細を開く（現在の構成は「追補: 1 Parameter = 1 Value」）。出力値は `Reference × (Base + Depth × Value)` をStatic=1またはBeat時点の信号で計算する。
 - Valuesタブ: 左Value Library（既存Modulator一覧、Value名編集、`+ ADSR` / `+ LFO`）、右上Outputグラフ（0–6 beat、選択Valueを強調、他を薄く表示、Beat位置の縦線）、右下Signal Components（ADSR 5項目 / LFO 3項目、使用数、未使用時のみRemove）。
 - Previewモード: `Static · signals = 1`（従来のStatic）、`Beat Scrub`（新規）、`Animated`（従来）。Beatスライダーを動かすとStaticはBeat Scrubへ切り替わる。Beat Scrubは各信号をCoreの `AdsrInstance` / `LfoInstance` で指定beatの値に固定し、スクラブ中はCompileせず値だけ更新する。
 
 ### モックとの差分（意図的）
 
-- モックの「Value＝複数Signal（ADSR+LFO、Weight付き）の合成」は保存Schemaの変更が必要なため実装していない。既存どおり1 Value = 1 Modulatorとし、合成はParameter側の複数Bindingで行う。合成Valueが必要なら別途仕様合意のうえCore / Schemaを拡張する。
-- Bindは1 Parameterに複数Bindingを持てる既存仕様を維持し、ボタンには先頭のValue名と追加数（`+N`）を表示する。
+- モックの「Value＝複数Signal（ADSR+LFO、Weight付き）の合成」は保存Schemaの変更が必要なため実装していない。既存どおり1 Value = 1 Modulatorとする。Parameter側の複数Bindingによる合成も廃止した（1 Parameter = 1 Value）。合成Valueが必要なら別途仕様合意のうえCore / Schemaを拡張する。
+- Bindは1 Parameterに1 Valueまで（2026-11-14に変更）。ボタンには接続中のValue名を表示する。
 - フォントに `⌁` / `◯` が無いため、Value・Binding表示は `●`、Circleは `○` を使う。
 
 ### 構成
@@ -166,3 +168,17 @@ DiameterはDepthがReferenceに対する割合になる。例: Ref=MinDimension�
 - モード: `Static · signals = 1`（従来どおり静止。Previewを押すとBeatへ切り替えて再生）、`Beat · BPM clock`（信号をCoreのADSR/LFOで現在拍の値に固定し、Compileせずに毎フレーム更新）、`Animated · Voice`（実Voiceを生成。Voiceが自然終了したら再トリガーしてループ）。
 - 再生中にスライダーを動かすと、その拍から再生を続ける（シーク）。Stopで時間が止まる。BeatではStop時の拍の絵を残してスクラブでき、AnimatedではVoiceを消す。編集による自動Compileでは再生位置を保つ（AnimatedはVoiceを作り直すので0拍に戻る）。
 - 確認: 120 BPMで約2拍/秒、60 BPMで約1拍/秒の進行、2.30拍でのループ、Stopで拍が止まること、AnimatedのVoice数が常に1で再トリガーされることを確認した。Console Error 0、EditMode 205成功。スクリーンショット: `Reports/PresetEditorUI/p1-playing.png`、`p2-stopped.png`、`p3-60bpm.png`。
+
+## 追補: 1 Parameter = 1 Value
+
+2026-11-14。Value Libraryの値変化（Modulator）は、1 Parameterに1つまでしか接続しない仕様にした。複数Valueの足し合わせは廃止。
+
+- Core: `PresetParameter.Bindings` はJSON Schema互換のためListのまま残す。`GetBinding()` / `Bind(id, depth)`（既存を置き換え）/ `Unbind()` を追加した。`Validate` は2件以上のBindingを `A Parameter can bind at most one Value.` で拒否するので、該当するJSONは保存も読み込みもできない（既存の保存Presetに該当なしを確認済み）。Runtime側の `ParameterDefinition` は変更していない。
+- Binding詳細（Parameter行のBindボタンで開閉）:
+  - **VALUE**: Dropdownで `None · stays at Base` または Value を選ぶと即座に接続・差し替え・解除する。差し替え時はDepthを保つ。未接続から接続した場合のDepthは既定値（Opacity 1、Position 100、Rotation 90、他はBase、Base=0なら1）。`+ ADSR` / `+ LFO` は新しいValueを作ってそのまま接続する。
+  - **Depth / Output range**: 接続中だけ表示する。Output rangeはValueの振れ幅（ADSR 0→1、LFO −1→+1）を当てたときの出力値で、Reference込みの実際の値を示す。
+  - **Start from 0 (Base = 0)**: Baseを0にする。OpacityのフェードインなどADSRで0から動かしたいときに使う（旧 `Bind ADSR from 0`）。Baseが0のときは無効。
+  - **Unbind** / **Done**、Reference用のRef. multiplier / Absolute value、現在の式（未接続 `Reference × Base`、接続中 `Reference × (Base + Depth × Value)`）。
+  - 旧UIの「接続済み一覧 + Add Value + New Depth + + Bind」の2段構成と、未適用の保留状態を廃止した。
+- Value LibraryのRemove不可時の案内は「すべてのParameterからUnbindする」に変更した。
+- 検証: コンパイル成功、EditMode 206成功（`ParameterBindsAtMostOneValue` を追加）。Play中にPosition Xで未接続表示、Default ADSRの接続（同じValueの再選択でもBinding 1件、Depth 100、Output range 0→100）を確認。スクリーンショット: `Reports/BindingUI/unbound.png`、`bound.png`。Dropdown・ボタンの実クリックは自動送信していない。
