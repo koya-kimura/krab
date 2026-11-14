@@ -18,11 +18,13 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private Element BuildInspectorPane()
         {
-            return UI.ScrollViewVertical(
-                520,
-                UI.DynamicElementOnStatusChanged(
-                    () => (_documentRevision, _selectedId, _modulatorsRevision, _modulatorNamesRevision),
-                    _ => BuildInspector()));
+            return UI.Column(
+                PaneTitle("Inspector"),
+                UI.ScrollViewVertical(
+                    520,
+                    UI.DynamicElementOnStatusChanged(
+                        () => (_documentRevision, _selectedId, _modulatorsRevision, _modulatorNamesRevision),
+                        _ => BuildInspector())));
         }
 
         private Element BuildInspector()
@@ -104,8 +106,11 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element ParameterFold(string name, PresetParameter parameter)
         {
             var models = Document.Modulators.ToArray();
+            var header = UI.Label(() => ParameterHeader(name, parameter));
+            header.RegisterUpdateCallback(element =>
+                element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
             return UI.Fold(
-                UI.Label(() => ParameterHeader(name, parameter)),
+                header,
                 NumberField("Base", () => parameter.Base, value => parameter.Base = value),
                 Choice("Reference", () => (int)parameter.Reference, value =>
                 {

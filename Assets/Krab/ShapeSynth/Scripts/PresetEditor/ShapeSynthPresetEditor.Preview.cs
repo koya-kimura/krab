@@ -85,6 +85,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BuildPreviewPane()
         {
             return UI.Column(
+                PaneTitle("Preview"),
                 UI.Image(() => _controller && _controller.OutputCamera ? _controller.OutputCamera.targetTexture : null)
                     .SetHeight(300),
                 UI.Row(

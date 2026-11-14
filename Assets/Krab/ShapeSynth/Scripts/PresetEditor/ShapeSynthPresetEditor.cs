@@ -44,6 +44,13 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private void Update()
         {
+            // Document is not serialized, so a script reload during Play leaves it empty.
+            if (Document == null)
+            {
+                NewDocument();
+                _error = "Script reload cleared the open preset.";
+            }
+
             if (_openOnUpdate)
             {
                 _openOnUpdate = false;

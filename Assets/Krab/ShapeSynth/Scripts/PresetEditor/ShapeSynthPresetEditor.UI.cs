@@ -30,7 +30,7 @@ namespace Krab.ShapeSynth.PresetEditor
             _workspace ??= UI.Window(
                 UI.Label(() => "Preset Editor" + (_dirty ? " *" : "")),
                 BuildFileBar(),
-                UI.DynamicElementIf(() => _error != null, () => UI.Label(() => _error)),
+                UI.DynamicElementIf(() => _error != null, () => UI.Label(() => _error).SetColor(PresetEditorPalette.Error)),
                 UI.Tabs(
                     ("Visual", UI.Row(
                         BuildHierarchyPane().SetWidth(260),
@@ -82,6 +82,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 {
                     if (_openIndex < presets.Count) OpenDocument(presets[_openIndex].Id);
                 }).SetInteractable(presets.Count > 0));
+        }
+
+        private static Element PaneTitle(string title)
+        {
+            return UI.Label(title).SetColor(PresetEditorPalette.Title);
         }
 
         private void RefreshSavedPresets()

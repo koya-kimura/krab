@@ -3,6 +3,7 @@ using System.Linq;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 using RosettaUI.UIToolkit.Builder;
+using UnityEngine;
 
 namespace Krab.ShapeSynth.PresetEditor
 {
@@ -17,6 +18,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BuildHierarchyPane()
         {
             return UI.Column(
+                PaneTitle("Hierarchy"),
                 UI.ScrollViewVertical(
                     320,
                     UI.DynamicElementOnStatusChanged(() => _documentRevision, _ => NodeRow(Document.RootGroup, 0))),
@@ -34,19 +36,22 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element NodeRow(PresetNode node, int depth)
         {
             var isGroup = node.Kind == PresetNodeKind.Group;
-            var title = UI.Button(
-                UI.Label(() => (node.Id == _selectedId ? "> " : "") + node.Name),
-                () => SelectNode(node.Id));
+            var title = UI.Button(UI.Label(() => Icon(node.Kind) + "  " + node.Name), () => SelectNode(node.Id));
             _hierarchyDrag ??= new PresetHierarchyDrag(id => id != Document.RootGroup.Id, CanDropNode, DropNode);
-            title.RegisterUpdateCallback(_ => _hierarchyDrag.Track(UIToolkitBuilder.Instance.GetUIObj(title), node.Id));
+            title.RegisterUpdateCallback(element =>
+            {
+                _hierarchyDrag.Track(UIToolkitBuilder.Instance.GetUIObj(element), node.Id);
+                element.Style.BackgroundColor = RowColor(node.Id);
+                element.Style.Color = node.Id == _hierarchyDrag.DraggingId ? PresetEditorPalette.DragSource : null;
+            });
 
             Element expander = isGroup
-                ? UI.Button(UI.Label(() => _expandedGroups.Contains(node.Id) ? "-" : "+"), () =>
+                ? UI.Button(UI.Label(() => _expandedGroups.Contains(node.Id) ? "▼" : "►"), () =>
                 {
                     if (!_expandedGroups.Remove(node.Id)) _expandedGroups.Add(node.Id);
                 }).SetWidth(24)
                 : UI.Space().SetWidth(24);
-            var row = UI.Row(UI.Space().SetWidth(depth * 14), expander, title);
+            var row = UI.Row(UI.Space().SetWidth(depth * 14), expander, title.SetFlexGrow(1));
             if (!isGroup) return row;
 
             return UI.Column(
@@ -56,6 +61,32 @@ namespace Krab.ShapeSynth.PresetEditor
                     () => UI.DynamicElementOnStatusChanged(
                         () => ChildRevision(node.Id),
                         _ => UI.Column(node.Children.Select(child => NodeRow(child, depth + 1))))));
+        }
+
+        /// <summary>While dragging, colors where the Node can go; otherwise marks the selection.</summary>
+        private Color? RowColor(string id)
+        {
+            var dragging = _hierarchyDrag.DraggingId;
+            if (dragging == null) return id == _selectedId ? PresetEditorPalette.Selected : null;
+            if (id == _hierarchyDrag.TargetId) return PresetEditorPalette.DropTarget;
+
+            return CanDropAnywhere(dragging, id) ? PresetEditorPalette.DropCandidate : null;
+        }
+
+        private bool CanDropAnywhere(string source, string target)
+        {
+            return CanDropNode(source, target, PresetDropPosition.Inside)
+                   || CanDropNode(source, target, PresetDropPosition.Before)
+                   || CanDropNode(source, target, PresetDropPosition.After);
+        }
+
+        private static string Icon(PresetNodeKind kind)
+        {
+            // Only glyphs present in RosettaUI's default font.
+            if (kind == PresetNodeKind.Circle) return "○";
+            if (kind == PresetNodeKind.Rectangle) return "◻";
+
+            return kind == PresetNodeKind.Polygon ? "▲" : "■";
         }
 
         private bool DropDestination(

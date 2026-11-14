@@ -45,6 +45,12 @@ namespace Krab.ShapeSynth.PresetEditor
             _drop = drop ?? throw new ArgumentNullException(nameof(drop));
         }
 
+        /// <summary>The Node being dragged, or null when no drag is in progress.</summary>
+        public string DraggingId => _dragging ? _sourceId : null;
+
+        /// <summary>The Node that would receive the current drop, or null.</summary>
+        public string TargetId => _dragging ? _targetId : null;
+
         /// <summary>Registers a row view once; the registration ends when the view leaves its panel.</summary>
         public void Track(VisualElement view, string id)
         {

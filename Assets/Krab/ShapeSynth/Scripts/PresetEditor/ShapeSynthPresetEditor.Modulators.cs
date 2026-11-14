@@ -19,6 +19,7 @@ namespace Krab.ShapeSynth.PresetEditor
             _signalGraph = new PresetSignalGraph(() => Document.Modulators, () => _selectedModulatorId, () => _beat);
             return UI.Row(
                 UI.Column(
+                    PaneTitle("Values"),
                     UI.ScrollViewVertical(
                         400,
                         UI.DynamicElementOnStatusChanged(
@@ -29,6 +30,7 @@ namespace Krab.ShapeSynth.PresetEditor
                         UI.Button("+ LFO", () => AddModulator(ModulatorKind.Lfo)))
                 ).SetWidth(220),
                 UI.Column(
+                    PaneTitle("Output"),
                     _signalGraph.CreateElement(),
                     UI.DynamicElementOnStatusChanged(
                         () => (_documentRevision, _selectedModulatorId, _modulatorsRevision),
@@ -38,10 +40,17 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private Element ModulatorRow(ModulatorSettings model)
         {
-            var kind = model.Kind == ModulatorKind.Adsr ? "ADSR" : "LFO";
-            return UI.Button(
-                UI.Label(() => (model.Id == _selectedModulatorId ? "> " : "") + model.Name + "  (" + kind + ")"),
+            var adsr = model.Kind == ModulatorKind.Adsr;
+            var row = UI.Button(
+                UI.Label(() => (adsr ? "● " : "◆ ") + model.Name),
                 () => SelectModulator(model.Id));
+            row.RegisterUpdateCallback(element =>
+            {
+                var selected = model.Id == _selectedModulatorId;
+                element.Style.BackgroundColor = selected ? PresetEditorPalette.Selected : null;
+                element.Style.Color = selected ? null : adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
+            });
+            return row;
         }
 
         private Element BuildModulatorFields(ModulatorSettings model)

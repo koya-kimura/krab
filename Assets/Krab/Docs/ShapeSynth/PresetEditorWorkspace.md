@@ -8,14 +8,16 @@
 
 - 上部: Preset名、New、Save、保存済みPresetのDropdownとOpen。未保存の確認はない（タイトルの `*` が未保存を示す）。
 - Visualタブ
-  - Hierarchy: Nodeをボタンで選択（選択中は `> ` 付き）。`+` / `-` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
+  - Hierarchy: Nodeをボタンで選択する（選択中は青）。種類は記号で示す（■ Group、○ Circle、◻ Rectangle、▲ Polygon）。`▼` / `►` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ドラッグ中はドロップできる行を暗い緑、今ドロップする行を明るい緑、ドラッグ中のNodeを灰色で示す。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
   - Preview: 出力RTを枠に収まるように表示する（Zoomなし）。`Play` / `Stop`、Beatスライダー、BPM、Seed。ModeはBeat（BPMクロック）だけ。各Valueを現在のBeatで評価して静止Hierarchyを描画し、Playでは最長ADSRの寿命（上限6拍）でループする。編集は0.3秒後に自動でCompileする。
-  - Inspector: Name、Transform / Shape / StyleのFold。各ParameterはFoldで、見出しに現在の出力値と接続中のValue名を出す。中身はBase、Reference、Value（`None` または1つのValue）、Depth（接続中のみ）、Ref. Multiplier、Absolute Value。
-- Valuesタブ: Value一覧（選択中は `> `）、`+ ADSR` / `+ LFO`、出力グラフ（0–6 beat、選択中を白、Beat位置の縦線）、選択ValueのName / ADSR 5項目 / LFO 3項目、Remove（どのParameterにも接続されていないときだけ有効）。
+  - Inspector: Name、Transform / Shape / StyleのFold。各ParameterはFoldで、見出しに現在の出力値と接続中のValue名を出す。Valueが接続されているParameterの見出しは緑。中身はBase、Reference、Value（`None` または1つのValue）、Depth（接続中のみ）、Ref. Multiplier、Absolute Value。
+- Valuesタブ: Value一覧（選択中は青、ADSRは青の ●、LFOは橙の ◆。グラフと同じ色）、`+ ADSR` / `+ LFO`、出力グラフ（0–6 beat、選択中を白、Beat位置の縦線）、選択ValueのName / ADSR 5項目 / LFO 3項目、Remove（どのParameterにも接続されていないときだけ有効）。
 - Visual側でValueを新規作成する機能、Static / Animatedモード、Preview Zoom、UI倍率、右クリックメニュー、未保存確認、Open一覧ブラウザ、ステータスバーは削除した。
+- 各ペインの先頭に Hierarchy / Preview / Inspector / Values / Output の見出しだけを置く。状態を示す色は `PresetEditorPalette` にまとめ、RosettaUIの `Style.Color` / `Style.BackgroundColor` だけで付ける。記号はRosettaUI既定フォントにあるもの（○ ◻ ▲ ■ ● ◆ ▼ ►）に限る。
+- Play中にスクリプトが再読み込みされるとDocumentは消える（シリアライズしないため）。そのときは新規Documentに置き換えてエラー欄に表示する。保存していない編集は失われる。
 - `Samples/Settings/WorkspacePanelSettings.asset` はScale With Screen Size（1600×900、Match 0.5）。このSceneだけが使う。
 - RosettaUIのDropdownメニューはUnity 6000.3で削除された内部APIに依存するため、`Choice` で `createMenuCallback` を外してUnity標準のメニューを使う互換処理だけ残した。
-- 検証: コンパイル成功、EditMode 206成功。Play中にVisual（停止・再生中）、Values、ParameterのFoldを展開した状態をスクリーンショットで確認し、Console Errorは0件だった（`Reports/PlainUI/`）。Drag & Drop、Dropdown、ボタンを実際にクリックする操作は自動では送っていない。
+- 検証: コンパイル成功、EditMode 206成功。Play中にVisual（停止・再生中）、Values、ParameterのFoldを展開した状態をスクリーンショットで確認し、Console Errorは0件だった（`Reports/PlainUI/`）。色分けは選択状態とドラッグ状態（内部状態を直接設定）を `color-select.png` / `color-drag.png` / `color-values.png` で確認した。Drag & Drop、Dropdown、ボタンを実際にクリックする操作は自動では送っていない。
 
 以下はこれ以前のUIの記録。
 

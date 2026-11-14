@@ -61,8 +61,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private static readonly Color Background = new(0.07f, 0.08f, 0.1f);
         private static readonly Color Grid = new(1, 1, 1, 0.06f);
         private static readonly Color Zero = new(1, 1, 1, 0.2f);
-        private static readonly Color Adsr = new(0.35f, 0.75f, 0.95f);
-        private static readonly Color Lfo = new(0.95f, 0.65f, 0.3f);
         private static readonly Color Selected = new(0.95f, 0.95f, 0.95f);
         private static readonly Color Cursor = new(1, 1, 1, 0.35f);
 
@@ -158,7 +156,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     continue;
                 }
 
-                var color = model.Kind == ModulatorKind.Adsr ? Adsr : Lfo;
+                var color = model.Kind == ModulatorKind.Adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
                 Curve(painter, model, rect, new Color(color.r, color.g, color.b, 0.45f), 1.5f);
             }
 
