@@ -8,13 +8,13 @@ namespace Krab.Common.Midi
     {
         private void Start()
         {
-            var devices = InputSystem.devices;
-            foreach (var device in devices)
-                if (device is MidiDevice midi)
-                {
-                    Debug.Log(device.name);
-                    midi.onWillNoteOn += null;
-                }
+            foreach (var device in InputSystem.devices)
+            {
+                if (device is not MidiDevice midi) continue;
+
+                Debug.Log(device.name, this);
+                midi.onWillNoteOn += null;
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using Krab.Common.Midi.Core;
 using UnityEngine;
 
@@ -16,20 +17,20 @@ namespace Krab.Common.Midi.Actions
 
         public ToggleMidiAction(string actionId, Param<bool> param, MidiActionStateRepository repository)
         {
-            _param = param ?? throw new System.ArgumentNullException(nameof(param));
+            _param = param ?? throw new ArgumentNullException(nameof(param));
             _actionId = actionId;
             _repository = repository;
 
-            if (_repository != null)
-            {
-                _param.SetValue(_repository.LoadBool(_actionId, _param.Value));
-                _param.Changed += OnValueChanged;
-            }
+            if (_repository == null) return;
+
+            _param.SetValue(_repository.LoadBool(_actionId, _param.Value));
+            _param.Changed += OnValueChanged;
         }
 
         public bool IsActive => _param.Value;
         public MidiActionKind Kind => MidiActionKind.Toggle;
         public string DisplayName => "Toggle";
+        public IMidiActionRuntime Runtime => null;
 
         public void Execute(MidiMessage message)
         {
@@ -38,16 +39,19 @@ namespace Krab.Common.Midi.Actions
             _param.SetValue(!_param.Value);
         }
 
-        public Color ResolveLedColor(Color configuredColor) =>
-            _param.Value ? configuredColor : MidiLedColor.Dim(configuredColor);
-
-        public IMidiActionRuntime Runtime => null;
+        public Color ResolveLedColor(Color configuredColor)
+        {
+            return _param.Value ? configuredColor : MidiLedColor.Dim(configuredColor);
+        }
 
         public void Dispose()
         {
             if (_repository != null) _param.Changed -= OnValueChanged;
         }
 
-        private void OnValueChanged(bool value) => _repository.SaveBool(_actionId, value);
+        private void OnValueChanged(bool value)
+        {
+            _repository.SaveBool(_actionId, value);
+        }
     }
 }

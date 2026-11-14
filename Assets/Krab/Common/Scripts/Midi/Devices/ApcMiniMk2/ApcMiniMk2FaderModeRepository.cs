@@ -13,19 +13,33 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
             var value = prefs.Get();
             if (value == (int)FaderModeAssignment.Mute || value == (int)FaderModeAssignment.Random)
                 return (FaderModeAssignment)value;
+
             prefs.Set((int)FaderModeAssignment.Mute);
             return FaderModeAssignment.Mute;
         }
 
-        public bool LoadActive(int index) => GetEntry(index).Active.Get();
-        public void SaveAssignment(int index, FaderModeAssignment value) => GetEntry(index).Assignment.Set((int)value);
-        public void SaveActive(int index, bool value) => GetEntry(index).Active.Set(value);
+        public bool LoadActive(int index)
+        {
+            return GetEntry(index).Active.Get();
+        }
+
+        public void SaveAssignment(int index, FaderModeAssignment value)
+        {
+            GetEntry(index).Assignment.Set((int)value);
+        }
+
+        public void SaveActive(int index, bool value)
+        {
+            GetEntry(index).Active.Set(value);
+        }
 
         private Entry GetEntry(int index)
         {
             ApcMiniMk2.ValidateChannelFaderIndex(index);
-            if (!_entries.TryGetValue(index, out var entry))
-                _entries.Add(index, entry = new Entry(index));
+            if (_entries.TryGetValue(index, out var entry)) return entry;
+
+            entry = new Entry(index);
+            _entries.Add(index, entry);
             return entry;
         }
 

@@ -27,18 +27,19 @@ namespace Krab.Common.Midi.Output
         /// <summary>Raised on the Unity main thread after an output port connects or disconnects.</summary>
         public event Action<bool> ConnectionChanged;
 
-        private void OnEnable()
-        {
-            StartWorkerIfStopped();
-        }
-
         private void Update()
         {
             StartWorkerIfStopped();
+
             if (_lastPublishedConnection == _connected) return;
 
             _lastPublishedConnection = _connected;
             ConnectionChanged?.Invoke(_connected);
+        }
+
+        private void OnEnable()
+        {
+            StartWorkerIfStopped();
         }
 
         private void OnDisable()
@@ -46,22 +47,14 @@ namespace Krab.Common.Midi.Output
             _workerState?.Stop();
             // A native driver may block; never stall the Unity main thread indefinitely.
             _worker?.Join(100);
-            while (_queue.TryDequeue(out _)) { }
+            while (_queue.TryDequeue(out _))
+            {
+            }
         }
 
         private void OnDestroy()
         {
             _workerState?.Stop();
-        }
-
-        private void StartWorkerIfStopped()
-        {
-            if (_worker != null && _worker.IsAlive) return;
-
-            var state = new WorkerState();
-            _workerState = state;
-            _worker = new Thread(() => WorkerLoop(state)) { IsBackground = true, Name = "Krab MIDI Output" };
-            _worker.Start();
         }
 
         public void SendNoteOn(int noteNumber, int velocity, int channel = 0)
@@ -102,16 +95,6 @@ namespace Krab.Common.Midi.Output
             SendRaw(message);
         }
 
-        private static void ValidateDataByte(int value, string name)
-        {
-            if (value is < 0 or > 127) throw new ArgumentOutOfRangeException(name);
-        }
-
-        private static void ValidateChannel(int channel)
-        {
-            if (channel is < 0 or > 15) throw new ArgumentOutOfRangeException(nameof(channel));
-        }
-
         public void SendRaw(ReadOnlySpan<byte> message)
         {
             var state = _workerState;
@@ -120,7 +103,28 @@ namespace Krab.Common.Midi.Output
             _queue.Enqueue(message.ToArray());
             // When the driver is slow, recent LED state wins over stale frames.
             while (_queue.Count > 512) _queue.TryDequeue(out _);
+
             state.Wake();
+        }
+
+        private void StartWorkerIfStopped()
+        {
+            if (_worker != null && _worker.IsAlive) return;
+
+            var state = new WorkerState();
+            _workerState = state;
+            _worker = new Thread(() => WorkerLoop(state)) { IsBackground = true, Name = "Krab MIDI Output" };
+            _worker.Start();
+        }
+
+        private static void ValidateDataByte(int value, string name)
+        {
+            if (value is < 0 or > 127) throw new ArgumentOutOfRangeException(name);
+        }
+
+        private static void ValidateChannel(int channel)
+        {
+            if (channel is < 0 or > 15) throw new ArgumentOutOfRangeException(nameof(channel));
         }
 
         private void WorkerLoop(WorkerState state)
@@ -172,7 +176,10 @@ namespace Krab.Common.Midi.Output
                         _portName = null;
                         port.Dispose();
                         port = null;
-                        while (_queue.TryDequeue(out _)) { }
+                        while (_queue.TryDequeue(out _))
+                        {
+                        }
+
                         break;
                     }
 
@@ -185,35 +192,6 @@ namespace Krab.Common.Midi.Output
                 _portName = null;
                 port?.Dispose();
                 state.Dispose();
-            }
-        }
-
-        private sealed class WorkerState : IDisposable
-        {
-            private readonly AutoResetEvent _wake = new(false);
-            private readonly object _sync = new();
-            private volatile bool _stopped;
-            private bool _disposed;
-
-            public bool IsStopped => _stopped;
-            public void Wake()
-            {
-                lock (_sync) if (!_disposed) _wake.Set();
-            }
-            public void Stop()
-            {
-                _stopped = true;
-                Wake();
-            }
-            public void Wait(int milliseconds) => _wake.WaitOne(milliseconds);
-            public void Dispose()
-            {
-                lock (_sync)
-                {
-                    if (_disposed) return;
-                    _disposed = true;
-                    _wake.Dispose();
-                }
             }
         }
 
@@ -256,6 +234,45 @@ namespace Krab.Common.Midi.Output
             {
                 port.Dispose();
                 throw;
+            }
+        }
+
+        private sealed class WorkerState : IDisposable
+        {
+            private readonly AutoResetEvent _wake = new(false);
+            private readonly object _sync = new();
+            private volatile bool _stopped;
+            private bool _disposed;
+
+            public bool IsStopped => _stopped;
+
+            public void Wake()
+            {
+                lock (_sync)
+                {
+                    if (!_disposed) _wake.Set();
+                }
+            }
+
+            public void Stop()
+            {
+                _stopped = true;
+                Wake();
+            }
+
+            public void Wait(int milliseconds)
+            {
+                _wake.WaitOne(milliseconds);
+            }
+
+            public void Dispose()
+            {
+                lock (_sync)
+                {
+                    if (_disposed) return;
+                    _disposed = true;
+                    _wake.Dispose();
+                }
             }
         }
     }

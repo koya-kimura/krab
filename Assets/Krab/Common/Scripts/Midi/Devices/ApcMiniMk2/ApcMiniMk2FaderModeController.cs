@@ -12,11 +12,15 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         private readonly ApcMiniMk2FaderModeRepository _repository;
         private long _beatIndex;
 
-        public ApcMiniMk2FaderModeController() : this(new ApcMiniMk2FaderModeRepository()) { }
+        public ApcMiniMk2FaderModeController()
+            : this(new ApcMiniMk2FaderModeRepository())
+        {
+        }
 
         public ApcMiniMk2FaderModeController(ApcMiniMk2FaderModeRepository repository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+
             for (var i = 0; i < ApcMiniMk2.ChannelFaderCount; i++)
             {
                 _assignments[i] = _repository.LoadAssignment(i);
@@ -37,6 +41,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         {
             ApcMiniMk2.ValidateFaderIndex(index);
             if (index == ApcMiniMk2.MasterFaderIndex || !_active[index]) return _rawValues[index];
+
             return _assignments[index] == FaderModeAssignment.Mute ? 0f : GetRandomValue(index);
         }
 
@@ -63,7 +68,9 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
             ApcMiniMk2.ValidateChannelFaderIndex(index);
             if (assignment != FaderModeAssignment.Mute && assignment != FaderModeAssignment.Random)
                 throw new ArgumentOutOfRangeException(nameof(assignment));
+
             if (_assignments[index] == assignment) return;
+
             var previous = GetValue(index);
             _assignments[index] = assignment;
             _repository.SaveAssignment(index, assignment);
@@ -84,7 +91,9 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         public void SetBeat(long beatIndex)
         {
             if (_beatIndex == beatIndex) return;
+
             for (var i = 0; i < _previousValues.Length; i++) _previousValues[i] = GetValue(i);
+
             _beatIndex = beatIndex;
             for (var i = 0; i < _previousValues.Length; i++) PublishIfChanged(i, _previousValues[i]);
         }

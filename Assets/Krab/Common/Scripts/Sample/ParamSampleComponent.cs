@@ -20,6 +20,15 @@ namespace Krab.Common.Sample
     [UiTarget("Samples/MIDI", "Parameters", 300)]
     public class ParamSampleComponent : MonoBehaviour, IUiTarget
     {
+        private const string ToggleId = "Sample.Page0.Enabled";
+        private const string FloatId = "Sample.Fader0";
+        private const string OneShotId = "Sample.Action.OneShot";
+        private const string MomentaryId = "Sample.Action.Momentary";
+        private const string StateId = "Sample.Action.State";
+        private const string RadioId = "Sample.Action.Radio";
+        private const string SequenceId = "Sample.Action.Sequence";
+        private const string AngleId = "Sample.Action.Angle";
+
         private static readonly Color SequenceInactiveColor = new(0.16f, 0.16f, 0.16f);
         private static readonly Color SequenceActiveColor = new(0.1f, 0.72f, 0.72f);
         private static readonly Color SequenceCurrentColor = new(1f, 0.78f, 0.08f);
@@ -39,15 +48,6 @@ namespace Krab.Common.Sample
             new("feedback", "Feedback")
         });
         private static readonly PrefsInt SequenceStepCount = new("Sample.Sequence.StepCount", 8);
-        private const string ToggleId = "Sample.Page0.Enabled";
-        private const string FloatId = "Sample.Fader0";
-        private const string OneShotId = "Sample.Action.OneShot";
-        private const string MomentaryId = "Sample.Action.Momentary";
-        private const string StateId = "Sample.Action.State";
-        private const string RadioId = "Sample.Action.Radio";
-        private const string SequenceId = "Sample.Action.Sequence";
-        private const string AngleId = "Sample.Action.Angle";
-
         private MidiBindingManager _bindings;
         private IMidiBindingUi _midiUi;
         private RadioMidiAction _radio;
@@ -56,12 +56,26 @@ namespace Krab.Common.Sample
         private int _radioListRevision;
         private int _sequenceRevision;
 
+        private void OnDestroy()
+        {
+            if (!_registered) return;
+
+            _bindings.UnregisterAction(ToggleId);
+            _bindings.UnregisterAction(FloatId);
+            _bindings.UnregisterAction(OneShotId);
+            _bindings.UnregisterAction(MomentaryId);
+            _bindings.UnregisterAction(StateId);
+            _bindings.UnregisterAction(RadioId);
+            _bindings.UnregisterAction(SequenceId);
+            _bindings.UnregisterAction(AngleId);
+            _registered = false;
+        }
+
         [Inject]
         public void Construct(IMidiBindingProvider midi, IMidiBindingUi midiUi)
         {
             _midiUi = midiUi;
-            if (_registered)
-                return;
+            if (_registered) return;
 
             _bindings = midi.Bindings;
             _bindings.RegisterToggle(ToggleId, ToggleValue);
@@ -119,23 +133,8 @@ namespace Krab.Common.Sample
                 _midiUi.CreateButton(AngleId, "Rotation normalized float")));
 
             elements.Add(CreateSequenceFold());
+
             return UI.ScrollViewVertical(600f, elements);
-        }
-
-        private void OnDestroy()
-        {
-            if (!_registered)
-                return;
-
-            _bindings.UnregisterAction(ToggleId);
-            _bindings.UnregisterAction(FloatId);
-            _bindings.UnregisterAction(OneShotId);
-            _bindings.UnregisterAction(MomentaryId);
-            _bindings.UnregisterAction(StateId);
-            _bindings.UnregisterAction(RadioId);
-            _bindings.UnregisterAction(SequenceId);
-            _bindings.UnregisterAction(AngleId);
-            _registered = false;
         }
 
         private Element CreateRadioFold()
@@ -166,6 +165,7 @@ namespace Krab.Common.Sample
                     UI.Button("−", () => RemoveRadioItem(itemId))
                         .RegisterUpdateCallback(element => element.Interactable = RadioItems.Count > 1)));
             }
+
             rows.Add(UI.Button("+ Add source", AddRadioItem));
             return UI.Column(rows);
         }
@@ -200,6 +200,7 @@ namespace Krab.Common.Sample
                     _midiUi.CreateButton(_sequence.GetBindingId(stepIndex), $"Sequence step {stepIndex + 1}"))
                     .SetMinWidth(78f);
             }
+
             return UI.ScrollViewHorizontal(760f, UI.Row(steps));
         }
 
@@ -217,6 +218,7 @@ namespace Krab.Common.Sample
                 element.Style.BackgroundColor = color;
                 element.Style.Color = isCurrent ? Color.black : Color.white;
             });
+
             return button;
         }
 
@@ -224,6 +226,7 @@ namespace Krab.Common.Sample
         {
             var clamped = Mathf.Clamp(stepCount, 1, 16);
             if (clamped == _sequence.StepCount) return;
+
             _bindings.SetSequenceStepCount(SequenceId, clamped);
             SequenceStepCount.Set(clamped);
             _sequenceRevision++;
@@ -238,8 +241,10 @@ namespace Krab.Common.Sample
         private void RemoveRadioItem(string itemId)
         {
             if (RadioItems.Count <= 1) return;
+
             var index = FindRadioItemIndex(itemId);
             if (index < 0) return;
+
             RadioItems.RemoveAt(index);
             ReconcileRadioItems();
         }
@@ -253,7 +258,10 @@ namespace Krab.Common.Sample
         private static int FindRadioItemIndex(string itemId)
         {
             for (var i = 0; i < RadioItems.Count; i++)
+            {
                 if (RadioItems[i].Id == itemId) return i;
+            }
+
             return -1;
         }
 
@@ -267,6 +275,7 @@ namespace Krab.Common.Sample
         {
             var index = FindRadioItemIndex(itemId);
             if (index < 0) return;
+
             var item = RadioItems[index];
             item.Name = string.IsNullOrWhiteSpace(value) ? $"Source {index + 1}" : value;
             RadioItems[index] = item;
@@ -282,18 +291,21 @@ namespace Krab.Common.Sample
         {
             var ids = new string[RadioItems.Count];
             for (var i = 0; i < ids.Length; i++) ids[i] = RadioItems[i].Id;
+
             return ids;
         }
 
         private static void NormalizeRadioItems()
         {
             if (RadioItems.Count == 0) RadioItems.Add(new RadioListItem(Guid.NewGuid().ToString("N"), "Source 1"));
+
             var ids = new HashSet<string>();
             for (var i = 0; i < RadioItems.Count; i++)
             {
                 var item = RadioItems[i];
                 if (string.IsNullOrWhiteSpace(item.Id) || !ids.Add(item.Id))
                     item.Id = Guid.NewGuid().ToString("N");
+
                 if (string.IsNullOrWhiteSpace(item.Name)) item.Name = $"Source {i + 1}";
                 RadioItems[i] = item;
             }
@@ -305,7 +317,10 @@ namespace Krab.Common.Sample
             public string Id;
             public string Name;
 
-            public RadioListItem() : this(Guid.NewGuid().ToString("N"), "Source") { }
+            public RadioListItem()
+                : this(Guid.NewGuid().ToString("N"), "Source")
+            {
+            }
 
             public RadioListItem(string id, string name)
             {
@@ -313,6 +328,5 @@ namespace Krab.Common.Sample
                 Name = name;
             }
         }
-
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Krab.Common.Midi.Actions;
 using Krab.Common.Midi.Core;
 using UnityEngine;
@@ -10,17 +11,18 @@ namespace Krab.Common.Midi.Bindings
     {
         private readonly Dictionary<string, MidiBinding> _bindings = new();
         private readonly Dictionary<string, ActionRegistration> _actions = new();
-        private readonly HashSet<IMidiActionRuntime> _runtimes = new(ReferenceEqualityComparer<IMidiActionRuntime>.Instance);
-        private readonly HashSet<ITransientMidiAction> _transientActions = new(ReferenceEqualityComparer<ITransientMidiAction>.Instance);
+        private readonly HashSet<IMidiActionRuntime> _runtimes =
+            new(ReferenceEqualityComparer<IMidiActionRuntime>.Instance);
+        private readonly HashSet<ITransientMidiAction> _transientActions =
+            new(ReferenceEqualityComparer<ITransientMidiAction>.Instance);
         private readonly MidiBindingRepository _repository;
         private readonly MidiActionStateRepository _stateRepository;
         private string _learningParamId;
 
-        public event Action<string, MidiControl?> BindingChanged;
-        public IEnumerable<MidiBinding> Bindings => _bindings.Values;
-        public string LearningParamId => _learningParamId;
-
-        public MidiBindingManager() : this(new MidiBindingRepository(), new MidiActionStateRepository()) { }
+        public MidiBindingManager()
+            : this(new MidiBindingRepository(), new MidiActionStateRepository())
+        {
+        }
 
         public MidiBindingManager(MidiBindingRepository repository, MidiActionStateRepository stateRepository = null)
         {
@@ -28,10 +30,15 @@ namespace Krab.Common.Midi.Bindings
             _stateRepository = stateRepository ?? new MidiActionStateRepository();
         }
 
+        public event Action<string, MidiControl?> BindingChanged;
+        public IEnumerable<MidiBinding> Bindings => _bindings.Values;
+        public string LearningParamId => _learningParamId;
+
         public void Register(string paramId, IMidiAction action)
         {
             ValidateActionId(paramId);
             if (action == null) throw new ArgumentNullException(nameof(action));
+
             EnsureActionIdAvailable(paramId);
             try
             {
@@ -95,6 +102,7 @@ namespace Krab.Common.Midi.Bindings
         {
             ValidateActionId(actionId);
             EnsureActionIdAvailable(actionId);
+
             var action = new RadioMidiAction(actionId, selectedIndex, optionKeys, _stateRepository);
             var bindingIds = new string[optionKeys.Count];
             var registeredCount = 0;
@@ -107,6 +115,7 @@ namespace Krab.Common.Midi.Bindings
                     RegisterBinding(bindingId, action.CreateOption(optionKeys[i]));
                     registeredCount++;
                 }
+
                 _actions.Add(actionId, new ActionRegistration(action, bindingIds));
                 RebuildRuntimeSets();
                 return action;
@@ -124,6 +133,7 @@ namespace Krab.Common.Midi.Bindings
             if (!_actions.TryGetValue(actionId, out var registration) ||
                 registration.Owner is not RadioMidiAction radio)
                 throw new InvalidOperationException($"Radio action is not registered: {actionId}");
+
             if (optionKeys == null || optionKeys.Count < 1)
                 throw new ArgumentException("A radio group requires at least one option.", nameof(optionKeys));
 
@@ -140,12 +150,16 @@ namespace Krab.Common.Midi.Bindings
             }
 
             foreach (var oldBindingId in registration.BindingIds)
+            {
                 if (Array.IndexOf(newBindingIds, oldBindingId) < 0) RemoveBinding(oldBindingId);
+            }
 
             radio.SetOptionKeys(optionKeys);
             for (var i = 0; i < optionKeys.Count; i++)
+            {
                 if (!_bindings.ContainsKey(newBindingIds[i]))
                     RegisterBinding(newBindingIds[i], radio.CreateOption(optionKeys[i]));
+            }
 
             registration.BindingIds = newBindingIds;
             RebuildRuntimeSets();
@@ -156,6 +170,7 @@ namespace Krab.Common.Midi.Bindings
         {
             ValidateActionId(actionId);
             EnsureActionIdAvailable(actionId);
+
             var action = new SequenceMidiAction(actionId, stepCount, palette ?? SequenceLedPalette.Default,
                 _stateRepository);
             var bindingIds = new string[stepCount];
@@ -169,6 +184,7 @@ namespace Krab.Common.Midi.Bindings
                     RegisterBinding(bindingId, action.CreateStep(i));
                     registeredCount++;
                 }
+
                 _actions.Add(actionId, new ActionRegistration(action, bindingIds));
                 RebuildRuntimeSets();
                 return action;
@@ -187,6 +203,7 @@ namespace Krab.Common.Midi.Bindings
             if (!_actions.TryGetValue(actionId, out var registration) ||
                 registration.Owner is not SequenceMidiAction sequence)
                 throw new InvalidOperationException($"Sequence action is not registered: {actionId}");
+
             if (sequence.StepCount == stepCount) return;
 
             var newBindingIds = new string[stepCount];
@@ -199,12 +216,16 @@ namespace Krab.Common.Midi.Bindings
             }
 
             foreach (var oldBindingId in registration.BindingIds)
+            {
                 if (Array.IndexOf(newBindingIds, oldBindingId) < 0) RemoveBinding(oldBindingId);
+            }
 
             sequence.SetStepCount(stepCount);
             for (var i = 0; i < stepCount; i++)
+            {
                 if (!_bindings.ContainsKey(newBindingIds[i]))
                     RegisterBinding(newBindingIds[i], sequence.CreateStep(i));
+            }
 
             registration.BindingIds = newBindingIds;
             RebuildRuntimeSets();
@@ -215,11 +236,15 @@ namespace Krab.Common.Midi.Bindings
             if (_bindings.ContainsKey(paramId)) _learningParamId = paramId;
         }
 
-        public void CancelLearn() => _learningParamId = null;
+        public void CancelLearn()
+        {
+            _learningParamId = null;
+        }
 
         public void Bind(string paramId, MidiControl control)
         {
             if (!_bindings.TryGetValue(paramId, out var binding)) return;
+
             foreach (var other in _bindings.Values)
             {
                 if (other.ParamId == paramId || other.Control != control) continue;
@@ -227,6 +252,7 @@ namespace Krab.Common.Midi.Bindings
                 _repository.Save(other.ParamId, null);
                 BindingChanged?.Invoke(other.ParamId, null);
             }
+
             binding.Control = control;
             _repository.Save(paramId, control);
             BindingChanged?.Invoke(paramId, control);
@@ -235,6 +261,7 @@ namespace Krab.Common.Midi.Bindings
         public void Unbind(string paramId)
         {
             if (!_bindings.TryGetValue(paramId, out var binding)) return;
+
             binding.Control = null;
             _repository.Save(paramId, null);
             BindingChanged?.Invoke(paramId, null);
@@ -249,33 +276,41 @@ namespace Krab.Common.Midi.Bindings
                 actionId = pair.Key;
                 break;
             }
+
             if (actionId != null) UnregisterAction(actionId);
         }
 
         public void UnregisterAction(string actionId)
         {
             if (!_actions.Remove(actionId, out var registration)) return;
+
             foreach (var bindingId in registration.BindingIds) RemoveBinding(bindingId);
             registration.Owner.Dispose();
             RebuildRuntimeSets();
         }
 
-        public MidiControl? GetControl(string paramId) =>
-            _bindings.TryGetValue(paramId, out var binding) ? binding.Control : null;
+        public MidiControl? GetControl(string paramId)
+        {
+            return _bindings.TryGetValue(paramId, out var binding) ? binding.Control : null;
+        }
 
-        public MidiBinding GetBinding(string paramId) =>
-            !string.IsNullOrEmpty(paramId) && _bindings.TryGetValue(paramId, out var binding) ? binding : null;
+        public MidiBinding GetBinding(string paramId)
+        {
+            return !string.IsNullOrEmpty(paramId) && _bindings.TryGetValue(paramId, out var binding) ? binding : null;
+        }
 
         public void Receive(MidiMessage message)
         {
             if (_learningParamId != null)
             {
                 if (!message.IsPressed && message.Control.Type != MidiMessageType.ControlChange) return;
+
                 var paramId = _learningParamId;
                 CancelLearn();
                 Bind(paramId, message.Control);
                 return;
             }
+
             foreach (var binding in _bindings.Values)
             {
                 if (binding.Control != message.Control) continue;
@@ -299,13 +334,18 @@ namespace Krab.Common.Midi.Bindings
         {
             var actionIds = new List<string>(_actions.Keys);
             foreach (var actionId in actionIds) UnregisterAction(actionId);
+
             BindingChanged = null;
         }
 
         private void RegisterBinding(string bindingId, IMidiAction action)
         {
-            if (string.IsNullOrWhiteSpace(bindingId)) throw new ArgumentException("A binding id is required.", nameof(bindingId));
-            if (_bindings.ContainsKey(bindingId)) throw new InvalidOperationException($"Already registered: {bindingId}");
+            if (string.IsNullOrWhiteSpace(bindingId))
+                throw new ArgumentException("A binding id is required.", nameof(bindingId));
+
+            if (_bindings.ContainsKey(bindingId))
+                throw new InvalidOperationException($"Already registered: {bindingId}");
+
             var loadedControl = _repository.Load(bindingId);
             if (loadedControl.HasValue)
             {
@@ -317,6 +357,7 @@ namespace Krab.Common.Midi.Bindings
                     break;
                 }
             }
+
             _bindings.Add(bindingId, new MidiBinding(bindingId, action,
                 _repository.GetLedColor(bindingId, Color.cyan)) { Control = loadedControl });
         }
@@ -324,6 +365,7 @@ namespace Krab.Common.Midi.Bindings
         private void RemoveBinding(string bindingId)
         {
             if (!_bindings.Remove(bindingId)) return;
+
             if (_learningParamId == bindingId) CancelLearn();
             BindingChanged?.Invoke(bindingId, null);
         }
@@ -358,6 +400,7 @@ namespace Krab.Common.Midi.Bindings
                 Owner = owner;
                 BindingIds = bindingIds;
             }
+
             public IDisposable Owner { get; }
             public string[] BindingIds { get; set; }
         }
@@ -365,8 +408,16 @@ namespace Krab.Common.Midi.Bindings
         private sealed class ReferenceEqualityComparer<T> : IEqualityComparer<T> where T : class
         {
             public static readonly ReferenceEqualityComparer<T> Instance = new();
-            public bool Equals(T x, T y) => ReferenceEquals(x, y);
-            public int GetHashCode(T obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+
+            public bool Equals(T x, T y)
+            {
+                return ReferenceEquals(x, y);
+            }
+
+            public int GetHashCode(T obj)
+            {
+                return RuntimeHelpers.GetHashCode(obj);
+            }
         }
     }
 }

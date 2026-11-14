@@ -22,7 +22,10 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         public const int FaderCount = 9;
         public const int MasterFaderIndex = 8;
 
-        public static int GetPadNote(int x, int y) => PadFirst + y * GridSize + x;
+        public static int GetPadNote(int x, int y)
+        {
+            return PadFirst + y * GridSize + x;
+        }
 
         /// <summary>
         /// Creates the logical key used by bindings. Page, x and y are all zero based;

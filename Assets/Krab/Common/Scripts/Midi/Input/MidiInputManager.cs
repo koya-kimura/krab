@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
-using Krab.Common.Midi.Core;
 using Krab.Common.Midi.Bindings;
+using Krab.Common.Midi.Core;
 using Krab.Common.Midi.Devices.ApcMiniMk2;
 using Krab.Common.Midi.Output;
 using Krab.Common.Timing;
 using Minis;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnitySimpleContainer;
 
 namespace Krab.Common.Midi.Input
 {
@@ -32,27 +33,21 @@ namespace Krab.Common.Midi.Input
         private bool _refreshAllLeds = true;
         private float _nextLedFlushTime;
 
-        public MidiBindingManager Bindings => _bindings ??= new MidiBindingManager();
-        public ApcMiniMk2FaderModeController FaderModes => _faderModes ??= new ApcMiniMk2FaderModeController();
-        public ApcMiniMk2InputAdapter Adapter => _adapter ??= new ApcMiniMk2InputAdapter(Bindings, FaderModes);
-        public Color GetPadColor(int note) => note >= ApcMiniMk2.PadFirst && note <= ApcMiniMk2.PadLast
-            ? _desiredPadColors[note - ApcMiniMk2.PadFirst]
-            : Color.black;
-        public bool GetTrackLed(int index) => index >= 0 && index < _desiredTrackLeds.Length && _desiredTrackLeds[index];
-        public Color GetShiftColor() => _desiredShiftColor;
-
-        [UnitySimpleContainer.Inject]
-        public void Construct(IBPMManager bpm)
-        {
-            _bpm = bpm;
-        }
-
         private void Awake()
         {
             _output = GetComponent<MidiOutput>();
             _ledOutput = new ApcMiniMk2OutputAdapter(_output);
             Bindings.BindingChanged += OnBindingChanged;
             Adapter.PageChanged += OnPageChanged;
+        }
+
+        private void Update()
+        {
+            var beatIndex = _bpm == null ? 0L : (long)Math.Floor(_bpm.Beat);
+            Bindings.UpdateActions(Time.frameCount, beatIndex);
+            FaderModes.SetBeat(beatIndex);
+            UpdateDesiredLeds();
+            FlushLeds();
         }
 
         private void OnEnable()
@@ -71,6 +66,7 @@ namespace Krab.Common.Midi.Input
             _output.ConnectionChanged -= OnConnectionChanged;
             InputSystem.onDeviceChange -= OnDeviceChange;
             foreach (var midi in _subscribedDevices) UnsubscribeCallbacks(midi);
+
             _subscribedDevices.Clear();
             _bindings?.ReleaseTransientActions();
         }
@@ -79,17 +75,36 @@ namespace Krab.Common.Midi.Input
         {
             if (_bindings != null) _bindings.BindingChanged -= OnBindingChanged;
             if (_adapter != null) _adapter.PageChanged -= OnPageChanged;
+
             _adapter?.Dispose();
             _bindings?.Dispose();
         }
 
-        private void Update()
+        public MidiBindingManager Bindings => _bindings ??= new MidiBindingManager();
+        public ApcMiniMk2FaderModeController FaderModes => _faderModes ??= new ApcMiniMk2FaderModeController();
+        public ApcMiniMk2InputAdapter Adapter => _adapter ??= new ApcMiniMk2InputAdapter(Bindings, FaderModes);
+
+        [Inject]
+        public void Construct(IBPMManager bpm)
         {
-            var beatIndex = _bpm == null ? 0L : (long)Math.Floor(_bpm.Beat);
-            Bindings.UpdateActions(Time.frameCount, beatIndex);
-            FaderModes.SetBeat(beatIndex);
-            UpdateDesiredLeds();
-            FlushLeds();
+            _bpm = bpm;
+        }
+
+        public Color GetPadColor(int note)
+        {
+            return note >= ApcMiniMk2.PadFirst && note <= ApcMiniMk2.PadLast
+                ? _desiredPadColors[note - ApcMiniMk2.PadFirst]
+                : Color.black;
+        }
+
+        public bool GetTrackLed(int index)
+        {
+            return index >= 0 && index < _desiredTrackLeds.Length && _desiredTrackLeds[index];
+        }
+
+        public Color GetShiftColor()
+        {
+            return _desiredShiftColor;
         }
 
         private void OnConnectionChanged(bool connected)
@@ -112,6 +127,7 @@ namespace Krab.Common.Midi.Input
             for (var i = 0; i < _desiredPadColors.Length; i++) _desiredPadColors[i] = Color.black;
             for (var i = 0; i < _desiredTrackLeds.Length; i++)
                 _desiredTrackLeds[i] = FaderModes.IsAssignedModeActive(i);
+
             _desiredShiftColor = Color.black;
             foreach (var binding in Bindings.Bindings)
             {
@@ -121,17 +137,17 @@ namespace Krab.Common.Midi.Input
                     _desiredShiftColor = binding.ResolveLedColor();
                     continue;
                 }
+
                 if (control.Page != Adapter.CurrentPage) continue;
                 if (control.Number >= ApcMiniMk2.PadFirst && control.Number <= ApcMiniMk2.PadLast)
-                {
                     _desiredPadColors[control.Number - ApcMiniMk2.PadFirst] = binding.ResolveLedColor();
-                }
             }
         }
 
         private void FlushLeds()
         {
             if (!_output.IsConnected || Time.unscaledTime < _nextLedFlushTime) return;
+
             _nextLedFlushTime = Time.unscaledTime + LedFlushInterval;
 
             if (_refreshAllLeds)
@@ -145,6 +161,7 @@ namespace Krab.Common.Midi.Input
                     _ledOutput.SetButton(ApcMiniMk2.PageButtonFirst + i, i == Adapter.CurrentPage);
                     _sentTrackLeds[i] = false;
                 }
+
                 _refreshAllLeds = false;
             }
 
@@ -157,6 +174,7 @@ namespace Krab.Common.Midi.Input
                 _sentPadColors[i] = _desiredPadColors[i];
                 sent++;
             }
+
             for (var i = 0; i < _desiredTrackLeds.Length; i++)
             {
                 if (_sentTrackLeds[i] == _desiredTrackLeds[i]) continue;
@@ -188,6 +206,7 @@ namespace Krab.Common.Midi.Input
         private void Unsubscribe(MidiDevice midi)
         {
             if (!_subscribedDevices.Remove(midi)) return;
+
             UnsubscribeCallbacks(midi);
             Bindings.ReleaseTransientActions();
         }
@@ -199,9 +218,19 @@ namespace Krab.Common.Midi.Input
             midi.onWillControlChange -= OnControlChange;
         }
 
-        private void OnNoteOn(MidiNoteControl note, float velocity) => Adapter.OnNoteOn(note.noteNumber, velocity);
-        private void OnNoteOff(MidiNoteControl note) => Adapter.OnNoteOff(note.noteNumber);
-        private void OnControlChange(MidiValueControl cc, float value) =>
+        private void OnNoteOn(MidiNoteControl note, float velocity)
+        {
+            Adapter.OnNoteOn(note.noteNumber, velocity);
+        }
+
+        private void OnNoteOff(MidiNoteControl note)
+        {
+            Adapter.OnNoteOff(note.noteNumber);
+        }
+
+        private void OnControlChange(MidiValueControl cc, float value)
+        {
             Adapter.OnControlChange(cc.controlNumber, value);
+        }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Krab.Common.Midi.Bindings
 {
-    public class MidiBinding
+    public sealed class MidiBinding
     {
         public MidiBinding(string paramId, IMidiAction action, PrefsColor ledColor)
         {
@@ -18,6 +18,10 @@ namespace Krab.Common.Midi.Bindings
         public MidiControl? Control { get; set; }
         public IMidiAction Action { get; }
         public PrefsColor LedColor { get; }
-        public Color ResolveLedColor() => Action.ResolveLedColor(LedColor.Get());
+
+        public Color ResolveLedColor()
+        {
+            return Action.ResolveLedColor(LedColor.Get());
+        }
     }
 }

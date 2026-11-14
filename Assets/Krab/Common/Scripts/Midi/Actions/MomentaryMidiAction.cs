@@ -18,24 +18,25 @@ namespace Krab.Common.Midi.Actions
         public bool IsActive => _param.Value;
         public MidiActionKind Kind => MidiActionKind.Momentary;
         public string DisplayName => "Momentary (one frame)";
+        public IMidiActionRuntime Runtime => this;
 
         public void Execute(MidiMessage message)
         {
             if (!message.IsPressed) return;
+
             _pressedFrame = Time.frameCount;
             _param.SetValue(true);
         }
 
         public void Update(in MidiActionUpdateContext context)
         {
-            if (_param.Value && context.FrameCount > _pressedFrame)
-                _param.SetValue(false);
+            if (_param.Value && context.FrameCount > _pressedFrame) _param.SetValue(false);
         }
 
-        public Color ResolveLedColor(Color configuredColor) =>
-            _param.Value ? configuredColor : MidiLedColor.Dim(configuredColor);
-
-        public IMidiActionRuntime Runtime => this;
+        public Color ResolveLedColor(Color configuredColor)
+        {
+            return _param.Value ? configuredColor : MidiLedColor.Dim(configuredColor);
+        }
 
         public void ResetTransientState()
         {
@@ -43,6 +44,8 @@ namespace Krab.Common.Midi.Actions
             _param.SetValue(false);
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+        }
     }
 }

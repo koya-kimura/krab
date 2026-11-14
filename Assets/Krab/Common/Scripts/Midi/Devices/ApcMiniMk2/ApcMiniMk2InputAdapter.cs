@@ -22,8 +22,15 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         public int CurrentPage { get; private set; }
         public event Action<int> PageChanged;
 
-        public float GetFaderValue(int index) => _faderModes.GetValue(index);
-        public float GetRawFaderValue(int index) => _faderModes.GetRawValue(index);
+        public float GetFaderValue(int index)
+        {
+            return _faderModes.GetValue(index);
+        }
+
+        public float GetRawFaderValue(int index)
+        {
+            return _faderModes.GetRawValue(index);
+        }
 
         public void OnNoteOn(int note, float velocity)
         {
@@ -61,6 +68,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         public void OnControlChange(int cc, float value)
         {
             if (cc < ApcMiniMk2.FaderCcFirst || cc > ApcMiniMk2.FaderCcLast) return;
+
             var index = cc - ApcMiniMk2.FaderCcFirst;
             _faderModes.SetRawValue(index, value);
             PublishFader(index);
@@ -77,7 +85,10 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
             _pressedNotePages.Clear();
         }
 
-        private void OnEffectiveValueChanged(int index, float _) => PublishFader(index);
+        private void OnEffectiveValueChanged(int index, float _)
+        {
+            PublishFader(index);
+        }
 
         private void PublishFader(int index)
         {
@@ -101,6 +112,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         private int TakePressedPage(int note)
         {
             if (!_pressedNotePages.TryGetValue(note, out var page)) return CurrentPage;
+
             _pressedNotePages.Remove(note);
             return page;
         }
@@ -108,6 +120,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         private void SelectPage(int page)
         {
             if (page < 0 || page >= ApcMiniMk2.PageCount || page == CurrentPage) return;
+
             CurrentPage = page;
             PageChanged?.Invoke(page);
             PublishAllFaders();

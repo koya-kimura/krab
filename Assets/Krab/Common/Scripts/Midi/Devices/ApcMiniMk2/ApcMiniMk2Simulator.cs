@@ -1,3 +1,4 @@
+using System;
 using Krab.Common.Views;
 using RosettaUI;
 using RosettaUI.UIToolkit.Builder;
@@ -16,6 +17,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
     {
         private const float ButtonWidth = 43f;
         private const float ButtonHeight = 34f;
+
         private static readonly Color OffPadColor = new(0.13f, 0.13f, 0.13f);
         private static readonly Color OffTrackColor = new(0.23f, 0.09f, 0.09f);
         private static readonly Color OffPageColor = new(0.08f, 0.2f, 0.1f);
@@ -39,8 +41,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
 
         public Element CreateElement()
         {
-            if (_surface == null)
-                return UI.Label("APC mini mk2 simulator: MIDI surface unavailable");
+            if (_surface == null) return UI.Label("APC mini mk2 simulator: MIDI surface unavailable");
 
             var rows = new Element[ApcMiniMk2.GridSize + 4];
             rows[0] = UI.Label(() => $"Page {_surface.Adapter.CurrentPage} / 7");
@@ -70,6 +71,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
                 bottomButtons[i] = CreateSurfaceButton($"T{i}", ApcMiniMk2.TrackButtonFirst + i,
                     () => GetTrackColor(track), OffTrackColor);
             }
+
             bottomButtons[ApcMiniMk2.GridSize] = CreateSurfaceButton("Shift", ApcMiniMk2.ShiftButton,
                 _surface.GetShiftColor, OffPadColor);
             rows[ApcMiniMk2.GridSize + 1] = UI.Row(bottomButtons);
@@ -88,7 +90,9 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
                         .SetWidth(ButtonWidth))
                     .SetWidth(ButtonWidth);
             }
+
             rows[ApcMiniMk2.GridSize + 2] = UI.Row(faders);
+
             var settings = new Element[ApcMiniMk2.ChannelFaderCount + 2];
             settings[0] = UI.Label("Fader button assignments (saved by explicit Prefs Save)");
             for (var i = 0; i < ApcMiniMk2.ChannelFaderCount; i++)
@@ -100,19 +104,21 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
             }
             settings[settings.Length - 1] = UI.Label("Master fader: normal (fixed)");
             rows[ApcMiniMk2.GridSize + 3] = UI.Column(settings);
+
             return UI.Column(rows);
         }
 
         private Color GetTrackColor(int index)
         {
             if (!_surface.FaderModes.IsAssignedModeActive(index)) return OffTrackColor;
+
             return _surface.FaderModes.GetAssignment(index) == FaderModeAssignment.Random
                 ? RandomModeColor
                 : Color.red;
         }
 
         private ButtonElement CreateSurfaceButton(string label, int note,
-            System.Func<Color> readColor, Color fallback)
+            Func<Color> readColor, Color fallback)
         {
             var button = UI.Button(label, () =>
             {
@@ -126,8 +132,10 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
                 if (color.r + color.g + color.b < 0.03f) color = fallback;
                 element.Style.BackgroundColor = color;
                 element.Style.Color = color.r * 0.299f + color.g * 0.587f + color.b * 0.114f > 0.55f
-                    ? Color.black : Color.white;
+                    ? Color.black
+                    : Color.white;
             });
+
             return button;
         }
 
@@ -140,8 +148,15 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
             slider.highValue = 1f;
             slider.SetValueWithoutNotify(fader.ReadValue());
 
-            void OnChanged(ChangeEvent<float> change) => fader.WriteValue(change.newValue);
-            void OnUpdated(Element _) => slider.SetValueWithoutNotify(fader.ReadValue());
+            void OnChanged(ChangeEvent<float> change)
+            {
+                fader.WriteValue(change.newValue);
+            }
+
+            void OnUpdated(Element _)
+            {
+                slider.SetValueWithoutNotify(fader.ReadValue());
+            }
 
             slider.RegisterValueChangedCallback(OnChanged);
             fader.onUpdate += OnUpdated;
@@ -150,22 +165,30 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
                 slider.UnregisterValueChangedCallback(OnChanged);
                 fader.onUpdate -= OnUpdated;
             };
+
             return true;
         }
 
         private sealed class FaderElement : Element
         {
-            private readonly System.Func<float> _readValue;
-            private readonly System.Action<float> _writeValue;
+            private readonly Func<float> _readValue;
+            private readonly Action<float> _writeValue;
 
-            public FaderElement(System.Func<float> readValue, System.Action<float> writeValue)
+            public FaderElement(Func<float> readValue, Action<float> writeValue)
             {
                 _readValue = readValue;
                 _writeValue = writeValue;
             }
 
-            public float ReadValue() => _readValue();
-            public void WriteValue(float value) => _writeValue(value);
+            public float ReadValue()
+            {
+                return _readValue();
+            }
+
+            public void WriteValue(float value)
+            {
+                _writeValue(value);
+            }
         }
     }
 }

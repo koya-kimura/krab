@@ -15,38 +15,26 @@ namespace Krab.Common.Midi.Views
     public sealed class MidiBindingUi : MonoBehaviour, IMidiBindingUi
     {
         private const float WindowWidth = 430f;
+
         private readonly List<(string ParamId, WindowElement Window)> _windows = new();
         private readonly List<IDisposable> _openSubscriptions = new();
         private MidiBindingManager _bindings;
         private WindowElement _activeWindow;
 
+        private void OnDestroy()
+        {
+            if (_bindings != null) _bindings.BindingChanged -= OnBindingChanged;
+
+            foreach (var subscription in _openSubscriptions) subscription.Dispose();
+        }
+
         [Inject]
         public void Construct(IMidiBindingProvider midi)
         {
-            if (_bindings != null)
-                _bindings.BindingChanged -= OnBindingChanged;
+            if (_bindings != null) _bindings.BindingChanged -= OnBindingChanged;
+
             _bindings = midi.Bindings;
             _bindings.BindingChanged += OnBindingChanged;
-        }
-
-        private void OnDestroy()
-        {
-            if (_bindings != null)
-                _bindings.BindingChanged -= OnBindingChanged;
-            foreach (var subscription in _openSubscriptions)
-                subscription.Dispose();
-        }
-
-        private void OnBindingChanged(string paramId, MidiControl? _)
-        {
-            if (_bindings.GetBinding(paramId) != null)
-                return;
-
-            foreach (var entry in _windows)
-            {
-                if (entry.ParamId == paramId)
-                    entry.Window.IsOpen = false;
-            }
         }
 
         public Element CreateButton(string paramId, string displayName)
@@ -80,14 +68,22 @@ namespace Krab.Common.Midi.Views
             return launcher;
         }
 
+        private void OnBindingChanged(string paramId, MidiControl? _)
+        {
+            if (_bindings.GetBinding(paramId) != null) return;
+
+            foreach (var entry in _windows)
+            {
+                if (entry.ParamId == paramId) entry.Window.IsOpen = false;
+            }
+        }
+
         private Element CreateSelectedContents(string paramId)
         {
-            if (string.IsNullOrEmpty(paramId))
-                return UI.Label("Select a parameter's MIDI button.");
+            if (string.IsNullOrEmpty(paramId)) return UI.Label("Select a parameter's MIDI button.");
 
             var binding = _bindings.GetBinding(paramId);
-            if (binding == null)
-                return UI.Label("This parameter is no longer registered.");
+            if (binding == null) return UI.Label("This parameter is no longer registered.");
 
             return UI.Column(
                 UI.Label($"Action: {binding.Action.DisplayName}"),
@@ -121,8 +117,7 @@ namespace Krab.Common.Midi.Views
 
         private static string DescribeControl(MidiControl? control)
         {
-            if (!control.HasValue)
-                return "Unassigned";
+            if (!control.HasValue) return "Unassigned";
 
             var value = control.Value;
             if (value.Type == MidiMessageType.Note)

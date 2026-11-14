@@ -17,9 +17,12 @@ namespace Krab.Common.Midi.Actions
         public StateMidiAction(string actionId, Param<int> param, int stateCount,
             IReadOnlyList<Color> stateColors, MidiActionStateRepository repository)
         {
-            if (string.IsNullOrWhiteSpace(actionId)) throw new ArgumentException("An action id is required.", nameof(actionId));
+            if (string.IsNullOrWhiteSpace(actionId))
+                throw new ArgumentException("An action id is required.", nameof(actionId));
+
             _param = param ?? throw new ArgumentNullException(nameof(param));
             if (stateCount < 2) throw new ArgumentOutOfRangeException(nameof(stateCount));
+
             if (stateColors != null && stateColors.Count != stateCount)
                 throw new ArgumentException("State color count must match state count.", nameof(stateColors));
 
@@ -41,6 +44,7 @@ namespace Krab.Common.Midi.Actions
         public int State => _param.Value;
         public MidiActionKind Kind => MidiActionKind.State;
         public string DisplayName => $"State ({_stateCount} states)";
+        public IMidiActionRuntime Runtime => null;
 
         public void Execute(MidiMessage message)
         {
@@ -50,18 +54,24 @@ namespace Krab.Common.Midi.Actions
         public Color ResolveLedColor(Color configuredColor)
         {
             if (_stateColors != null) return _stateColors[_param.Value];
+
             return _param.Value == 0 ? MidiLedColor.Dim(configuredColor) : configuredColor;
         }
 
-        public IMidiActionRuntime Runtime => null;
+        public void Dispose()
+        {
+            _param.Changed -= OnValueChanged;
+        }
 
-        public void Dispose() => _param.Changed -= OnValueChanged;
-
-        private int Normalize(int value) => value >= 0 && value < _stateCount ? value : 0;
+        private int Normalize(int value)
+        {
+            return value >= 0 && value < _stateCount ? value : 0;
+        }
 
         private void OnValueChanged(int value)
         {
             if (_normalizing) return;
+
             var normalized = Normalize(value);
             if (normalized != value)
             {
@@ -69,6 +79,7 @@ namespace Krab.Common.Midi.Actions
                 _param.SetValue(normalized);
                 _normalizing = false;
             }
+
             _repository.SaveStateIndex(_actionId, normalized);
         }
     }

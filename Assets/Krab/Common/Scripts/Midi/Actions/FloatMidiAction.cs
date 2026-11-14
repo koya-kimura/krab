@@ -16,17 +16,22 @@ namespace Krab.Common.Midi.Actions
 
         public MidiActionKind Kind => MidiActionKind.Float;
         public string DisplayName => "Float";
+        public IMidiActionRuntime Runtime => null;
 
         public void Execute(MidiMessage message)
         {
-            if (message.Control.Type != MidiMessageType.ControlChange)
-                return;
+            if (message.Control.Type != MidiMessageType.ControlChange) return;
 
             _param.SetValue(Math.Clamp(message.Value, 0f, 1f));
         }
 
-        public Color ResolveLedColor(Color configuredColor) => configuredColor;
-        public IMidiActionRuntime Runtime => null;
-        public void Dispose() { }
+        public Color ResolveLedColor(Color configuredColor)
+        {
+            return configuredColor;
+        }
+
+        public void Dispose()
+        {
+        }
     }
 }

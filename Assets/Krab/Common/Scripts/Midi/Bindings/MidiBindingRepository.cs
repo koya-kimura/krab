@@ -5,20 +5,9 @@ using UnityEngine;
 
 namespace Krab.Common.Midi.Bindings
 {
-    public class MidiBindingRepository
+    public sealed class MidiBindingRepository
     {
         private readonly Dictionary<string, Entry> _entries = new();
-
-        private Entry GetEntry(string paramId)
-        {
-            if (!_entries.TryGetValue(paramId, out var entry))
-            {
-                entry = new Entry(paramId);
-                _entries.Add(paramId, entry);
-            }
-
-            return entry;
-        }
 
         public MidiControl? Load(string paramId)
         {
@@ -26,8 +15,7 @@ namespace Krab.Common.Midi.Bindings
 
             var type = entry.Type.Get();
             var number = entry.Number.Get();
-            if (type < 0 || number < 0)
-                return null;
+            if (type < 0 || number < 0) return null;
 
             return new MidiControl((MidiMessageType)type, entry.Channel.Get(), number);
         }
@@ -54,7 +42,18 @@ namespace Krab.Common.Midi.Bindings
             entry.Number.Set(control.Value.Number);
         }
 
-        private class Entry
+        private Entry GetEntry(string paramId)
+        {
+            if (!_entries.TryGetValue(paramId, out var entry))
+            {
+                entry = new Entry(paramId);
+                _entries.Add(paramId, entry);
+            }
+
+            return entry;
+        }
+
+        private sealed class Entry
         {
             public readonly PrefsInt Channel;
             public readonly PrefsInt Number;

@@ -17,6 +17,7 @@ namespace Krab.Common.Midi.Actions
         public bool IsActive => _param.Value;
         public MidiActionKind Kind => MidiActionKind.OneShot;
         public string DisplayName => "OneShot (held)";
+        public IMidiActionRuntime Runtime => null;
 
         public void Execute(MidiMessage message)
         {
@@ -24,11 +25,18 @@ namespace Krab.Common.Midi.Actions
             else if (message.IsReleased) _param.SetValue(false);
         }
 
-        public Color ResolveLedColor(Color configuredColor) =>
-            _param.Value ? configuredColor : MidiLedColor.Dim(configuredColor);
+        public Color ResolveLedColor(Color configuredColor)
+        {
+            return _param.Value ? configuredColor : MidiLedColor.Dim(configuredColor);
+        }
 
-        public IMidiActionRuntime Runtime => null;
-        public void ResetTransientState() => _param.SetValue(false);
-        public void Dispose() { }
+        public void ResetTransientState()
+        {
+            _param.SetValue(false);
+        }
+
+        public void Dispose()
+        {
+        }
     }
 }

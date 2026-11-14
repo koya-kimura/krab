@@ -22,7 +22,9 @@ namespace Krab.Common.Midi.Actions
         public RadioMidiAction(string actionId, Param<int> selectedIndex, IReadOnlyList<string> optionKeys,
             MidiActionStateRepository repository)
         {
-            if (string.IsNullOrWhiteSpace(actionId)) throw new ArgumentException("An action id is required.", nameof(actionId));
+            if (string.IsNullOrWhiteSpace(actionId))
+                throw new ArgumentException("An action id is required.", nameof(actionId));
+
             _selectedIndex = selectedIndex ?? throw new ArgumentNullException(nameof(selectedIndex));
             ValidateOptionKeys(optionKeys);
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -37,9 +39,26 @@ namespace Krab.Common.Midi.Actions
 
         public int OptionCount => _optionKeys.Count;
         public int SelectedIndex => _selectedIndex.Value;
-        public string GetBindingId(int index) => GetBindingIdForKey(_optionKeys[Validate(index)]);
-        public string GetBindingIdForKey(string optionKey) => $"{_actionId}.Option.{ValidateNonEmptyKey(optionKey)}";
-        internal IMidiAction CreateOption(string optionKey) => new RadioOptionMidiAction(this, ValidateKey(optionKey));
+
+        public string GetBindingId(int index)
+        {
+            return GetBindingIdForKey(_optionKeys[Validate(index)]);
+        }
+
+        public string GetBindingIdForKey(string optionKey)
+        {
+            return $"{_actionId}.Option.{ValidateNonEmptyKey(optionKey)}";
+        }
+
+        public void Dispose()
+        {
+            _selectedIndex.Changed -= OnValueChanged;
+        }
+
+        internal IMidiAction CreateOption(string optionKey)
+        {
+            return new RadioOptionMidiAction(this, ValidateKey(optionKey));
+        }
 
         internal void SetOptionKeys(IReadOnlyList<string> optionKeys)
         {
@@ -48,32 +67,18 @@ namespace Krab.Common.Midi.Actions
             var selectedKey = oldIndex >= 0 && oldIndex < _optionKeys.Count ? _optionKeys[oldIndex] : null;
             _optionKeys.Clear();
             _optionKeys.AddRange(optionKeys);
+
             var newIndex = selectedKey == null ? -1 : _optionKeys.IndexOf(selectedKey);
             if (newIndex < 0) newIndex = Math.Min(Math.Max(oldIndex, 0), _optionKeys.Count - 1);
+
             _selectedIndex.SetValue(newIndex);
-        }
-
-        public void Dispose() => _selectedIndex.Changed -= OnValueChanged;
-
-        private int Validate(int index)
-        {
-            if (index < 0 || index >= OptionCount) throw new ArgumentOutOfRangeException(nameof(index));
-            return index;
-        }
-
-        private int Normalize(int index) => index >= 0 && index < OptionCount ? index : 0;
-
-        private string ValidateKey(string optionKey)
-        {
-            if (string.IsNullOrWhiteSpace(optionKey) || !_optionKeys.Contains(optionKey))
-                throw new ArgumentException("The radio option key is not registered.", nameof(optionKey));
-            return optionKey;
         }
 
         private static string ValidateNonEmptyKey(string optionKey)
         {
             if (string.IsNullOrWhiteSpace(optionKey))
                 throw new ArgumentException("A radio option key is required.", nameof(optionKey));
+
             return optionKey;
         }
 
@@ -81,6 +86,7 @@ namespace Krab.Common.Midi.Actions
         {
             if (optionKeys == null || optionKeys.Count < 1)
                 throw new ArgumentException("A radio group requires at least one option.", nameof(optionKeys));
+
             var unique = new HashSet<string>();
             foreach (var key in optionKeys)
             {
@@ -92,16 +98,41 @@ namespace Krab.Common.Midi.Actions
         private static string[] CreateIndexKeys(int optionCount)
         {
             if (optionCount < 1) throw new ArgumentOutOfRangeException(nameof(optionCount));
+
             var keys = new string[optionCount];
             for (var i = 0; i < keys.Length; i++) keys[i] = i.ToString();
             return keys;
         }
 
-        private void Select(int index) => _selectedIndex.SetValue(index);
+        private int Validate(int index)
+        {
+            if (index < 0 || index >= OptionCount) throw new ArgumentOutOfRangeException(nameof(index));
+
+            return index;
+        }
+
+        private int Normalize(int index)
+        {
+            return index >= 0 && index < OptionCount ? index : 0;
+        }
+
+        private string ValidateKey(string optionKey)
+        {
+            if (string.IsNullOrWhiteSpace(optionKey) || !_optionKeys.Contains(optionKey))
+                throw new ArgumentException("The radio option key is not registered.", nameof(optionKey));
+
+            return optionKey;
+        }
+
+        private void Select(int index)
+        {
+            _selectedIndex.SetValue(index);
+        }
 
         private void OnValueChanged(int value)
         {
             if (_normalizing) return;
+
             var normalized = Normalize(value);
             if (normalized != value)
             {
@@ -109,6 +140,7 @@ namespace Krab.Common.Midi.Actions
                 _selectedIndex.SetValue(normalized);
                 _normalizing = false;
             }
+
             _repository.SaveRadioIndex(_actionId, normalized);
         }
 
@@ -123,20 +155,25 @@ namespace Krab.Common.Midi.Actions
                 _optionKey = optionKey;
             }
 
-            private int Index => _owner._optionKeys.IndexOf(_optionKey);
             public MidiActionKind Kind => MidiActionKind.Radio;
             public string DisplayName => $"Radio (option {Index + 1}/{_owner.OptionCount})";
+            public IMidiActionRuntime Runtime => null;
+
+            private int Index => _owner._optionKeys.IndexOf(_optionKey);
 
             public void Execute(MidiMessage message)
             {
                 if (message.IsPressed && Index >= 0) _owner.Select(Index);
             }
 
-            public Color ResolveLedColor(Color configuredColor) =>
-                _owner.SelectedIndex == Index ? configuredColor : MidiLedColor.Dim(configuredColor);
+            public Color ResolveLedColor(Color configuredColor)
+            {
+                return _owner.SelectedIndex == Index ? configuredColor : MidiLedColor.Dim(configuredColor);
+            }
 
-            public IMidiActionRuntime Runtime => null;
-            public void Dispose() { }
+            public void Dispose()
+            {
+            }
         }
     }
 }
