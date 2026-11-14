@@ -52,7 +52,8 @@ namespace Krab.Common.Sample
         private IMidiBindingUi _midiUi;
         private RadioMidiAction _radio;
         private SequenceMidiAction _sequence;
-        private bool _registered;
+        // Registration lives in the non-serialized binding manager, so it must not survive a script reload.
+        [NonSerialized] private bool _registered;
         private int _radioListRevision;
         private int _sequenceRevision;
 
