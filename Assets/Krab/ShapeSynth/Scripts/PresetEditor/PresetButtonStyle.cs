@@ -12,15 +12,21 @@ namespace Krab.ShapeSynth.PresetEditor
     /// </summary>
     public static class PresetButtonStyle
     {
-        public enum Look { Normal, Hover, Pressed, Primary, PrimaryHover, Active, ActiveHover, Disabled }
-
-        public static readonly Color HoverFill = T.Hex(0x3c4653), PressedFill = T.Hex(0x1f2630), PressedBorder = T.Hex(0x86add2);
+        public static readonly Color HoverFill = T.Hex(0x3c4653);
+        public static readonly Color PressedFill = T.Hex(0x1f2630);
+        public static readonly Color PressedBorder = T.Hex(0x86add2);
         public static readonly Color PrimaryHoverFill = T.Hex(0x41678d);
-        public static readonly Color ActiveFill = T.Hex(0x2e6a55), ActiveHoverFill = T.Hex(0x367a62), ActiveBorder = T.Hex(0x6cc9a6);
+        public static readonly Color ActiveFill = T.Hex(0x2e6a55);
+        public static readonly Color ActiveHoverFill = T.Hex(0x367a62);
+        public static readonly Color ActiveBorder = T.Hex(0x6cc9a6);
 
         /// <param name="primary">Call-to-action tone, e.g. Save while there are unsaved edits.</param>
         /// <param name="active">"On" state, e.g. Preview while a preview is running or Open while its browser is shown.</param>
-        public static ButtonElement Create(LabelElement label, Action action, Func<bool> primary = null, Func<bool> active = null)
+        public static ButtonElement Create(
+            LabelElement label,
+            Action action,
+            Func<bool> primary = null,
+            Func<bool> active = null)
         {
             var button = UI.Button(label, action);
             var hover = false;
@@ -47,7 +53,8 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 bound = view;
                 applied = null;
-                hover = pressed = false;
+                hover = false;
+                pressed = false;
                 T.Radius(view.style, 3);
                 T.Padding(view.style, 4, 9);
                 T.Margin(view.style, 0, 2);
@@ -56,11 +63,40 @@ namespace Krab.ShapeSynth.PresetEditor
                 view.style.height = 26;
                 view.style.alignSelf = Align.Center;
                 view.style.flexGrow = 0;
-                void Enter(PointerEnterEvent _) { hover = true; Apply(); }
-                void Leave(PointerLeaveEvent _) { hover = false; pressed = false; Apply(); }
-                void Down(PointerDownEvent evt) { if (evt.button == 0) { pressed = true; Apply(); } }
-                void Up(PointerUpEvent _) { pressed = false; Apply(); }
-                void CaptureOut(PointerCaptureOutEvent _) { pressed = false; Apply(); }
+
+                void Enter(PointerEnterEvent _)
+                {
+                    hover = true;
+                    Apply();
+                }
+
+                void Leave(PointerLeaveEvent _)
+                {
+                    hover = false;
+                    pressed = false;
+                    Apply();
+                }
+
+                void Down(PointerDownEvent evt)
+                {
+                    if (evt.button != 0) return;
+
+                    pressed = true;
+                    Apply();
+                }
+
+                void Up(PointerUpEvent _)
+                {
+                    pressed = false;
+                    Apply();
+                }
+
+                void CaptureOut(PointerCaptureOutEvent _)
+                {
+                    pressed = false;
+                    Apply();
+                }
+
                 view.RegisterCallback<PointerEnterEvent>(Enter);
                 view.RegisterCallback<PointerLeaveEvent>(Leave);
                 view.RegisterCallback<PointerDownEvent>(Down, TrickleDown.TrickleDown);
@@ -81,18 +117,50 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public static void Paint(VisualElement view, Look look)
         {
-            Color fill, border, text = T.Foreground;
+            Color fill;
+            Color border;
+            var text = T.Foreground;
             switch (look)
             {
-                case Look.Hover: fill = HoverFill; border = T.Hex(0x5a6273); break;
-                case Look.Pressed: fill = PressedFill; border = PressedBorder; break;
-                case Look.Primary: fill = T.PrimaryFill; border = T.PrimaryBorder; text = Color.white; break;
-                case Look.PrimaryHover: fill = PrimaryHoverFill; border = T.Hex(0x77a2c9); text = Color.white; break;
-                case Look.Active: fill = ActiveFill; border = ActiveBorder; text = Color.white; break;
-                case Look.ActiveHover: fill = ActiveHoverFill; border = ActiveBorder; text = Color.white; break;
-                case Look.Disabled: fill = T.Hex(0x23262d); border = T.Hex(0x30343c); text = T.Hex(0x5f6878); break;
-                default: fill = T.ButtonFill; border = T.ButtonBorder; break;
+                case Look.Hover:
+                    fill = HoverFill;
+                    border = T.Hex(0x5a6273);
+                    break;
+                case Look.Pressed:
+                    fill = PressedFill;
+                    border = PressedBorder;
+                    break;
+                case Look.Primary:
+                    fill = T.PrimaryFill;
+                    border = T.PrimaryBorder;
+                    text = Color.white;
+                    break;
+                case Look.PrimaryHover:
+                    fill = PrimaryHoverFill;
+                    border = T.Hex(0x77a2c9);
+                    text = Color.white;
+                    break;
+                case Look.Active:
+                    fill = ActiveFill;
+                    border = ActiveBorder;
+                    text = Color.white;
+                    break;
+                case Look.ActiveHover:
+                    fill = ActiveHoverFill;
+                    border = ActiveBorder;
+                    text = Color.white;
+                    break;
+                case Look.Disabled:
+                    fill = T.Hex(0x23262d);
+                    border = T.Hex(0x30343c);
+                    text = T.Hex(0x5f6878);
+                    break;
+                default:
+                    fill = T.ButtonFill;
+                    border = T.ButtonBorder;
+                    break;
             }
+
             view.style.backgroundColor = fill;
             T.Border(view.style, border);
             view.style.color = text;
@@ -114,15 +182,28 @@ namespace Krab.ShapeSynth.PresetEditor
                 var state = selected() ? 2 : hover ? 1 : 0;
                 if (applied == state) return;
                 applied = state;
-                bound.style.backgroundColor = state == 2 ? PresetEditorTheme.Selected : state == 1 ? PresetEditorTheme.Hex(0x2a303b) : Color.clear;
+                if (state == 2) bound.style.backgroundColor = T.Selected;
+                else if (state == 1) bound.style.backgroundColor = T.Hex(0x2a303b);
+                else bound.style.backgroundColor = Color.clear;
             }
             row.RegisterUpdateCallback(_ => Apply());
             return PresetWorkspaceLayout.BindView(row, view =>
             {
                 bound = view;
                 applied = null;
-                void Enter(PointerEnterEvent _) { hover = true; Apply(); }
-                void Leave(PointerLeaveEvent _) { hover = false; Apply(); }
+
+                void Enter(PointerEnterEvent _)
+                {
+                    hover = true;
+                    Apply();
+                }
+
+                void Leave(PointerLeaveEvent _)
+                {
+                    hover = false;
+                    Apply();
+                }
+
                 view.RegisterCallback<PointerEnterEvent>(Enter);
                 view.RegisterCallback<PointerLeaveEvent>(Leave);
                 Apply();
@@ -133,6 +214,18 @@ namespace Krab.ShapeSynth.PresetEditor
                     if (bound == view) bound = null;
                 };
             });
+        }
+
+        public enum Look
+        {
+            Normal,
+            Hover,
+            Pressed,
+            Primary,
+            PrimaryHover,
+            Active,
+            ActiveHover,
+            Disabled,
         }
     }
 }

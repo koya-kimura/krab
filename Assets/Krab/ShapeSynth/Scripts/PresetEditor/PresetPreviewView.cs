@@ -20,13 +20,14 @@ namespace Krab.ShapeSynth.PresetEditor
         private int _pointerId = -1;
         private Vector2 _lastPointerPosition;
 
-        public float Zoom { get; private set; } = 1f;
-        public Vector2 Pan { get; private set; }
-
         public PresetPreviewView(Func<Texture> textureProvider)
         {
             _textureProvider = textureProvider ?? throw new ArgumentNullException(nameof(textureProvider));
         }
+
+        public float Zoom { get; private set; } = 1f;
+
+        public Vector2 Pan { get; private set; }
 
         /// <summary>The zoomable viewport only. Toolbar and footer belong to the editor shell.</summary>
         public Element CreateElement()
@@ -44,6 +45,14 @@ namespace Krab.ShapeSynth.PresetEditor
             ApplyTransform();
         }
 
+        public string ZoomAndTextureSize()
+        {
+            var texture = _textureProvider();
+            return texture == null
+                ? $"no texture · Zoom {Zoom:P0}"
+                : $"{texture.width} × {texture.height} · Zoom {Zoom:P0}";
+        }
+
         private void CheckTextureSize()
         {
             var texture = _textureProvider();
@@ -54,14 +63,6 @@ namespace Krab.ShapeSynth.PresetEditor
             _lastTextureWidth = texture.width;
             _lastTextureHeight = texture.height;
             if (hadTexture) Fit();
-        }
-
-        public string ZoomAndTextureSize()
-        {
-            var texture = _textureProvider();
-            return texture == null
-                ? $"no texture · Zoom {Zoom:P0}"
-                : $"{texture.width} × {texture.height} · Zoom {Zoom:P0}";
         }
 
         private Action Attach(VisualElement viewport)
@@ -100,8 +101,10 @@ namespace Krab.ShapeSynth.PresetEditor
         private void OnGeometryChanged(GeometryChangedEvent evt)
         {
             if (evt.newRect.width <= 0 || evt.newRect.height <= 0) return;
+
             if (_imageView == null) FindImageView();
             if (_hasViewportGeometry) return;
+
             _hasViewportGeometry = true;
             Fit();
         }
@@ -124,6 +127,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private void OnPointerDown(PointerDownEvent evt)
         {
             if (evt.button != (int)MouseButton.MiddleMouse) return;
+
             _isDragging = true;
             _pointerId = evt.pointerId;
             _lastPointerPosition = (Vector2)evt.localPosition;
@@ -134,6 +138,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private void OnPointerMove(PointerMoveEvent evt)
         {
             if (!_isDragging || evt.pointerId != _pointerId) return;
+
             var pointerPosition = (Vector2)evt.localPosition;
             Pan += pointerPosition - _lastPointerPosition;
             _lastPointerPosition = pointerPosition;
@@ -144,6 +149,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private void OnPointerUp(PointerUpEvent evt)
         {
             if (!_isDragging || evt.pointerId != _pointerId || evt.button != (int)MouseButton.MiddleMouse) return;
+
             _viewport.ReleasePointer(_pointerId);
             _isDragging = false;
             _pointerId = -1;
@@ -159,6 +165,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private void ApplyTransform()
         {
             if (_imageView == null) return;
+
             _imageView.style.scale = new Scale(new Vector2(Zoom * 0.92f, Zoom * 0.92f));
             _imageView.style.translate = new Translate(Pan.x, Pan.y);
         }
@@ -167,6 +174,7 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             _imageView = UIToolkitBuilder.Instance.GetUIObj(_imageElement);
             if (_imageView == null) return;
+
             _imageView.name = "preset-preview-image";
             if (_imageView is Image image) image.scaleMode = ScaleMode.ScaleToFit;
             _imageView.style.position = Position.Absolute;

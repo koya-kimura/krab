@@ -12,7 +12,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private readonly PanelSettings _settings;
         private VisualElement _root;
         private float _pixelWidth;
-        public int Percent { get; private set; } = 140;
 
         public PresetWorkspaceScale(UIDocument document)
         {
@@ -26,13 +25,18 @@ namespace Krab.ShapeSynth.PresetEditor
             document.panelSettings = _settings;
         }
 
+        public int Percent { get; private set; } = 140;
+
         public void Update()
         {
             var root = _document ? _document.rootVisualElement?.panel?.visualTree : null;
             if (ReferenceEquals(root, _root)) return;
+
             if (_root != null) _root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
+
             _root = root;
             if (root == null) return;
+
             root.RegisterCallback<GeometryChangedEvent>(OnGeometry);
             if (root.layout.width > 0) SetPixelWidth(root.layout.width * _settings.scale);
         }
@@ -43,26 +47,34 @@ namespace Krab.ShapeSynth.PresetEditor
             Apply();
         }
 
-        private void OnGeometry(GeometryChangedEvent evt)
-        {
-            if (!ReferenceEquals(evt.target, _root) || evt.newRect.width <= 0) return;
-            SetPixelWidth(evt.newRect.width * _settings.scale);
-        }
-        private void SetPixelWidth(float width) { _pixelWidth = width; Apply(); }
-        private void Apply()
-        {
-            if (_pixelWidth <= 0) return;
-            // Keep the same readable density on a 4K Game View instead of halving the controls.
-            var scale = Percent / 100f * Mathf.Max(1, _pixelWidth / 1920f);
-            if (!Mathf.Approximately(_settings.scale, scale)) _settings.scale = scale;
-        }
-
         public void Dispose()
         {
             if (_root != null) _root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             _root = null;
             if (_document && _document.panelSettings == _settings) _document.panelSettings = _original;
             if (_settings) UnityEngine.Object.Destroy(_settings);
+        }
+
+        private void OnGeometry(GeometryChangedEvent evt)
+        {
+            if (!ReferenceEquals(evt.target, _root) || evt.newRect.width <= 0) return;
+
+            SetPixelWidth(evt.newRect.width * _settings.scale);
+        }
+
+        private void SetPixelWidth(float width)
+        {
+            _pixelWidth = width;
+            Apply();
+        }
+
+        private void Apply()
+        {
+            if (_pixelWidth <= 0) return;
+
+            // Keep the same readable density on a 4K Game View instead of halving the controls.
+            var scale = Percent / 100f * Mathf.Max(1, _pixelWidth / 1920f);
+            if (!Mathf.Approximately(_settings.scale, scale)) _settings.scale = scale;
         }
     }
 }

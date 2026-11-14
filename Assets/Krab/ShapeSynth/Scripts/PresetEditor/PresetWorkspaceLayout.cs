@@ -60,17 +60,20 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 Name(view, "preset-panels");
                 var compact = false;
+
                 void OnGeometryChanged(GeometryChangedEvent evt)
                 {
                     if (!ReferenceEquals(evt.target, view) || evt.newRect.width <= 0) return;
+
                     var nextCompact = evt.newRect.width < 1100;
                     if (nextCompact == compact) return;
+
                     compact = nextCompact;
                     navigationPanel.Style.Width = compact ? CompactNavigationWidth : DefaultNavigationWidth;
                     inspectorPanel.Style.Width = compact ? CompactInspectorWidth : DefaultInspectorWidth;
                 }
-                view.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
 
+                view.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
                 return () => view.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             });
             BindView(navigationDivider, view => BindDivider(view, navigationPanel, inspectorPanel, panels, 160, 1));
@@ -83,14 +86,20 @@ namespace Krab.ShapeSynth.PresetEditor
         public static void ConfigureWindow(WindowElement window)
         {
             if (window == null) throw new ArgumentNullException(nameof(window));
+
             BindView(window, view =>
             {
                 view.name = "preset-workspace-window";
                 view.style.position = Position.Absolute;
                 view.style.backgroundColor = PresetEditorTheme.Window;
+
                 // This is a bounded workspace, not a content-sized popup. Dynamic fields must not
                 // ask Rosetta's Window to expand to an Image's intrinsic texture dimensions.
-                void OnContentResize(RequestResizeWindowEvent evt) => evt.StopImmediatePropagation();
+                void OnContentResize(RequestResizeWindowEvent evt)
+                {
+                    evt.StopImmediatePropagation();
+                }
+
                 view.RegisterCallback<RequestResizeWindowEvent>(OnContentResize, TrickleDown.TrickleDown);
                 VisualElement root = null;
                 IVisualElementScheduledItem schedule = null;
@@ -98,10 +107,13 @@ namespace Krab.ShapeSynth.PresetEditor
                 void ResizeToPanel(GeometryChangedEvent _)
                 {
                     if (_ != null && !ReferenceEquals(_.target, root)) return;
+
                     var panel = view.panel;
                     if (panel == null) return;
+
                     var bounds = panel.visualTree.layout;
                     if (bounds.width <= 0 || bounds.height <= 0) return;
+
                     var availableWidth = Mathf.Max(1, bounds.width - 24);
                     var availableHeight = Mathf.Max(1, bounds.height - 24);
                     view.style.left = 12;
@@ -117,10 +129,12 @@ namespace Krab.ShapeSynth.PresetEditor
                 {
                     root = view.panel?.visualTree;
                     if (root == null) return;
+
                     root.RegisterCallback<GeometryChangedEvent>(ResizeToPanel);
                     ResizeToPanel(null);
                     schedule?.Pause();
                 }
+
                 AttachToPanelRoot();
                 if (root == null)
                     schedule = view.schedule.Execute(AttachToPanelRoot).Every(16).Until(() => root != null);
@@ -156,8 +170,10 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 var view = UIToolkitBuilder.Instance.GetUIObj(element);
                 if (ReferenceEquals(view, boundView)) return;
+
                 ClearView();
                 if (view == null) return;
+
                 boundView = view;
                 detachView = attach(view);
                 bridge.onUnsubscribe += OnUnsubscribe;
@@ -180,8 +196,13 @@ namespace Krab.ShapeSynth.PresetEditor
             return () => { };
         }
 
-        private static Action BindDivider(VisualElement divider, Element panel, Element oppositePanel, Element panels,
-            float minimumWidth, float direction)
+        private static Action BindDivider(
+            VisualElement divider,
+            Element panel,
+            Element oppositePanel,
+            Element panels,
+            float minimumWidth,
+            float direction)
         {
             divider.name = direction > 0 ? "preset-navigation-divider" : "preset-inspector-divider";
             divider.style.backgroundColor = PresetEditorTheme.Stroke;
@@ -190,18 +211,22 @@ namespace Krab.ShapeSynth.PresetEditor
             var startX = 0f;
             var startWidth = 0f;
             var dragging = false;
+
             void OnDown(PointerDownEvent evt)
             {
                 if (evt.button != 0) return;
+
                 dragging = true;
                 startX = evt.position.x;
                 startWidth = UIToolkitBuilder.Instance.GetUIObj(panel).layout.width;
                 divider.CapturePointer(evt.pointerId);
                 evt.StopPropagation();
             }
+
             void OnMove(PointerMoveEvent evt)
             {
                 if (!dragging) return;
+
                 var width = startWidth + direction * (evt.position.x - startX);
                 var rowWidth = UIToolkitBuilder.Instance.GetUIObj(panels).layout.width;
                 var oppositeWidth = UIToolkitBuilder.Instance.GetUIObj(oppositePanel).layout.width;
@@ -209,9 +234,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 panel.Style.Width = Mathf.Clamp(width, minimumWidth, maximumWidth);
                 evt.StopPropagation();
             }
+
             void OnUp(PointerUpEvent evt)
             {
                 if (!dragging) return;
+
                 dragging = false;
                 if (divider.HasPointerCapture(evt.pointerId)) divider.ReleasePointer(evt.pointerId);
                 evt.StopPropagation();
@@ -228,8 +255,13 @@ namespace Krab.ShapeSynth.PresetEditor
             };
         }
 
-        private static void ConfigureResponsiveToggles(Element toolbar, Element navigation, Element navigationDivider,
-            Element inspector, Element inspectorDivider, Element panels)
+        private static void ConfigureResponsiveToggles(
+            Element toolbar,
+            Element navigation,
+            Element navigationDivider,
+            Element inspector,
+            Element inspectorDivider,
+            Element panels)
         {
             BindView(toolbar, view =>
             {
@@ -251,6 +283,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     if (panelView != null) panelView.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
                     if (dividerView != null) dividerView.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
                 }
+
                 void OnNavClicked()
                 {
                     if (wasNarrow == true)
@@ -260,8 +293,10 @@ namespace Krab.ShapeSynth.PresetEditor
                         SetVisibility(inspector, inspectorDivider, false);
                     }
                     else navOpen = !navOpen;
+
                     SetVisibility(navigation, navigationDivider, navOpen);
                 }
+
                 void OnInspectorClicked()
                 {
                     if (wasNarrow == true)
@@ -271,17 +306,22 @@ namespace Krab.ShapeSynth.PresetEditor
                         SetVisibility(navigation, navigationDivider, false);
                     }
                     else inspectorOpen = !inspectorOpen;
+
                     SetVisibility(inspector, inspectorDivider, inspectorOpen);
                 }
+
                 navButton.clicked += OnNavClicked;
                 inspectorButton.clicked += OnInspectorClicked;
 
                 var panelsView = UIToolkitBuilder.Instance.GetUIObj(panels);
+
                 void ApplyResponsive(float width)
                 {
                     if (width <= 0) return; // Hidden while the Values tab is open.
+
                     var narrow = width < 850;
                     if (wasNarrow == narrow) return;
+
                     wasNarrow = narrow;
                     toggleRow.style.display = narrow ? DisplayStyle.Flex : DisplayStyle.None;
                     navButton.style.display = narrow ? DisplayStyle.Flex : DisplayStyle.None;
@@ -301,9 +341,11 @@ namespace Krab.ShapeSynth.PresetEditor
                         SetVisibility(inspector, inspectorDivider, true);
                     }
                 }
+
                 void OnGeometryChanged(GeometryChangedEvent evt)
                 {
                     if (!ReferenceEquals(evt.target, panelsView)) return;
+
                     ApplyResponsive(evt.newRect.width);
                 }
 
@@ -312,6 +354,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     panelsView.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
                     if (panelsView.layout.width > 0) ApplyResponsive(panelsView.layout.width);
                 }
+
                 return () =>
                 {
                     navButton.clicked -= OnNavClicked;
