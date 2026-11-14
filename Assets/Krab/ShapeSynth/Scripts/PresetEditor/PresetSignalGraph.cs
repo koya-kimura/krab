@@ -6,6 +6,7 @@ using Krab.ShapeSynth.Core.Modulation;
 using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Runtime;
 using RosettaUI;
+using RosettaUI.UIToolkit.Builder;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -55,6 +56,15 @@ namespace Krab.ShapeSynth.PresetEditor
     public sealed class PresetSignalGraph
     {
         private const int Samples = 180;
+        private const float Height = 180;
+
+        private static readonly Color Background = new(0.07f, 0.08f, 0.1f);
+        private static readonly Color Grid = new(1, 1, 1, 0.06f);
+        private static readonly Color Zero = new(1, 1, 1, 0.2f);
+        private static readonly Color Adsr = new(0.35f, 0.75f, 0.95f);
+        private static readonly Color Lfo = new(0.95f, 0.65f, 0.3f);
+        private static readonly Color Selected = new(0.95f, 0.95f, 0.95f);
+        private static readonly Color Cursor = new(1, 1, 1, 0.35f);
 
         private readonly Func<IReadOnlyList<ModulatorSettings>> _models;
         private readonly Func<string> _selectedId;
@@ -73,27 +83,27 @@ namespace Krab.ShapeSynth.PresetEditor
             _cursorBeat = cursorBeat ?? throw new ArgumentNullException(nameof(cursorBeat));
         }
 
-        public int RepaintCount { get; private set; }
-
         public Element CreateElement()
         {
-            var box = UI.Box(UI.Space()).SetHeight(180).SetMinHeight(180).SetFlexShrink(0);
-            box.RegisterUpdateCallback(_ => RepaintIfChanged());
-            return PresetWorkspaceLayout.BindView(box, view =>
+            var box = UI.Space().SetHeight(Height).SetMinHeight(Height).SetFlexShrink(0);
+            box.RegisterUpdateCallback(element =>
             {
-                _view = view;
-                view.name = "preset-signal-graph";
-                view.style.backgroundColor = PresetEditorTheme.Graph;
-                PresetEditorTheme.Border(view.style, PresetEditorTheme.Hex(0x39414d));
-                PresetEditorTheme.Margin(view.style, 0, 0);
-                view.generateVisualContent += Draw;
-                _signature = null;
-                return () =>
-                {
-                    view.generateVisualContent -= Draw;
-                    if (_view == view) _view = null;
-                };
+                Attach(UIToolkitBuilder.Instance.GetUIObj(element));
+                RepaintIfChanged();
             });
+            return box;
+        }
+
+        private void Attach(VisualElement view)
+        {
+            if (view == null || view == _view) return;
+
+            if (_view != null) _view.generateVisualContent -= Draw;
+
+            _view = view;
+            _view.style.backgroundColor = Background;
+            _view.generateVisualContent += Draw;
+            _signature = null;
         }
 
         private void RepaintIfChanged()
@@ -104,7 +114,6 @@ namespace Krab.ShapeSynth.PresetEditor
             if (signature == _signature) return;
 
             _signature = signature;
-            RepaintCount++;
             _view.MarkDirtyRepaint();
         }
 
@@ -129,14 +138,14 @@ namespace Krab.ShapeSynth.PresetEditor
 
             var painter = context.painter2D;
             painter.lineWidth = 1;
-            painter.strokeColor = PresetEditorTheme.GraphGrid;
+            painter.strokeColor = Grid;
             for (var i = 1; i < 6; i++)
                 Line(painter, new Vector2(0, rect.height * i / 6), new Vector2(rect.width, rect.height * i / 6));
 
             for (var i = 1; i < 6; i++)
                 Line(painter, new Vector2(rect.width * i / 6, 0), new Vector2(rect.width * i / 6, rect.height));
 
-            painter.strokeColor = PresetEditorTheme.GraphZero;
+            painter.strokeColor = Zero;
             Line(painter, new Vector2(0, Y(0, rect)), new Vector2(rect.width, Y(0, rect)));
 
             var selected = _selectedId();
@@ -149,15 +158,15 @@ namespace Krab.ShapeSynth.PresetEditor
                     continue;
                 }
 
-                var color = model.Kind == ModulatorKind.Adsr ? PresetEditorTheme.Adsr : PresetEditorTheme.Lfo;
+                var color = model.Kind == ModulatorKind.Adsr ? Adsr : Lfo;
                 Curve(painter, model, rect, new Color(color.r, color.g, color.b, 0.45f), 1.5f);
             }
 
-            if (highlighted != null) Curve(painter, highlighted, rect, PresetEditorTheme.Sum, 2.5f);
+            if (highlighted != null) Curve(painter, highlighted, rect, Selected, 2.5f);
 
             var beat = Mathf.Clamp(_cursorBeat(), 0, PresetSignalSampler.GraphBeats);
             var cursor = beat / PresetSignalSampler.GraphBeats * rect.width;
-            painter.strokeColor = new Color(1, 1, 1, 0.35f);
+            painter.strokeColor = Cursor;
             painter.lineWidth = 1;
             Line(painter, new Vector2(cursor, 0), new Vector2(cursor, rect.height));
         }

@@ -1,78 +1,156 @@
+using System;
+using System.Linq;
+using Krab.ShapeSynth.Core.Evaluation;
+using Krab.ShapeSynth.Core.Modulation;
+using Krab.ShapeSynth.Core.Performance;
+using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
-using UnityEngine.UIElements;
-using T = Krab.ShapeSynth.PresetEditor.PresetEditorTheme;
+using UnityEngine;
 
 namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
-        private static readonly string[] PreviewModeNames = { "Static · signals = 1", "Beat · BPM clock", "Animated · Voice" };
+        private const double PreviewDelaySeconds = 0.3;
+
+        private PreviewSignal[] _previewSignals = Array.Empty<PreviewSignal>();
+        private bool _refreshPreview;
+        private double _previewDue;
+        private bool _playing;
+        private float _beat;
+        private float _bpm = 120;
+        private int _seed = 1234;
+
+        public bool IsPlaying => _playing;
+
+        public float Beat => _beat;
+
+        /// <summary>Longest ADSR lifetime, capped to the graph range, so one loop matches one trigger.</summary>
+        public float LoopBeats
+        {
+            get
+            {
+                var lifetime = Document.Modulators
+                    .Where(model => model.Kind == ModulatorKind.Adsr)
+                    .Select(model => model.Attack + model.Decay + model.SustainTime + model.Release)
+                    .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
+                    .DefaultIfEmpty(PresetSignalSampler.GraphBeats)
+                    .Max();
+                return Mathf.Clamp((float)lifetime, 0.25f, PresetSignalSampler.GraphBeats);
+            }
+        }
+
+        /// <summary>Compiles the document and shows it with every Value sampled at the current Beat.</summary>
+        public void Preview()
+        {
+            _refreshPreview = false;
+            if (!_controller) return;
+
+            Guard(() =>
+            {
+                var target = PresetCompiler.Compile(Document);
+                _previewSignals = Document.Modulators.Select(model => new PreviewSignal(model)).ToArray();
+                UpdatePreviewSignals();
+                _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, _seed);
+            });
+        }
+
+        public void StopPreview()
+        {
+            if (_controller) _controller.StaticPreview = null;
+
+            _playing = false;
+            _refreshPreview = false;
+        }
+
+        public void Play()
+        {
+            _beat = 0;
+            _playing = true;
+            Preview();
+        }
+
+        public void Stop()
+        {
+            _playing = false;
+        }
+
+        /// <summary>Scrubs, or seeks while playing, without recompiling.</summary>
+        public void SetBeat(float beat)
+        {
+            _beat = Mathf.Clamp(beat, 0, PresetSignalSampler.GraphBeats);
+            UpdatePreviewSignals();
+        }
 
         private Element BuildPreviewPane()
         {
             return UI.Column(
-                BuildPreviewToolbar(),
-                _previewView.CreateElement().Styled(style => T.Padding(style, 14, 14)),
-                BuildPreviewFooter());
-        }
-
-        private Element BuildPreviewToolbar()
-        {
-            return UI.Row(
-                T.Button(() => IsPreviewRunning ? "● Playing" : "▶ Preview", Play, null, () => IsPreviewRunning),
-                EnabledButton("■ Stop", StopPlayback, () => IsPreviewRunning),
-                Choice(null, () => (int)_previewMode, value => SetPreviewMode((PresetPreviewMode)value), PreviewModeNames)
-                    .SetWidth(160),
-                UI.Space().SetFlexGrow(1),
-                StateText(() => "Beat", () => _previewMode == PresetPreviewMode.Static ? T.Hex(0x5f6878) : T.Muted, 11)
-                    .Styled(style => style.marginRight = 4),
-                UI.Slider(null, () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats, new SliderOption(false))
-                    .SetWidth(130)
-                    .RegisterUpdateCallback(element => element.Interactable = _previewMode != PresetPreviewMode.Animated),
-                StateText(
-                    () => _previewMode == PresetPreviewMode.Static ? "—" : _beat.ToString("F2"),
-                    () => IsPreviewRunning ? T.Output : T.Hex(0x6f7a8a),
-                    11).SetWidth(34),
-                T.Button("Fit", () => _previewView.Fit())
-            ).SetFlexWrap(true).Styled(style =>
-            {
-                style.minHeight = 40;
-                style.alignItems = Align.Center;
-                T.Padding(style, 6, 10);
-                T.Border(style, T.Stroke, 0, 0, 1, 0);
-                style.backgroundColor = T.Panel;
-            });
-        }
-
-        private Element BuildPreviewFooter()
-        {
-            return UI.Row(
-                T.Text(() => "Preview · " + PreviewModeLabel(), 10, T.Hex(0x788599)),
-                UI.Space().SetFlexGrow(1),
-                UI.Field(Caption("Auto"), () => _autoPreview, value =>
-                {
-                    _autoPreview = value;
-                    if (value) QueuePreview();
-                }).SetWidth(72),
-                UI.Field(Caption("BPM"), () => _bpm, value =>
-                {
-                    _bpm = value;
-                    QueuePreview();
-                }).SetWidth(100),
-                UI.Field(Caption("Seed"), () => _seed, value =>
+                UI.Image(() => _controller && _controller.OutputCamera ? _controller.OutputCamera.targetTexture : null)
+                    .SetHeight(300),
+                UI.Row(
+                    UI.Button(UI.Label(() => _playing ? "Stop" : "Play"), () =>
+                    {
+                        if (_playing) Stop();
+                        else Play();
+                    }),
+                    UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats)
+                ),
+                UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value)),
+                UI.Field("Seed", () => _seed, value =>
                 {
                     _seed = value;
                     QueuePreview();
-                }).SetWidth(130),
-                T.Text(() => _previewView.ZoomAndTextureSize(), 10, T.Hex(0x788599)).Styled(style => style.marginLeft = 10)
-            ).SetFlexWrap(true).Styled(style =>
+                }));
+        }
+
+        private void QueuePreview()
+        {
+            _refreshPreview = true;
+            _previewDue = Time.realtimeSinceStartupAsDouble + PreviewDelaySeconds;
+        }
+
+        private void AdvancePlayback(float deltaSeconds)
+        {
+            if (!_playing || _bpm <= 0) return;
+
+            _beat += deltaSeconds * _bpm / 60f;
+            var loop = LoopBeats;
+            if (_beat >= loop) _beat %= loop;
+
+            UpdatePreviewSignals();
+        }
+
+        private void UpdatePreviewSignals()
+        {
+            foreach (var signal in _previewSignals)
             {
-                style.alignItems = Align.Center;
-                style.fontSize = 10;
-                T.Padding(style, 3, 10);
-                T.Border(style, T.Hex(0x292f38), 1, 0, 0, 0);
-                style.backgroundColor = T.Panel;
-            });
+                signal.Value = PresetSignalSampler.SampleOrZero(signal.Model, _beat);
+            }
+        }
+
+        /// <summary>The current value of a Value at the preview Beat.</summary>
+        private double SignalAtBeat(string modulatorId)
+        {
+            var model = Document.Modulators.FirstOrDefault(entry => entry.Id == modulatorId);
+            return model == null ? 0 : PresetSignalSampler.SampleOrZero(model, _beat);
+        }
+
+        /// <summary>A still signal whose value can change without recompiling the hierarchy.</summary>
+        private sealed class PreviewSignal : IModulator
+        {
+            public PreviewSignal(ModulatorSettings model)
+            {
+                Model = model;
+            }
+
+            public ModulatorSettings Model { get; }
+
+            public double Value { get; set; }
+
+            public double Evaluate(double nowSeconds)
+            {
+                return Value;
+            }
         }
     }
 }

@@ -2,9 +2,7 @@ using System;
 using System.Linq;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
-using UnityEngine;
-using UnityEngine.UIElements;
-using T = Krab.ShapeSynth.PresetEditor.PresetEditorTheme;
+using RosettaUI.UIToolkit.Builder;
 
 namespace Krab.ShapeSynth.PresetEditor
 {
@@ -16,130 +14,48 @@ namespace Krab.ShapeSynth.PresetEditor
         private PresetHierarchyDrag _hierarchyDrag;
         private PresetNodeKind _addKind = PresetNodeKind.Circle;
 
-        private Element BuildNavigation()
+        private Element BuildHierarchyPane()
         {
             return UI.Column(
-                T.PaneTitle("Hierarchy", EnabledButton("Delete", DeleteSelected, () => CanDeleteNode).Styled(SmallButton)),
-                UI.ScrollViewVerticalAndHorizontal(
-                    null,
-                    null,
-                    UI.DynamicElementOnStatusChanged(() => _documentRevision, _ => NodeRow(Document.RootGroup, 0)))
-                    .SetFlexGrow(1).SetMinHeight(0)
-                    .Styled(style => style.paddingTop = 4),
-                T.Text(() => "Add to: " + AddTarget.Name + "  ·  drag edges reorder, center nests", 10, T.Muted)
-                    .Styled(style => T.Padding(style, 6, 10)),
+                UI.ScrollViewVertical(
+                    320,
+                    UI.DynamicElementOnStatusChanged(() => _documentRevision, _ => NodeRow(Document.RootGroup, 0))),
+                Choice(
+                    "Shape",
+                    () => Array.IndexOf(ShapeKinds, _addKind),
+                    value => _addKind = ShapeKinds[value],
+                    ShapeKinds.Select(kind => kind.ToString())),
                 UI.Row(
-                    T.Text("Shape", 10, T.Muted).Styled(style =>
-                    {
-                        style.marginRight = 6;
-                        style.alignSelf = Align.Center;
-                    }),
-                    Choice(
-                        null,
-                        () => Array.IndexOf(ShapeKinds, _addKind),
-                        value => _addKind = ShapeKinds[value],
-                        ShapeKinds.Select(kind => kind.ToString())).SetFlexGrow(1)
-                ).Styled(style => T.Padding(style, 0, 8)),
-                T.ActionStrip(
-                    T.Button("+ Group", () => AddNode(PresetNodeKind.Group)),
-                    T.Button("+ Shape", () => AddNode(_addKind))));
-        }
-
-        private static void SmallButton(IStyle style)
-        {
-            T.Padding(style, 2, 7);
-            style.minHeight = 20;
-            style.height = 22;
-            style.fontSize = 10;
-        }
-
-        private static string Icon(PresetNodeKind kind)
-        {
-            if (kind == PresetNodeKind.Circle) return "○";
-            if (kind == PresetNodeKind.Rectangle) return "□";
-
-            return kind == PresetNodeKind.Polygon ? "△" : "▸";
+                    UI.Button("+ Shape", () => AddNode(_addKind)),
+                    UI.Button("+ Group", () => AddNode(PresetNodeKind.Group)),
+                    UI.Button("Delete", DeleteSelected)));
         }
 
         private Element NodeRow(PresetNode node, int depth)
         {
-            var title = UI.Button(T.Text(() => node.Name, 12), () => SelectNode(node.Id))
-                .SetFlexGrow(1).Styled(RowTitleCell);
-            _hierarchyDrag ??= new PresetHierarchyDrag(
-                id => id != Document.RootGroup.Id,
-                CanDropNode,
-                DropNode,
-                message => _status = message);
-            PresetWorkspaceLayout.BindView(title, view => _hierarchyDrag.Bind(view, node.Id));
-
             var isGroup = node.Kind == PresetNodeKind.Group;
+            var title = UI.Button(
+                UI.Label(() => (node.Id == _selectedId ? "> " : "") + node.Name),
+                () => SelectNode(node.Id));
+            _hierarchyDrag ??= new PresetHierarchyDrag(id => id != Document.RootGroup.Id, CanDropNode, DropNode);
+            title.RegisterUpdateCallback(_ => _hierarchyDrag.Track(UIToolkitBuilder.Instance.GetUIObj(title), node.Id));
+
             Element expander = isGroup
-                ? UI.Button(T.Text(() => _expandedGroups.Contains(node.Id) ? "▾" : "▸", 12, T.Icon), () =>
+                ? UI.Button(UI.Label(() => _expandedGroups.Contains(node.Id) ? "-" : "+"), () =>
                 {
                     if (!_expandedGroups.Remove(node.Id)) _expandedGroups.Add(node.Id);
-                }).Styled(IconCell)
-                : T.Text(Icon(node.Kind), 11, T.Icon).Styled(IconCell);
-            var row = PresetButtonStyle.Selectable(UI.Row(expander, title), () => node.Id == _selectedId).Styled(style =>
-            {
-                style.height = 28;
-                style.alignItems = Align.Center;
-                style.paddingLeft = 6 + depth * 15;
-                style.paddingRight = 8;
-            });
-
-            // Child creation is only offered on a Group.
-            Action AddChildAction(PresetNodeKind kind)
-            {
-                if (!isGroup) return null;
-
-                return () =>
-                {
-                    SelectNode(node.Id);
-                    AddNode(kind);
-                };
-            }
-
-            var popup = UI.Popup(row, () => new IMenuItem[]
-            {
-                new MenuItem("Select", () => SelectNode(node.Id)),
-                new MenuItem("Add Group", AddChildAction(PresetNodeKind.Group)),
-                new MenuItem("Add Circle", AddChildAction(PresetNodeKind.Circle)),
-                new MenuItem("Delete Node", node != Document.RootGroup ? () =>
-                {
-                    SelectNode(node.Id);
-                    DeleteSelected();
-                } : (Action)null),
-            });
-            if (!isGroup) return popup;
+                }).SetWidth(24)
+                : UI.Space().SetWidth(24);
+            var row = UI.Row(UI.Space().SetWidth(depth * 14), expander, title);
+            if (!isGroup) return row;
 
             return UI.Column(
-                popup,
+                row,
                 UI.DynamicElementIf(
                     () => _expandedGroups.Contains(node.Id),
                     () => UI.DynamicElementOnStatusChanged(
                         () => ChildRevision(node.Id),
                         _ => UI.Column(node.Children.Select(child => NodeRow(child, depth + 1))))));
-        }
-
-        private static void IconCell(IStyle style)
-        {
-            style.width = 18;
-            style.minWidth = 18;
-            style.backgroundColor = Color.clear;
-            T.Border(style, Color.clear, 0);
-            T.Margin(style, 0, 0);
-            T.Padding(style, 0, 0);
-            style.unityTextAlign = TextAnchor.MiddleCenter;
-        }
-
-        private static void RowTitleCell(IStyle style)
-        {
-            style.backgroundColor = Color.clear;
-            T.Border(style, Color.clear, 0);
-            T.Margin(style, 0, 0);
-            T.Padding(style, 0, 2);
-            style.justifyContent = Justify.FlexStart;
-            style.unityTextAlign = TextAnchor.MiddleLeft;
         }
 
         private bool DropDestination(
@@ -189,13 +105,12 @@ namespace Krab.ShapeSynth.PresetEditor
 
                 var oldParent = ParentOf(source);
                 Document.MoveNode(source, parent.Id, index);
-                _childrenRevisions[oldParent.Id] = ChildRevision(oldParent.Id) + 1;
-                if (parent != oldParent) _childrenRevisions[parent.Id] = ChildRevision(parent.Id) + 1;
+                ChildrenChanged(oldParent.Id);
+                if (parent != oldParent) ChildrenChanged(parent.Id);
 
                 _expandedGroups.Add(parent.Id);
                 SelectNode(source);
                 Changed();
-                _status = "Moved " + Selected.Name + " into " + parent.Name;
             });
         }
     }

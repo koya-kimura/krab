@@ -1,5 +1,24 @@
 # Phase 10: Preset Editor Workspace
 
+## 現在のUI（2026-11-14、素のRosettaUI）
+
+独自テーマ・3ペインの可変レイアウト・UI倍率・Zoom/Panなどを削除し、RosettaUI標準のWindow / Tabs / Fold / Field / Dropdown / Buttonだけで組み直した（PresetEditorのスクリプトは約3200行から約1300行）。説明文・ヒント・ステータスバーは置かない。表示するのは処理に失敗したときのエラー文だけ。
+
+`Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayすると、共通Settingsウィンドウの右にPreset Editorウィンドウが開く。閉じた場合は Settings → ShapeSynth → Authoring → Preset Editor → Open Preset Editor。
+
+- 上部: Preset名、New、Save、保存済みPresetのDropdownとOpen。未保存の確認はない（タイトルの `*` が未保存を示す）。
+- Visualタブ
+  - Hierarchy: Nodeをボタンで選択（選択中は `> ` 付き）。`+` / `-` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
+  - Preview: 出力RTを枠に収まるように表示する（Zoomなし）。`Play` / `Stop`、Beatスライダー、BPM、Seed。ModeはBeat（BPMクロック）だけ。各Valueを現在のBeatで評価して静止Hierarchyを描画し、Playでは最長ADSRの寿命（上限6拍）でループする。編集は0.3秒後に自動でCompileする。
+  - Inspector: Name、Transform / Shape / StyleのFold。各ParameterはFoldで、見出しに現在の出力値と接続中のValue名を出す。中身はBase、Reference、Value（`None` または1つのValue）、Depth（接続中のみ）、Ref. Multiplier、Absolute Value。
+- Valuesタブ: Value一覧（選択中は `> `）、`+ ADSR` / `+ LFO`、出力グラフ（0–6 beat、選択中を白、Beat位置の縦線）、選択ValueのName / ADSR 5項目 / LFO 3項目、Remove（どのParameterにも接続されていないときだけ有効）。
+- Visual側でValueを新規作成する機能、Static / Animatedモード、Preview Zoom、UI倍率、右クリックメニュー、未保存確認、Open一覧ブラウザ、ステータスバーは削除した。
+- `Samples/Settings/WorkspacePanelSettings.asset` はScale With Screen Size（1600×900、Match 0.5）。このSceneだけが使う。
+- RosettaUIのDropdownメニューはUnity 6000.3で削除された内部APIに依存するため、`Choice` で `createMenuCallback` を外してUnity標準のメニューを使う互換処理だけ残した。
+- 検証: コンパイル成功、EditMode 206成功。Play中にVisual（停止・再生中）、Values、ParameterのFoldを展開した状態をスクリーンショットで確認し、Console Errorは0件だった（`Reports/PlainUI/`）。Drag & Drop、Dropdown、ボタンを実際にクリックする操作は自動では送っていない。
+
+以下はこれ以前のUIの記録。
+
 2026-11-12。Phase 8/9の未コミット変更を保持してUIを改善した。今回もコミットしていない。Core、Compiler、Repository、SchemaVersion=1、Performance.v1.json、共通描画/出力の仕様は変更していない。
 
 ## 操作

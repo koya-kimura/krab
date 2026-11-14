@@ -1,6 +1,6 @@
 # Phase 9: Runtime Preset Editor
 
-> Phase 10でUIを専用Workspaceへ更新した。現在の操作方法・更新設計・検証は [Preset Editor Workspace](PresetEditorWorkspace.md) を参照。以下はPhase 9のデータ/APIと当時のUI記録。
+> UIはPhase 10以降で作り直した。現在の操作方法は [Preset Editor Workspace](PresetEditorWorkspace.md) の「現在のUI」を参照。以下はPhase 9のデータ/APIと当時のUI記録。
 
 ## 目的と構成
 

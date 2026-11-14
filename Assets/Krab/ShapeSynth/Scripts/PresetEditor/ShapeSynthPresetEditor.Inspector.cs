@@ -1,84 +1,72 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Evaluation;
+using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 using UnityEngine;
-using UnityEngine.UIElements;
-using T = Krab.ShapeSynth.PresetEditor.PresetEditorTheme;
 
 namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
+        private const string NoValueName = "None";
+
+        private static readonly string[] ReferenceNames = Enum.GetNames(typeof(ReferenceSource));
+
         private Element BuildInspectorPane()
         {
-            return UI.Column(
-                T.PaneTitle("Inspector"),
-                VerticalScroll(UI.DynamicElementOnStatusChanged(
-                    () => (_documentRevision, _selectedId),
-                    _ => BuildInspector())).SetFlexGrow(1));
+            return UI.ScrollViewVertical(
+                520,
+                UI.DynamicElementOnStatusChanged(
+                    () => (_documentRevision, _selectedId, _modulatorsRevision, _modulatorNamesRevision),
+                    _ => BuildInspector()));
         }
 
         private Element BuildInspector()
         {
-            InspectorBuildCount++;
             var node = Selected;
-            var fields = new List<Element>
+            var elements = new List<Element>
             {
-                UI.Field((LabelElement)null, () => node.Name, value =>
+                UI.Field("Name", () => node.Name, value =>
                 {
                     node.Name = value;
-                    Changed(false);
-                }).Styled(style =>
-                {
-                    style.fontSize = 14;
-                    style.unityFontStyleAndWeight = FontStyle.Bold;
+                    _dirty = true;
                 }),
-                T.Text(node.Kind.ToString(), 11, T.Caption).Styled(style =>
-                {
-                    style.marginTop = 2;
-                    style.marginLeft = 2;
-                }),
-                T.SectionTitle("Transform"),
-                ParameterRow("Position X", node.PositionX),
-                ParameterRow("Position Y", node.PositionY),
-                ParameterRow("Rotation", node.Rotation),
-                ParameterRow("Scale X", node.ScaleX),
-                ParameterRow("Scale Y", node.ScaleY),
+                UI.Fold(
+                    "Transform",
+                    ParameterFold("Position X", node.PositionX),
+                    ParameterFold("Position Y", node.PositionY),
+                    ParameterFold("Rotation", node.Rotation),
+                    ParameterFold("Scale X", node.ScaleX),
+                    ParameterFold("Scale Y", node.ScaleY)).Open()
             };
-            if (node.Kind != PresetNodeKind.Group) AddShapeFields(fields, node);
-            else fields.Add(BuildGroupHint());
+            if (node.Kind == PresetNodeKind.Group) return UI.Column(elements);
 
-            fields.Add(T.SectionTitle("Identity"));
-            fields.Add(T.Text(node.Id, 10, T.Muted));
-            return UI.Column(fields).Styled(style =>
-            {
-                style.paddingTop = 10;
-                style.paddingBottom = 20;
-                style.paddingLeft = 12;
-                style.paddingRight = 12;
-            });
+            elements.Add(UI.Fold("Shape", ShapeParameters(node)).Open());
+            elements.Add(UI.Fold("Style", StyleFields(node)).Open());
+            return UI.Column(elements);
         }
 
-        private void AddShapeFields(List<Element> fields, PresetNode node)
+        private IEnumerable<Element> ShapeParameters(PresetNode node)
         {
-            fields.Add(T.SectionTitle("Shape"));
-            if (node.Kind == PresetNodeKind.Circle) fields.Add(ParameterRow("Diameter", node.Width));
+            if (node.Kind == PresetNodeKind.Circle) yield return ParameterFold("Diameter", node.Width);
+
             if (node.Kind == PresetNodeKind.Rectangle)
             {
-                fields.Add(ParameterRow("Width", node.Width));
-                fields.Add(ParameterRow("Height", node.Height));
+                yield return ParameterFold("Width", node.Width);
+                yield return ParameterFold("Height", node.Height);
             }
 
-            if (node.Kind == PresetNodeKind.Polygon)
-            {
-                fields.Add(T.Text("Triangle: local radius 100px. Use Scale / Rotation.", 11, T.Caption)
-                    .Styled(style => style.marginTop = 6));
-            }
+            yield return ParameterFold("Opacity", node.Opacity);
+        }
 
-            fields.Add(ParameterRow("Opacity", node.Opacity));
-            fields.Add(T.SectionTitle("Style"));
-            fields.Add(FieldRow("Color", UI.Field(
-                (LabelElement)null,
+        private IEnumerable<Element> StyleFields(PresetNode node)
+        {
+            yield return UI.Field(
+                "Color",
                 () => new Color((float)node.Red, (float)node.Green, (float)node.Blue, (float)node.Alpha),
                 value =>
                 {
@@ -87,20 +75,20 @@ namespace Krab.ShapeSynth.PresetEditor
                     node.Blue = value.b;
                     node.Alpha = value.a;
                     Changed();
-                })));
-            fields.Add(FieldRow("Fill", UI.Field((LabelElement)null, () => node.Fill, value =>
+                });
+            yield return UI.Field("Fill", () => node.Fill, value =>
             {
                 node.Fill = value;
                 Changed();
-            })));
-            fields.Add(FieldRow("Stroke", UI.Field((LabelElement)null, () => node.Stroke, value =>
+            });
+            yield return UI.Field("Stroke", () => node.Stroke, value =>
             {
                 node.Stroke = value;
                 Changed();
-            })));
-            fields.Add(FieldRow("Stroke Width", NumberInput(() => node.StrokeWidth, value => node.StrokeWidth = value)));
-            fields.Add(FieldRow("Stroke Color", UI.Field(
-                (LabelElement)null,
+            });
+            yield return NumberField("Stroke Width", () => node.StrokeWidth, value => node.StrokeWidth = value);
+            yield return UI.Field(
+                "Stroke Color",
                 () => new Color((float)node.StrokeRed, (float)node.StrokeGreen, (float)node.StrokeBlue, (float)node.StrokeAlpha),
                 value =>
                 {
@@ -109,30 +97,94 @@ namespace Krab.ShapeSynth.PresetEditor
                     node.StrokeBlue = value.b;
                     node.StrokeAlpha = value.a;
                     Changed();
-                })));
-        }
-
-        private static Element BuildGroupHint()
-        {
-            return T.Text("Groups transform their children. Select a Shape for size, opacity and style.", 11, T.Caption)
-                .Styled(style =>
-                {
-                    style.marginTop = 10;
-                    style.whiteSpace = WhiteSpace.Normal;
                 });
         }
 
-        /// <summary>Label on the left, fixed-width input on the right (the reference "field-row").</summary>
-        private static Element FieldRow(string label, Element input)
+        /// <summary>Base, Reference and the single bound Value of one Parameter.</summary>
+        private Element ParameterFold(string name, PresetParameter parameter)
         {
-            return UI.Row(
-                T.Text(label, 12, T.Hex(0xc0c7d1)).SetFlexGrow(1),
-                input.SetWidth(120).SetMinWidth(120).SetFlexGrow(0)
-            ).Styled(style =>
+            var models = Document.Modulators.ToArray();
+            return UI.Fold(
+                UI.Label(() => ParameterHeader(name, parameter)),
+                NumberField("Base", () => parameter.Base, value => parameter.Base = value),
+                Choice("Reference", () => (int)parameter.Reference, value =>
+                {
+                    parameter.Reference = (ReferenceSource)value;
+                    Changed();
+                }, ReferenceNames),
+                Choice(
+                    "Value",
+                    () => Array.FindIndex(models, model => model.Id == parameter.GetBinding()?.ModulatorId) + 1,
+                    index => SelectValue(name, parameter, index == 0 ? null : models.ElementAtOrDefault(index - 1)),
+                    new[] { NoValueName }.Concat(models.Select(model => model.Name))),
+                UI.DynamicElementIf(
+                    () => parameter.GetBinding() != null,
+                    () => NumberField("Depth", () => parameter.GetBinding()?.Depth ?? 0, value =>
+                    {
+                        var binding = parameter.GetBinding();
+                        if (binding != null) binding.Depth = value;
+                    })),
+                NumberField("Ref. Multiplier", () => parameter.Multiplier, value => parameter.Multiplier = value),
+                NumberField("Absolute Value", () => parameter.AbsoluteValue, value => parameter.AbsoluteValue = value));
+        }
+
+        private string ParameterHeader(string name, PresetParameter parameter)
+        {
+            var binding = parameter.GetBinding();
+            var model = binding == null ? null : Document.Modulators.FirstOrDefault(entry => entry.Id == binding.ModulatorId);
+            var value = binding == null ? parameter.Base : parameter.Base + binding.Depth * SignalAtBeat(binding.ModulatorId);
+            var output = ParameterOutput(parameter, value);
+            return model == null ? $"{name}  {output}" : $"{name}  {output}  [{model.Name}]";
+        }
+
+        private void SelectValue(string name, PresetParameter parameter, ModulatorSettings model)
+        {
+            if (model == null)
             {
-                style.alignItems = Align.Center;
-                style.marginTop = 4;
-                style.marginBottom = 4;
+                parameter.Unbind();
+                Changed();
+                return;
+            }
+
+            var current = parameter.GetBinding();
+            if (current?.ModulatorId == model.Id) return;
+
+            parameter.Bind(model.Id, current?.Depth ?? DefaultDepth(name, parameter));
+            Changed();
+        }
+
+        private static double DefaultDepth(string name, PresetParameter parameter)
+        {
+            if (name == "Opacity") return 1;
+            if (name.StartsWith("Position")) return 100;
+            if (name == "Rotation") return 90;
+
+            return parameter.Base == 0 ? 1 : parameter.Base;
+        }
+
+        private string ParameterOutput(PresetParameter parameter, double value)
+        {
+            try
+            {
+                var texture = _controller && _controller.OutputCamera ? _controller.OutputCamera.targetTexture : null;
+                var context = texture
+                    ? new ReferenceContext(texture.width, texture.height)
+                    : new ReferenceContext(1920, 1080);
+                var reference = new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue);
+                return (reference.Evaluate(context) * value).ToString("F2");
+            }
+            catch (ArgumentException)
+            {
+                return "-";
+            }
+        }
+
+        private Element NumberField(string label, Func<double> read, Action<double> write)
+        {
+            return UI.Field(label, () => (float)read(), value =>
+            {
+                write(value);
+                Changed();
             });
         }
     }
