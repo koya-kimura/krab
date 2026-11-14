@@ -36,6 +36,7 @@ KrabはUnity製の映像制作・ライブパフォーマンス用プロジェ�
 
 ## コード変更のルール
 
+- 命名・メンバー順・書式・Unity接続の書き方は `Assets/Krab/Docs/CodingStyle.md` に従う。`Common/Scripts/` のMidi以外がオーナーの手本コード。
 - 既存のnamespace（`Krab.Common.*`、`Krab.ShapeSynth.*`）と周辺コードの書式に合わせる。機能と無関係な一括整形・リファクタリングは避ける。
 - 継承を想定しないクラスは `sealed` を検討し、単純なプロパティにはauto-propertyや式形式を使う。UnityのInspector表示・シリアライズが必要なフィールドは維持する。
 - ファイルが300行を超える場合は責務ごとの分割を検討する。分割自体を目的にしない。
