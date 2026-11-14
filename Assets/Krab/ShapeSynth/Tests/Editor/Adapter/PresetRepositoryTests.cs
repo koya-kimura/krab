@@ -5,8 +5,8 @@ using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Unity.Persistence;
+using Newtonsoft.Json;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace Krab.ShapeSynth.Tests.Editor.Adapter
 {
@@ -253,7 +253,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         private void WriteDocument(PresetDocument document)
         {
             Directory.CreateDirectory(_directory);
-            File.WriteAllText(FilePath(document.Id + ".json"), JsonUtility.ToJson(document));
+            File.WriteAllText(FilePath(document.Id + ".json"), JsonConvert.SerializeObject(document));
         }
 
         private string FilePath(string fileName)

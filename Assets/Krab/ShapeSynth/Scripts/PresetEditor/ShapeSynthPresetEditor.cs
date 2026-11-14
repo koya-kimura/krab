@@ -95,6 +95,8 @@ namespace Krab.ShapeSynth.PresetEditor
             _workspaceScale?.Dispose();
         }
 
+        // The node tree is recursive; keep Unity's reload serialization from walking it. Files are the source of truth.
+        [field: NonSerialized]
         public PresetDocument Document { get; private set; }
 
         public PresetRepository Repository => _repository ??= new PresetRepository();
