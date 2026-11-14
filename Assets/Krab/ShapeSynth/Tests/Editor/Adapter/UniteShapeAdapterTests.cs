@@ -48,9 +48,13 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
                 var shape = ShapeDefinition.Circle(ParameterDefinition.Constant(-1),
                     new TransformDefinition(positionX: ParameterDefinition.Constant(double.MaxValue)));
                 var items = Evaluate(shape);
+
                 Assert.DoesNotThrow(() => UniteShapeAdapter.Draw(canvas, items, 640, 480));
             }
-            finally { UnityEngine.Object.DestroyImmediate(gameObject); }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
         }
 
         [Test]
@@ -65,14 +69,20 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
                     new Point2(0, 0), new Point2(1, 0), new Point2(0, 1e100)
                 });
                 var items = Evaluate(polygon);
+
                 Assert.Throws<ArgumentOutOfRangeException>(() => UniteShapeAdapter.Draw(canvas, items, 640, 480));
             }
-            finally { UnityEngine.Object.DestroyImmediate(gameObject); }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
         }
 
-        private static IReadOnlyList<DrawItem> Evaluate(ShapeDefinition shape) =>
-            new HierarchyEvaluator(new GroupDefinition(null, shape), Array.Empty<IModulator>())
+        private static IReadOnlyList<DrawItem> Evaluate(ShapeDefinition shape)
+        {
+            return new HierarchyEvaluator(new GroupDefinition(null, shape), Array.Empty<IModulator>())
                 .Evaluate(0, new ReferenceContext(640, 480));
+        }
 
         private static void AssertPoint(Matrix4x4 matrix, Vector2 point, float x, float y)
         {

@@ -14,12 +14,13 @@ namespace Krab.ShapeSynth.Tests.Editor
 {
     public sealed class MultiPresetTests
     {
-        private static readonly ReferenceContext Canvas = new ReferenceContext(1920, 1080);
+        private static readonly ReferenceContext Canvas = new(1920, 1080);
 
         [Test]
         public void CatalogHasFiveUniquePresetIdsAndKeysAndLeavesOtherKeysUnmapped()
         {
             var entries = PresetCatalog.Entries;
+
             Assert.That(entries, Has.Count.EqualTo(5));
             Assert.That(entries.Select(entry => entry.Id).Distinct().Count(), Is.EqualTo(5));
             Assert.That(entries.Select(entry => entry.Key).Distinct().Count(), Is.EqualTo(5));
@@ -37,10 +38,12 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var settings = PerformanceSettings.CreateForPerformance();
             var fxItems = Evaluate(settings, "fx01", 1234, 0.05);
+
             Assert.That(fxItems, Has.Count.EqualTo(150));
             Assert.That(fxItems.All(item => item.Kind == ShapeKind.Circle), Is.True);
 
             var padItems = Evaluate(settings, "pad01", 1234, 0.05);
+
             Assert.That(padItems, Has.Count.EqualTo(5));
             Assert.That(padItems.All(item => item.Kind == ShapeKind.Circle), Is.True);
             foreach (var item in padItems)
@@ -55,8 +58,10 @@ namespace Krab.ShapeSynth.Tests.Editor
             }
 
             var snareItems = Evaluate(settings, "snare01", 1234, 0.05);
+
             Assert.That(snareItems, Has.Count.EqualTo(5));
             Assert.That(snareItems.All(item => item.Kind == ShapeKind.Polygon && item.Vertices.Count == 3), Is.True);
+
             var radii = new List<double>();
             foreach (var item in snareItems)
             {
@@ -69,7 +74,9 @@ namespace Krab.ShapeSynth.Tests.Editor
                 Assert.That(y + Canvas.CanvasHeight / 2, Is.InRange(0, Canvas.CanvasHeight));
                 Assert.That(item.Opacity, Is.InRange(0, 1));
             }
+
             Assert.That(radii.Max() - radii.Min(), Is.LessThan(1e-8));
+
             var before = Evaluate(settings, "snare01", 1234, 0)[0].WorldTransform;
             var peak = Evaluate(settings, "snare01", 1234, 0.025)[0].WorldTransform;
             Assert.That(peak.M02 * peak.M02 + peak.M12 * peak.M12,
@@ -95,7 +102,10 @@ namespace Krab.ShapeSynth.Tests.Editor
                 AssertPoint(vertices[i], sameSeedVertices[i]);
             }
             Assert.That(vertices.Select(vertex => $"{vertex.X:R},{vertex.Y:R}").Distinct().Count(), Is.EqualTo(10));
-            Assert.That(vertices.Where((vertex, index) => vertex.X != otherSeedVertices[index].X || vertex.Y != otherSeedVertices[index].Y).Any(), Is.True);
+            Assert.That(
+                vertices.Where((vertex, index) =>
+                    vertex.X != otherSeedVertices[index].X || vertex.Y != otherSeedVertices[index].Y).Any(),
+                Is.True);
         }
 
         [Test]
@@ -103,17 +113,25 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var settings = PerformanceSettings.CreateForPerformance();
             var target = PresetCatalog.Build(settings, "lead03", 1234);
-            var rectangles = target.Definition.Children.Cast<ShapeDefinition>().Where(shape => shape.Kind == ShapeKind.Rectangle).ToArray();
-            var circles = target.Definition.Children.Cast<ShapeDefinition>().Where(shape => shape.Kind == ShapeKind.Circle).ToArray();
+            var shapes = target.Definition.Children.Cast<ShapeDefinition>().ToArray();
+            var rectangles = shapes.Where(shape => shape.Kind == ShapeKind.Rectangle).ToArray();
+            var circles = shapes.Where(shape => shape.Kind == ShapeKind.Circle).ToArray();
+
             Assert.That(rectangles, Has.Length.EqualTo(25));
             Assert.That(circles.Length, Is.InRange(1, 25));
-            Assert.That(rectangles.All(shape => !shape.Style.FillEnabled && shape.Style.StrokeEnabled && shape.Style.StrokeWidth == 3), Is.True);
+            Assert.That(
+                rectangles.All(shape =>
+                    !shape.Style.FillEnabled && shape.Style.StrokeEnabled && shape.Style.StrokeWidth == 3),
+                Is.True);
             Assert.That(circles.All(shape => shape.Color.R > shape.Color.G && shape.Color.R > shape.Color.B), Is.True);
 
             var items = Evaluate(settings, "lead03", 1234, 0.05);
             var rectangleItems = items.Where(item => item.Kind == ShapeKind.Rectangle).ToArray();
-            var xCoordinates = rectangleItems.Select(item => Math.Round(item.WorldTransform.M02, 6)).Distinct().OrderBy(x => x).ToArray();
-            var yCoordinates = rectangleItems.Select(item => Math.Round(item.WorldTransform.M12, 6)).Distinct().OrderBy(y => y).ToArray();
+            var xCoordinates = rectangleItems
+                .Select(item => Math.Round(item.WorldTransform.M02, 6)).Distinct().OrderBy(x => x).ToArray();
+            var yCoordinates = rectangleItems
+                .Select(item => Math.Round(item.WorldTransform.M12, 6)).Distinct().OrderBy(y => y).ToArray();
+
             Assert.That(xCoordinates, Has.Length.EqualTo(5));
             Assert.That(yCoordinates, Has.Length.EqualTo(5));
             Assert.That(xCoordinates[0], Is.EqualTo(-302.4).Within(1e-5));
@@ -130,17 +148,28 @@ namespace Krab.ShapeSynth.Tests.Editor
             var collection = new VoiceCollection();
             var voices = new List<VoiceInstance>();
             foreach (var descriptor in PresetCatalog.Entries)
+            {
                 voices.Add(collection.Spawn(PresetCatalog.Build(settings, descriptor.Id, 100), 0, 120, 100));
+            }
+
             var repeated = collection.Spawn(PresetCatalog.Build(settings, "pad01", 101), 0, 120, 101);
             voices.Add(repeated);
 
             Assert.That(collection.Voices, Has.Count.EqualTo(6));
             Assert.That(voices[1].Modulators[0], Is.Not.SameAs(repeated.Modulators[0]));
             for (var i = 0; i < voices.Count; i++)
-            for (var j = i + 1; j < voices.Count; j++)
-                Assert.That(voices[i].Modulators[0], Is.Not.SameAs(voices[j].Modulators[0]));
+            {
+                for (var j = i + 1; j < voices.Count; j++)
+                {
+                    Assert.That(voices[i].Modulators[0], Is.Not.SameAs(voices[j].Modulators[0]));
+                }
+            }
 
-            foreach (var voice in voices) Assert.That(voice.Evaluate(0.05, Canvas), Is.Not.Empty);
+            foreach (var voice in voices)
+            {
+                Assert.That(voice.Evaluate(0.05, Canvas), Is.Not.Empty);
+            }
+
             Assert.That(collection.Evaluate(20, Canvas), Is.Empty);
             Assert.That(collection.Voices, Is.Empty);
         }
@@ -156,7 +185,8 @@ namespace Krab.ShapeSynth.Tests.Editor
             var oldEnvelope = (AdsrInstance)oldVoice.Modulators[0];
 
             settings.Modulators.Single(modulator => modulator.Id == "lead03-envelope").Attack = 0.01;
-            var newVoice = new VoiceInstance(PresetCatalog.Build(settings, "lead03", 1234), new VoiceTime(0, 120), 1234);
+            var newVoice = new VoiceInstance(
+                PresetCatalog.Build(settings, "lead03", 1234), new VoiceTime(0, 120), 1234);
             var newOpacity = newVoice.Evaluate(0.05, Canvas)[0].Opacity;
 
             Assert.That(oldEnvelope.Definition.Attack, Is.EqualTo(0.2));
@@ -165,8 +195,12 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(newOpacity, Is.Not.EqualTo(oldOpacity));
         }
 
-        private static IReadOnlyList<DrawItem> Evaluate(PerformanceSettings settings, string id, int seed, double seconds) =>
-            new VoiceInstance(PresetCatalog.Build(settings, id, seed), new VoiceTime(0, 120), seed).Evaluate(seconds, Canvas);
+        private static IReadOnlyList<DrawItem> Evaluate(
+            PerformanceSettings settings, string id, int seed, double seconds)
+        {
+            var voice = new VoiceInstance(PresetCatalog.Build(settings, id, seed), new VoiceTime(0, 120), seed);
+            return voice.Evaluate(seconds, Canvas);
+        }
 
         private static void AssertColor(RgbaColor actual, double r, double g, double b)
         {

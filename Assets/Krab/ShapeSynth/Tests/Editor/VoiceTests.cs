@@ -8,16 +8,9 @@ using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor
 {
-    public class VoiceTests
+    public sealed class VoiceTests
     {
-        private static readonly ReferenceContext Context = new ReferenceContext(100, 80);
-        private static ShapeDefinition Shape(params BindingDefinition[] bindings) =>
-            ShapeDefinition.Circle(new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), 1, bindings));
-        private static GroupDefinition Group(GroupRuntimeDefinition runtime, params INodeDefinition[] children) =>
-            new GroupDefinition(null, runtime, children);
-        private static GroupRuntimeDefinition Scope(params ModulatorSlotDefinition[] slots) => new GroupRuntimeDefinition(slots);
-        private static AdsrDefinition Envelope(double sustain = 1, double sustainTime = 10, double release = 1) =>
-            new AdsrDefinition(0, 0, sustain, sustainTime, release);
+        private static readonly ReferenceContext Context = new(100, 80);
 
         [Test]
         public void NestedInheritedGroupsShareParentScopeAndSampleAtSameTime()
@@ -26,6 +19,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var root = Group(Scope(new ModulatorSlotDefinition(adsr, false)),
                 Group(null, Group(null, Shape(new BindingDefinition(0, 3)))));
             var voice = new VoiceInstance(new TriggerTarget(root), new VoiceTime(2, 60));
+
             Assert.That(voice.Modulators, Has.Count.EqualTo(1));
             Assert.That(voice.Evaluate(2, Context)[0].Width, Is.EqualTo(4));
             Assert.That(voice.Evaluate(2, Context)[0].Width, Is.EqualTo(4));
@@ -39,12 +33,15 @@ namespace Krab.ShapeSynth.Tests.Editor
             var target = new TriggerTarget(Group(null, subtree, subtree));
             var first = new VoiceInstance(target, new VoiceTime(0, 60));
             var second = new VoiceInstance(target, new VoiceTime(2, 120));
+
             Assert.That(first.Modulators, Has.Count.EqualTo(2));
             Assert.That(first.Lifetimes, Has.Count.EqualTo(2));
             Assert.That(second.Modulators, Has.Count.EqualTo(2));
             Assert.That(first.Modulators[0], Is.Not.SameAs(first.Modulators[1]));
             Assert.That(first.Modulators[0], Is.Not.SameAs(second.Modulators[0]));
+
             first.Release(1);
+
             Assert.That(((ILifetime)first.Modulators[0]).IsFinished(2), Is.True);
             Assert.That(((ILifetime)second.Modulators[0]).IsFinished(2), Is.False);
         }
@@ -53,9 +50,11 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void RepeatedSourceSlotsAliasAndBindingsResolveSameInstance()
         {
             var adsr = Envelope();
-            var root = Group(Scope(new ModulatorSlotDefinition(adsr, false), new ModulatorSlotDefinition(adsr, false)),
+            var root = Group(
+                Scope(new ModulatorSlotDefinition(adsr, false), new ModulatorSlotDefinition(adsr, false)),
                 Shape(new BindingDefinition(0, 1), new BindingDefinition(1, 2)));
             var voice = new VoiceInstance(new TriggerTarget(root), new VoiceTime(0, 60));
+
             Assert.That(voice.Modulators, Has.Count.EqualTo(1));
             Assert.That(voice.Evaluate(0, Context)[0].Width, Is.EqualTo(4));
         }
@@ -72,12 +71,15 @@ namespace Krab.ShapeSynth.Tests.Editor
             var target = new TriggerTarget(Group(runtime, Group(null, Shape())));
             var slow = new VoiceInstance(target, new VoiceTime(0, 60));
             var fast = new VoiceInstance(target, new VoiceTime(0, 120));
+
             Assert.That(slow.Time.StartBpm, Is.EqualTo(60));
             Assert.That(fast.Time.StartBpm, Is.EqualTo(120));
             Assert.That(slow.Modulators[0].Evaluate(1), Is.EqualTo(1));
             Assert.That(fast.Modulators[0].Evaluate(1), Is.EqualTo(-1));
-            Assert.That(((LfoInstance)slow.Modulators[0]).Time.StartSeconds, Is.EqualTo(slow.Time.StartSeconds));
-            Assert.That(((AdsrInstance)slow.Modulators[1]).Time.StartSeconds, Is.EqualTo(slow.Time.StartSeconds));
+            Assert.That(
+                ((LfoInstance)slow.Modulators[0]).Time.StartSeconds, Is.EqualTo(slow.Time.StartSeconds));
+            Assert.That(
+                ((AdsrInstance)slow.Modulators[1]).Time.StartSeconds, Is.EqualTo(slow.Time.StartSeconds));
             Assert.That(slow.Lifetimes, Has.Count.EqualTo(2));
             Assert.That(slow.IsFinished(1), Is.False);
             Assert.That(fast.IsFinished(1), Is.True);
@@ -91,10 +93,12 @@ namespace Krab.ShapeSynth.Tests.Editor
             var root = Group(Scope(new ModulatorSlotDefinition(Envelope(), false)),
                 Group(new GroupRuntimeDefinition(timers: new[] { timer }), Shape(new BindingDefinition(0, 1))));
             var voice = new VoiceInstance(new TriggerTarget(root), new VoiceTime(0, 60));
+
             Assert.That(voice.Modulators, Has.Count.EqualTo(1));
             Assert.That(voice.Lifetimes, Has.Count.EqualTo(2));
             Assert.That(voice.IsFinished(1), Is.False);
-            Assert.That(voice.IsFinished(2), Is.False); // Held ADSR outlives timer.
+            // Held ADSR outlives timer.
+            Assert.That(voice.IsFinished(2), Is.False);
         }
 
         [TestCase(true)]
@@ -103,9 +107,11 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var timerBeats = timerFirst ? 1 : 5;
             var envBeats = timerFirst ? 5 : 1;
-            var runtime = new GroupRuntimeDefinition(new[] { new ModulatorSlotDefinition(Envelope(sustainTime: envBeats, release: 0), true) },
+            var runtime = new GroupRuntimeDefinition(
+                new[] { new ModulatorSlotDefinition(Envelope(sustainTime: envBeats, release: 0), true) },
                 new[] { new TimerDefinition(timerBeats) });
             var voice = new VoiceInstance(new TriggerTarget(Group(runtime, Shape())), new VoiceTime(0, 60));
+
             Assert.That(voice.IsFinished(Math.Min(timerBeats, envBeats) - 0.001), Is.False);
             Assert.That(voice.IsFinished(Math.Min(timerBeats, envBeats)), Is.False);
             Assert.That(voice.IsFinished(Math.Max(timerBeats, envBeats) - 0.001), Is.False);
@@ -115,9 +121,12 @@ namespace Krab.ShapeSynth.Tests.Editor
         [Test]
         public void LifetimeMayBeNestedButHierarchyNeedsOneLifetimeSomewhere()
         {
-            var valid = Group(null, Group(new GroupRuntimeDefinition(timers: new[] { new TimerDefinition(1) }), Shape()));
+            var valid = Group(
+                null, Group(new GroupRuntimeDefinition(timers: new[] { new TimerDefinition(1) }), Shape()));
+
             Assert.DoesNotThrow(() => new VoiceInstance(new TriggerTarget(valid), new VoiceTime(0, 60)));
-            Assert.Throws<ArgumentException>(() => new VoiceInstance(new TriggerTarget(Group(null, Shape())), new VoiceTime(0, 60)));
+            Assert.Throws<ArgumentException>(
+                () => new VoiceInstance(new TriggerTarget(Group(null, Shape())), new VoiceTime(0, 60)));
         }
 
         [Test]
@@ -130,6 +139,7 @@ namespace Krab.ShapeSynth.Tests.Editor
                 Group(Scope(new ModulatorSlotDefinition(second, false)), Shape()));
             var voice = new VoiceInstance(new TriggerTarget(root), new VoiceTime(0, 60));
             voice.Release(2);
+
             Assert.That(voice.Lifetimes, Has.Count.EqualTo(3));
             Assert.That(((ILifetime)voice.Modulators[0]).IsFinished(3), Is.True);
             Assert.That(((ILifetime)voice.Modulators[1]).IsFinished(3), Is.True);
@@ -147,6 +157,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var oldA = collection.Spawn(a, 0, 60);
             var oldB = collection.Spawn(b, 0, 60);
             var restarted = collection.Restart(a, 1, 60);
+
             Assert.That(collection.Voices, Has.Count.EqualTo(2));
             Assert.That(collection.Voices[0], Is.SameAs(oldB));
             Assert.That(collection.Voices[1], Is.SameAs(restarted));
@@ -158,10 +169,12 @@ namespace Krab.ShapeSynth.Tests.Editor
         [Test]
         public void FailedRestartPreservesExistingVoices()
         {
-            var good = new TriggerTarget(Group(new GroupRuntimeDefinition(timers: new[] { new TimerDefinition(10) }), Shape()));
+            var good = new TriggerTarget(
+                Group(new GroupRuntimeDefinition(timers: new[] { new TimerDefinition(10) }), Shape()));
             var bad = new TriggerTarget(Group(null, Shape()));
             var collection = new VoiceCollection();
             var live = collection.Spawn(good, 0, 60);
+
             Assert.Throws<ArgumentException>(() => collection.Restart(bad, 1, 60));
             Assert.That(collection.Voices, Has.Count.EqualTo(1));
             Assert.That(collection.Voices[0], Is.SameAs(live));
@@ -174,6 +187,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var collection = new VoiceCollection();
             collection.Spawn(new TriggerTarget(definition), 0, 60);
             collection.Spawn(new TriggerTarget(definition), 1, 60);
+
             Assert.That(collection.Evaluate(1, Context), Has.Count.EqualTo(1));
             Assert.That(collection.Voices, Has.Count.EqualTo(1));
             Assert.That(collection.Voices[0].Time.StartSeconds, Is.EqualTo(1));
@@ -184,12 +198,12 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var timer = new GroupRuntimeDefinition(timers: new[] { new TimerDefinition(10) });
             var a = new TriggerTarget(Group(timer, Shape()));
-            var b = new TriggerTarget(Group(timer,
-                ShapeDefinition.Circle(ParameterDefinition.Constant(2))));
+            var b = new TriggerTarget(Group(timer, ShapeDefinition.Circle(ParameterDefinition.Constant(2))));
             var collection = new VoiceCollection();
             collection.Spawn(a, 0, 60);
             collection.Spawn(b, 0, 60);
             var items = collection.Evaluate(0, Context);
+
             Assert.That(items, Has.Count.EqualTo(2));
             Assert.That(collection.Voices[0].Target, Is.SameAs(a));
             Assert.That(collection.Voices[1].Target, Is.SameAs(b));
@@ -202,12 +216,20 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             Assert.Throws<ArgumentNullException>(() => new TriggerTarget(null));
             Assert.Throws<ArgumentNullException>(() => new VoiceInstance(null, new VoiceTime(0, 60)));
-            Assert.Throws<ArgumentException>(() => new GroupRuntimeDefinition(new ModulatorSlotDefinition[] { null }));
+            Assert.Throws<ArgumentException>(
+                () => new GroupRuntimeDefinition(new ModulatorSlotDefinition[] { null }));
+
             var shared = Envelope();
-            Assert.Throws<ArgumentException>(() => new VoiceInstance(new TriggerTarget(Group(
-                Scope(new ModulatorSlotDefinition(shared, true), new ModulatorSlotDefinition(shared, false)), Shape())), new VoiceTime(0, 60)));
-            var invalid = Group(Scope(new ModulatorSlotDefinition(new LfoDefinition(1))), Shape(new BindingDefinition(1, 1)));
-            Assert.Throws<ArgumentException>(() => new VoiceInstance(new TriggerTarget(invalid), new VoiceTime(0, 60)));
+            Assert.Throws<ArgumentException>(() => new VoiceInstance(
+                new TriggerTarget(Group(
+                    Scope(new ModulatorSlotDefinition(shared, true), new ModulatorSlotDefinition(shared, false)),
+                    Shape())),
+                new VoiceTime(0, 60)));
+
+            var invalid = Group(
+                Scope(new ModulatorSlotDefinition(new LfoDefinition(1))), Shape(new BindingDefinition(1, 1)));
+            Assert.Throws<ArgumentException>(
+                () => new VoiceInstance(new TriggerTarget(invalid), new VoiceTime(0, 60)));
         }
 
         [Test]
@@ -216,11 +238,35 @@ namespace Krab.ShapeSynth.Tests.Editor
             var slots = new List<ModulatorSlotDefinition> { new ModulatorSlotDefinition(Envelope(), false) };
             var runtime = new GroupRuntimeDefinition(slots);
             slots.Clear();
+
             Assert.That(runtime.Modulators, Has.Count.EqualTo(1));
-            Assert.Throws<NotSupportedException>(() => ((IList<ModulatorSlotDefinition>)runtime.Modulators).Clear());
+            Assert.Throws<NotSupportedException>(
+                () => ((IList<ModulatorSlotDefinition>)runtime.Modulators).Clear());
+
             var voice = new VoiceInstance(new TriggerTarget(Group(runtime, Shape())), new VoiceTime(0, 60));
             Assert.Throws<NotSupportedException>(() => ((IList<IModulator>)voice.Modulators).Clear());
             Assert.Throws<NotSupportedException>(() => ((IList<ILifetime>)voice.Lifetimes).Clear());
+        }
+
+        private static ShapeDefinition Shape(params BindingDefinition[] bindings)
+        {
+            return ShapeDefinition.Circle(
+                new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), 1, bindings));
+        }
+
+        private static GroupDefinition Group(GroupRuntimeDefinition runtime, params INodeDefinition[] children)
+        {
+            return new GroupDefinition(null, runtime, children);
+        }
+
+        private static GroupRuntimeDefinition Scope(params ModulatorSlotDefinition[] slots)
+        {
+            return new GroupRuntimeDefinition(slots);
+        }
+
+        private static AdsrDefinition Envelope(double sustain = 1, double sustainTime = 10, double release = 1)
+        {
+            return new AdsrDefinition(0, 0, sustain, sustainTime, release);
         }
     }
 }

@@ -6,12 +6,8 @@ using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor
 {
-    public class LfoTests
+    public sealed class LfoTests
     {
-        private static LfoInstance Create(LfoWaveform waveform, double cyclesPerBeat = 1, double phaseOffset = 0,
-            double startSeconds = 0, double startBpm = 60) =>
-            new LfoInstance(new LfoDefinition(cyclesPerBeat, phaseOffset, waveform), new VoiceTime(startSeconds, startBpm));
-
         [TestCase(LfoWaveform.Sine, 0, 0)]
         [TestCase(LfoWaveform.Sine, 0.25, 1)]
         [TestCase(LfoWaveform.Sine, 0.5, 0)]
@@ -53,6 +49,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void SineOffsetChangesTheStartingSignal(double offset, double expected)
         {
             var instance = Create(LfoWaveform.Sine, phaseOffset: offset, startSeconds: 10);
+
             Assert.That(instance.Evaluate(10), Is.EqualTo(expected).Within(1e-12));
             Assert.That(instance.Evaluate(9), Is.EqualTo(expected).Within(1e-12));
         }
@@ -62,6 +59,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var positive = Create(LfoWaveform.Square, phaseOffset: 1.25, startSeconds: 10);
             var negative = Create(LfoWaveform.Square, phaseOffset: -0.75, startSeconds: 10);
+
             Assert.That(positive.Definition.PhaseOffset, Is.EqualTo(0.25));
             Assert.That(negative.Definition.PhaseOffset, Is.EqualTo(0.25));
             Assert.That(positive.Evaluate(5), Is.EqualTo(1));
@@ -74,6 +72,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var instance = Create(LfoWaveform.Triangle, 0.25, 0.1);
             var atFour = instance.Evaluate(4);
             var atHalf = instance.Evaluate(0.5);
+
             Assert.That(instance.Evaluate(0.5), Is.EqualTo(atHalf).Within(1e-12));
             Assert.That(instance.Evaluate(4), Is.EqualTo(atFour).Within(1e-12));
             Assert.That(instance.Evaluate(1000004), Is.EqualTo(atFour).Within(1e-9));
@@ -99,6 +98,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void LargeFiniteTimePreservesRepresentableFractionalPhase()
         {
             var instance = Create(LfoWaveform.Sine, 1, startBpm: 60);
+
             Assert.That(instance.Evaluate(1e12 + 0.25), Is.EqualTo(1).Within(1e-9));
         }
 
@@ -132,8 +132,9 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void ExtremeFiniteFrequenciesDoNotOverflowTheCycleProduct()
         {
             var fast = Create(LfoWaveform.Sine, double.MaxValue);
-            Assert.That(fast.Evaluate(double.MaxValue), Is.InRange(-1, 1));
             var slow = Create(LfoWaveform.Sine, double.Epsilon, 0.25);
+
+            Assert.That(fast.Evaluate(double.MaxValue), Is.InRange(-1, 1));
             Assert.That(slow.Evaluate(1), Is.EqualTo(1).Within(1e-12));
         }
 
@@ -152,8 +153,17 @@ namespace Krab.ShapeSynth.Tests.Editor
             var instance = Create(LfoWaveform.Sine);
             Assert.Throws<ArgumentOutOfRangeException>(() => instance.Evaluate(double.NaN));
             Assert.Throws<ArgumentOutOfRangeException>(() => instance.Evaluate(double.PositiveInfinity));
+
             var extremeStart = Create(LfoWaveform.Sine, startSeconds: -double.MaxValue);
             Assert.Throws<ArgumentOutOfRangeException>(() => extremeStart.Evaluate(double.MaxValue));
+        }
+
+        private static LfoInstance Create(
+            LfoWaveform waveform, double cyclesPerBeat = 1, double phaseOffset = 0,
+            double startSeconds = 0, double startBpm = 60)
+        {
+            var definition = new LfoDefinition(cyclesPerBeat, phaseOffset, waveform);
+            return new LfoInstance(definition, new VoiceTime(startSeconds, startBpm));
         }
     }
 }

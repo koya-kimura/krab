@@ -15,14 +15,15 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         [SetUp]
         public void SetUp()
         {
-            _directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Krab-" + Guid.NewGuid().ToString("N"));
-            _path = System.IO.Path.Combine(_directory, "settings.json");
+            _directory = Path.Combine(Path.GetTempPath(), "Krab-" + Guid.NewGuid().ToString("N"));
+            _path = Path.Combine(_directory, "settings.json");
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_directory)) Directory.Delete(_directory, true);
+            if (Directory.Exists(_directory))
+                Directory.Delete(_directory, true);
         }
 
         [Test]
@@ -68,6 +69,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var json = PerformanceSettingsStore.Encode(PerformanceSettings.CreateDefault())
                 .Replace("\"Waveform\": 0", "\"Waveform\": 3");
+
             Assert.That(PerformanceSettingsStore.Decode(json).Modulators[1].Waveform, Is.EqualTo((LfoWaveform)3));
         }
 
@@ -76,20 +78,26 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var defaults = PerformanceSettings.CreateDefault();
             Assert.Throws<ArgumentException>(() => PerformanceSettingsStore.Decode("{"));
+
             defaults.Version = 2;
             Assert.Throws<ArgumentException>(() => PerformanceSettingsStore.Encode(defaults));
+
             defaults = PerformanceSettings.CreateDefault();
             defaults.Modulators.Add(defaults.Modulators[0]);
             Assert.Throws<ArgumentException>(() => PerformanceSettingsStore.Encode(defaults));
+
             defaults = PerformanceSettings.CreateDefault();
             defaults.Fx01.EnvelopeId = "missing";
             Assert.Throws<ArgumentException>(() => PerformanceSettingsStore.Encode(defaults));
+
             defaults = PerformanceSettings.CreateDefault();
             defaults.Modulators[0].Kind = (ModulatorKind)99;
             Assert.Throws<ArgumentOutOfRangeException>(() => PerformanceSettingsStore.Encode(defaults));
+
             defaults = PerformanceSettings.CreateDefault();
             defaults.Modulators[0].Attack = double.NaN;
             Assert.Throws<ArgumentOutOfRangeException>(() => PerformanceSettingsStore.Encode(defaults));
+
             defaults = PerformanceSettings.CreateDefault();
             defaults.Fx01.CircleCount = 2001;
             Assert.Throws<ArgumentOutOfRangeException>(() => PerformanceSettingsStore.Encode(defaults));
@@ -101,11 +109,13 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var store = new PerformanceSettingsStore(_path);
             var original = PerformanceSettings.CreateDefault();
             store.Save(original);
+
             Assert.That(store.Exists, Is.True);
             Assert.That(store.Load().Fx01.CircleCount, Is.EqualTo(150));
 
             original.Fx01.CircleCount = 240;
             store.Save(original);
+
             Assert.That(store.Load().Fx01.CircleCount, Is.EqualTo(240));
             Assert.That(Directory.GetFiles(_directory), Is.EqualTo(new[] { _path }));
         }

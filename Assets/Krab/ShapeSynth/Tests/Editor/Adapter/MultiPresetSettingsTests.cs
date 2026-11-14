@@ -14,14 +14,15 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         [SetUp]
         public void SetUp()
         {
-            _directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Krab-" + Guid.NewGuid().ToString("N"));
-            _path = System.IO.Path.Combine(_directory, "settings.json");
+            _directory = Path.Combine(Path.GetTempPath(), "Krab-" + Guid.NewGuid().ToString("N"));
+            _path = Path.Combine(_directory, "settings.json");
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_directory)) Directory.Delete(_directory, true);
+            if (Directory.Exists(_directory))
+                Directory.Delete(_directory, true);
         }
 
         [Test]
@@ -55,9 +56,11 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
 
             var source = PerformanceSettings.CreateForPerformance();
             Assert.That(source.Modulators, Has.Count.EqualTo(8));
+
             source.Presets[0].Seed = 7654;
-            source.Modulators.Find(entry => entry.Id == "pad01-envelope").Attack = 1.15;
-            source.Modulators.Find(entry => entry.Id == "pad01-envelope").Name = "Edited pad envelope";
+            var sourceEnvelope = source.Modulators.Find(entry => entry.Id == "pad01-envelope");
+            sourceEnvelope.Attack = 1.15;
+            sourceEnvelope.Name = "Edited pad envelope";
 
             var decoded = PerformanceSettingsStore.Decode(PerformanceSettingsStore.Encode(source));
             var envelope = decoded.Modulators.Find(entry => entry.Id == "pad01-envelope");
@@ -74,6 +77,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var unknown = PerformanceSettings.CreateForPerformance();
             unknown.Presets[0].Id = "other";
+
             Assert.Throws<ArgumentException>(() => PerformanceSettingsStore.Encode(unknown));
 
             var duplicate = PerformanceSettings.CreateForPerformance();

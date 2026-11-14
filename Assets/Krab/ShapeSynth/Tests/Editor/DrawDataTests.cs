@@ -1,3 +1,4 @@
+using System;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Geometry;
@@ -6,20 +7,23 @@ using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor
 {
-    public class DrawDataTests
+    public sealed class DrawDataTests
     {
         [Test]
         public void EvaluatedItemsContainOrderedShapeDataAcrossNestedAndEmptyGroups()
         {
-            var circle = ShapeDefinition.Circle(ParameterDefinition.Constant(4), opacity: ParameterDefinition.Constant(-0.25),
+            var circle = ShapeDefinition.Circle(
+                ParameterDefinition.Constant(4), opacity: ParameterDefinition.Constant(-0.25),
                 color: new RgbaColor(0.1, 0.2, 0.3, 0.4));
             var rectangle = ShapeDefinition.Rectangle(ParameterDefinition.Constant(8), ParameterDefinition.Constant(6),
                 opacity: ParameterDefinition.Constant(1.5), color: new RgbaColor(0.5, 0.6, 0.7));
             var polygon = ShapeDefinition.Polygon(new[] { new Point2(-2, 1), new Point2(3, 1), new Point2(0, 5) },
                 color: new RgbaColor(0.8, 0.7, 0.6));
-            var root = new GroupDefinition(null, circle, new GroupDefinition(null, rectangle, new GroupDefinition(), polygon));
+            var root = new GroupDefinition(
+                null, circle, new GroupDefinition(null, rectangle, new GroupDefinition(), polygon));
 
-            var items = new HierarchyEvaluator(root, new IModulator[0]).Evaluate(0, new ReferenceContext(800, 450));
+            var items = new HierarchyEvaluator(root, Array.Empty<IModulator>())
+                .Evaluate(0, new ReferenceContext(800, 450));
 
             Assert.That(items, Has.Count.EqualTo(3));
             Assert.That(items[0].Kind, Is.EqualTo(ShapeKind.Circle));
@@ -44,7 +48,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var width = new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasWidth, 0.1), 1);
             var height = new ParameterDefinition(new ReferenceDefinition(ReferenceSource.CanvasHeight, 0.2), 1);
             var evaluator = new HierarchyEvaluator(new GroupDefinition(null,
-                ShapeDefinition.Rectangle(width, height)), new IModulator[0]);
+                ShapeDefinition.Rectangle(width, height)), Array.Empty<IModulator>());
 
             var small = evaluator.Evaluate(0, new ReferenceContext(100, 50))[0];
             var large = evaluator.Evaluate(0, new ReferenceContext(300, 200))[0];
@@ -61,7 +65,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var definition = new GroupDefinition(new TransformDefinition(positionX: ParameterDefinition.Constant(12)),
                 ShapeDefinition.Polygon(new[] { new Point2(0, 0), new Point2(2, 0), new Point2(1, 3) },
                     opacity: ParameterDefinition.Constant(0.75), color: new RgbaColor(0.2, 0.4, 0.6)));
-            var evaluator = new HierarchyEvaluator(definition, new IModulator[0]);
+            var evaluator = new HierarchyEvaluator(definition, Array.Empty<IModulator>());
 
             var first = evaluator.Evaluate(2, new ReferenceContext(800, 450))[0];
             var second = evaluator.Evaluate(2, new ReferenceContext(800, 450))[0];

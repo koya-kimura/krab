@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
@@ -16,13 +17,14 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         [SetUp]
         public void SetUp()
         {
-            _directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Krab-Presets-" + Guid.NewGuid().ToString("N"));
+            _directory = Path.Combine(Path.GetTempPath(), "Krab-Presets-" + Guid.NewGuid().ToString("N"));
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_directory)) Directory.Delete(_directory, true);
+            if (Directory.Exists(_directory))
+                Directory.Delete(_directory, true);
         }
 
         [Test]
@@ -114,7 +116,12 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var draft = PresetDocument.CreateNew();
             draft.Modulators.Clear();
             foreach (var node in draft.Nodes())
-                foreach (var parameter in node.Parameters()) parameter.Bindings.Clear();
+            {
+                foreach (var parameter in node.Parameters())
+                {
+                    parameter.Bindings.Clear();
+                }
+            }
 
             repository.Save(draft);
 
@@ -129,14 +136,19 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var repository = new PresetRepository(_directory);
             var document = PresetDocument.CreateNew();
             var parent = document.RootGroup;
-            for (var i = 0; i < 60; i++) parent = document.AddNode(parent.Id, PresetNodeKind.Group);
+            for (var i = 0; i < 60; i++)
+            {
+                parent = document.AddNode(parent.Id, PresetNodeKind.Group);
+            }
+
             var shape = document.AddNode(parent.Id, PresetNodeKind.Rectangle);
             shape.PositionX.Base = 123;
             repository.Save(document);
+
             var loaded = repository.Load(document.Id);
-            Assert.That(System.Linq.Enumerable.Select(loaded.Nodes(), node => node.Id),
-                Is.EqualTo(System.Linq.Enumerable.Select(document.Nodes(), node => node.Id)));
-            Assert.That(System.Linq.Enumerable.Last(loaded.Nodes()).PositionX.Base, Is.EqualTo(123));
+
+            Assert.That(loaded.Nodes().Select(node => node.Id), Is.EqualTo(document.Nodes().Select(node => node.Id)));
+            Assert.That(loaded.Nodes().Last().PositionX.Base, Is.EqualTo(123));
             Assert.DoesNotThrow(() => PresetCompiler.Compile(loaded));
         }
 
@@ -145,9 +157,10 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var repository = new PresetRepository(_directory);
             Directory.CreateDirectory(_directory);
-            File.WriteAllText(System.IO.Path.Combine(_directory, "invalid.json"), "{}");
+            File.WriteAllText(FilePath("invalid.json"), "{}");
             Assert.Throws<ArgumentException>(() => repository.Load("invalid"));
-            File.WriteAllText(System.IO.Path.Combine(_directory, "invalid.json"), "{\"SchemaVersion\":1,\"SchemaVersion\":1}");
+
+            File.WriteAllText(FilePath("invalid.json"), "{\"SchemaVersion\":1,\"SchemaVersion\":1}");
             Assert.Throws<ArgumentException>(() => repository.Load("invalid"));
         }
 
@@ -159,13 +172,15 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             repository.Save(document);
             document.Name = "Updated";
             repository.Save(document);
+
             Assert.That(repository.Load(document.Id).Name, Is.EqualTo("Updated"));
             Assert.That(Directory.GetFiles(_directory), Has.Length.EqualTo(1));
 
-            var previous = File.ReadAllText(System.IO.Path.Combine(_directory, document.Id + ".json"));
+            var previous = File.ReadAllText(FilePath(document.Id + ".json"));
             document.Name = " ";
+
             Assert.Throws<ArgumentException>(() => repository.Save(document));
-            Assert.That(File.ReadAllText(System.IO.Path.Combine(_directory, document.Id + ".json")), Is.EqualTo(previous));
+            Assert.That(File.ReadAllText(FilePath(document.Id + ".json")), Is.EqualTo(previous));
             Assert.That(Directory.GetFiles(_directory), Has.Length.EqualTo(1));
         }
 
@@ -173,6 +188,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         public void LoadAndExistsRejectPathTraversalIDs()
         {
             var repository = new PresetRepository(_directory);
+
             Assert.Throws<ArgumentException>(() => repository.Load("../outside"));
             Assert.Throws<ArgumentException>(() => repository.Exists("_hidden"));
             Assert.That(Directory.Exists(_directory), Is.False);
@@ -186,7 +202,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             valid.Id = "valid";
             repository.Save(valid);
             Directory.CreateDirectory(_directory);
-            File.WriteAllText(System.IO.Path.Combine(_directory, "broken.json"), "not JSON");
+            File.WriteAllText(FilePath("broken.json"), "not JSON");
 
             var listed = repository.List(out var errors);
 
@@ -202,8 +218,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var repository = new PresetRepository(_directory);
             var document = PresetDocument.CreateNew();
             repository.Save(document);
-            var original = System.IO.Path.Combine(_directory, document.Id + ".json");
-            File.Move(original, System.IO.Path.Combine(_directory, "different-id.json"));
+            File.Move(FilePath(document.Id + ".json"), FilePath("different-id.json"));
 
             Assert.Throws<ArgumentException>(() => repository.Load("different-id"));
         }
@@ -215,11 +230,13 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var unsupported = PresetDocument.CreateNew();
             unsupported.SchemaVersion = 99;
             WriteDocument(unsupported);
+
             Assert.Throws<ArgumentException>(() => repository.Load(unsupported.Id));
 
             var duplicateNodes = PresetDocument.CreateNew();
             duplicateNodes.RootGroup.Children[0].Id = duplicateNodes.RootGroup.Id;
             WriteDocument(duplicateNodes);
+
             Assert.Throws<ArgumentException>(() => repository.Load(duplicateNodes.Id));
         }
 
@@ -228,7 +245,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var repository = new PresetRepository(_directory);
             Directory.CreateDirectory(_directory);
-            File.WriteAllText(System.IO.Path.Combine(_directory, "broken.json"), "{");
+            File.WriteAllText(FilePath("broken.json"), "{");
 
             Assert.Throws<ArgumentException>(() => repository.Load("broken"));
         }
@@ -236,7 +253,12 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         private void WriteDocument(PresetDocument document)
         {
             Directory.CreateDirectory(_directory);
-            File.WriteAllText(System.IO.Path.Combine(_directory, document.Id + ".json"), JsonUtility.ToJson(document));
+            File.WriteAllText(FilePath(document.Id + ".json"), JsonUtility.ToJson(document));
+        }
+
+        private string FilePath(string fileName)
+        {
+            return Path.Combine(_directory, fileName);
         }
     }
 }

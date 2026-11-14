@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Geometry;
@@ -9,9 +10,9 @@ using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor
 {
-    public class HierarchyTests
+    public sealed class HierarchyTests
     {
-        private static readonly ReferenceContext Context = new ReferenceContext(800, 450);
+        private static readonly ReferenceContext Context = new(800, 450);
 
         [Test]
         public void IdentityTranslationRotationAndParentChildCompositionAreAnalytic()
@@ -92,7 +93,8 @@ namespace Krab.ShapeSynth.Tests.Editor
             var transform = new TransformDefinition(positionX: Constant(7), positionY: Constant(-3));
             var circle = ShapeDefinition.Circle(Constant(12), transform);
             var rectangle = ShapeDefinition.Rectangle(Constant(8), Constant(6), transform);
-            var polygon = ShapeDefinition.Polygon(new[] { new Point2(1, 2), new Point2(-1, 0), new Point2(0, 3) }, transform);
+            var polygon = ShapeDefinition.Polygon(
+                new[] { new Point2(1, 2), new Point2(-1, 0), new Point2(0, 3) }, transform);
             var items = Evaluate(new GroupDefinition(null, circle, rectangle, polygon));
 
             foreach (var item in items)
@@ -108,7 +110,8 @@ namespace Krab.ShapeSynth.Tests.Editor
             // An asymmetric child with large bounds still leaves its group's pivot at the origin.
             var offCenterChild = ShapeDefinition.Rectangle(Constant(40), Constant(12),
                 new TransformDefinition(positionX: Constant(25), positionY: Constant(-7)));
-            var pivotGroup = new GroupDefinition(new TransformDefinition(positionX: Constant(3), positionY: Constant(5)), offCenterChild);
+            var pivotGroup = new GroupDefinition(
+                new TransformDefinition(positionX: Constant(3), positionY: Constant(5)), offCenterChild);
             AssertPoint(Evaluate(pivotGroup)[0].WorldTransform.TransformPoint(new Point2(0, 0)), 28, -2);
         }
 
@@ -138,8 +141,11 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var sharedSignal = new LfoInstance(new LfoDefinition(0.25), new VoiceTime(0, 60));
             var shape = ShapeDefinition.Circle(Bound(0, 2));
-            var evaluator = new HierarchyEvaluator(new GroupDefinition(null, shape, shape), new IModulator[] { sharedSignal });
+            var evaluator = new HierarchyEvaluator(
+                new GroupDefinition(null, shape, shape), new IModulator[] { sharedSignal });
+
             var items = evaluator.Evaluate(1, Context);
+
             Assert.That(items, Has.Count.EqualTo(2));
             Assert.That(items[0].Width, Is.EqualTo(items[1].Width).Within(1e-12));
             Assert.That(items[0].Width, Is.EqualTo(2).Within(1e-12));
@@ -179,8 +185,10 @@ namespace Krab.ShapeSynth.Tests.Editor
             AssertPoint(repeated.WorldTransform.TransformPoint(new Point2(0, 0)), 10, 0);
             AssertPoint(oldItem.WorldTransform.TransformPoint(new Point2(0, 0)), 10, 0);
 
-            AssertPoint(releasedEvaluator.Evaluate(1, Context)[0].WorldTransform.TransformPoint(new Point2(0, 0)), 5, 0);
-            AssertPoint(heldEvaluator.Evaluate(1, Context)[0].WorldTransform.TransformPoint(new Point2(0, 0)), 10, 0);
+            AssertPoint(
+                releasedEvaluator.Evaluate(1, Context)[0].WorldTransform.TransformPoint(new Point2(0, 0)), 5, 0);
+            AssertPoint(
+                heldEvaluator.Evaluate(1, Context)[0].WorldTransform.TransformPoint(new Point2(0, 0)), 10, 0);
             AssertPoint(oldItem.WorldTransform.TransformPoint(new Point2(0, 0)), 10, 0);
         }
 
@@ -191,12 +199,13 @@ namespace Krab.ShapeSynth.Tests.Editor
             INodeDefinition[] inputChildren = { shape };
             var group = new GroupDefinition(null, inputChildren);
             inputChildren[0] = null;
+
             Assert.That(group.Children, Has.Count.EqualTo(1));
             Assert.That(group.Children[0], Is.SameAs(shape));
             Assert.Throws<ArgumentException>(() => new GroupDefinition(null, new INodeDefinition[] { null }));
             Assert.Throws<ArgumentNullException>(() => new GroupDefinition(null, (INodeDefinition[])null));
 
-            // Public construction only accepts an array it defensively copies, so a normal caller cannot form a cycle.
+            // Public construction defensively copies the array, so a normal caller cannot form a cycle.
             INodeDefinition[] recursiveArray = { shape };
             var apparentlyRecursive = new GroupDefinition(null, recursiveArray);
             recursiveArray[0] = apparentlyRecursive;
@@ -223,21 +232,26 @@ namespace Krab.ShapeSynth.Tests.Editor
             AssertPoint(polygon.Vertices[0], -1, -1);
             Assert.Throws<ArgumentException>(() => ShapeDefinition.Polygon(new[] { new Point2(0, 0) }));
 
-            // Public immutable constructors prevent cycles. Simulate corrupt deserialization only for this guard test.
+            // Public constructors prevent cycles; simulate corrupt deserialization for this guard test only.
             var group = new GroupDefinition();
             var childrenField = typeof(GroupDefinition).GetField("<Children>k__BackingField",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                BindingFlags.Instance | BindingFlags.NonPublic);
             childrenField.SetValue(group, Array.AsReadOnly<INodeDefinition>(new INodeDefinition[] { group }));
             Assert.Throws<ArgumentException>(() => new HierarchyEvaluator(group, Array.Empty<IModulator>()));
         }
 
-        private static IReadOnlyList<DrawItem> Evaluate(GroupDefinition definition) =>
-            new HierarchyEvaluator(definition, new IModulator[0]).Evaluate(0, Context);
+        private static IReadOnlyList<DrawItem> Evaluate(GroupDefinition definition)
+        {
+            return new HierarchyEvaluator(definition, Array.Empty<IModulator>()).Evaluate(0, Context);
+        }
 
         private static ParameterDefinition Constant(double value) => ParameterDefinition.Constant(value);
 
-        private static ParameterDefinition Bound(int index, double depth) =>
-            new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), 0, new BindingDefinition(index, depth));
+        private static ParameterDefinition Bound(int index, double depth)
+        {
+            return new ParameterDefinition(
+                new ReferenceDefinition(ReferenceSource.Absolute), 0, new BindingDefinition(index, depth));
+        }
 
         private static void AssertPoint(Point2 actual, double x, double y)
         {

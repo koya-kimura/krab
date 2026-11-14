@@ -32,14 +32,18 @@ namespace Krab.ShapeSynth.Tests.Editor
             var second = document.AddNode(document.RootGroup.Id, PresetNodeKind.Polygon);
             var nested = document.AddNode(first.Id, PresetNodeKind.Circle);
 
-            Assert.That(document.RootGroup.Children.Select(node => node.Id), Is.EqualTo(new[] { original.Id, first.Id, second.Id }));
+            Assert.That(
+                document.RootGroup.Children.Select(node => node.Id),
+                Is.EqualTo(new[] { original.Id, first.Id, second.Id }));
             Assert.That(first.Children.Single().Id, Is.EqualTo(nested.Id));
             Assert.Throws<ArgumentException>(() => document.AddNode(original.Id, PresetNodeKind.Circle));
             Assert.Throws<ArgumentException>(() => document.DeleteNode(document.RootGroup.Id));
             Assert.That(document.DeleteNode(first.Id), Is.True);
             Assert.That(document.Nodes().Any(node => node.Id == nested.Id), Is.False);
             Assert.That(document.DeleteNode("absent"), Is.False);
-            Assert.That(document.RootGroup.Children.Select(node => node.Id), Is.EqualTo(new[] { original.Id, second.Id }));
+            Assert.That(
+                document.RootGroup.Children.Select(node => node.Id),
+                Is.EqualTo(new[] { original.Id, second.Id }));
         }
 
         [Test]
@@ -48,6 +52,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var duplicateNode = PresetDocument.CreateNew();
             duplicateNode.RootGroup.Children.Add(PresetNode.Create(PresetNodeKind.Circle));
             duplicateNode.RootGroup.Children[1].Id = duplicateNode.RootGroup.Children[0].Id;
+
             Assert.Throws<ArgumentException>(duplicateNode.Validate);
 
             var duplicateModulator = PresetDocument.CreateNew();
@@ -55,14 +60,17 @@ namespace Krab.ShapeSynth.Tests.Editor
             {
                 Id = duplicateModulator.Modulators[0].Id, Name = "Duplicate", Kind = ModulatorKind.Adsr
             });
+
             Assert.Throws<ArgumentException>(duplicateModulator.Validate);
 
             var unknownBinding = PresetDocument.CreateNew();
             unknownBinding.RootGroup.Children[0].Opacity.Bindings[0].ModulatorId = "missing";
+
             Assert.Throws<ArgumentException>(unknownBinding.Validate);
 
             var nonFinite = PresetDocument.CreateNew();
             nonFinite.RootGroup.Children[0].Width.Base = double.NaN;
+
             Assert.Throws<ArgumentOutOfRangeException>(nonFinite.Validate);
         }
 
@@ -72,8 +80,10 @@ namespace Krab.ShapeSynth.Tests.Editor
             var document = PresetDocument.CreateNew();
             var id = document.Modulators.Single().Id;
             Assert.Throws<ArgumentException>(() => document.DeleteModulator(id));
+
             document.RootGroup.Children[0].Opacity.Bindings.Clear();
             document.DeleteModulator(id);
+
             Assert.That(document.Modulators, Is.Empty);
             Assert.DoesNotThrow(document.Validate);
         }
@@ -83,7 +93,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var document = PresetDocument.CreateNew();
             var root = document.RootGroup;
-            var envelope = document.Modulators.Single();
+            Assert.That(document.Modulators, Has.Count.EqualTo(1));
             var lfo = new ModulatorSettings
             {
                 Id = "osc", Name = "Oscillator", Kind = ModulatorKind.Lfo,
@@ -96,16 +106,21 @@ namespace Krab.ShapeSynth.Tests.Editor
             var rectangle = document.AddNode(subgroup.Id, PresetNodeKind.Rectangle);
             rectangle.Width.Base = 10;
             rectangle.Height.Base = 20;
-            rectangle.Red = 0.2; rectangle.Green = 0.4; rectangle.Blue = 0.6;
-            rectangle.Fill = false; rectangle.Stroke = true; rectangle.StrokeWidth = 3;
+            rectangle.Red = 0.2;
+            rectangle.Green = 0.4;
+            rectangle.Blue = 0.6;
+            rectangle.Fill = false;
+            rectangle.Stroke = true;
+            rectangle.StrokeWidth = 3;
             rectangle.PositionY.Bindings.Add(new PresetBinding { ModulatorId = lfo.Id, Depth = 2 });
 
             var compiled = PresetCompiler.CompileGroup(document);
-            Assert.That(compiled.Runtime.Modulators, Has.Count.EqualTo(2));
             var childGroup = (GroupDefinition)compiled.Children[1];
+            var shape = (ShapeDefinition)childGroup.Children.Single();
+
+            Assert.That(compiled.Runtime.Modulators, Has.Count.EqualTo(2));
             Assert.That(childGroup.Transform.PositionX.BaseValue, Is.EqualTo(12));
             Assert.That(childGroup.Transform.RotationDegrees.BaseValue, Is.EqualTo(30));
-            var shape = (ShapeDefinition)childGroup.Children.Single();
             Assert.That(shape.Kind, Is.EqualTo(ShapeKind.Rectangle));
             Assert.That(shape.Width.BaseValue, Is.EqualTo(10));
             Assert.That(shape.Height.BaseValue, Is.EqualTo(20));
@@ -143,12 +158,15 @@ namespace Krab.ShapeSynth.Tests.Editor
 
             Assert.That(first.Modulators[0], Is.Not.SameAs(second.Modulators[0]));
             first.Release(0.1);
+
             Assert.That(((ILifetime)first.Modulators[0]).IsFinished(0.21), Is.True);
             Assert.That(((ILifetime)second.Modulators[0]).IsFinished(0.21), Is.False);
+
 
             envelope.Attack = 5;
             var laterTarget = PresetCompiler.Compile(document);
             var laterVoice = new VoiceInstance(laterTarget, new VoiceTime(1, 60));
+
             Assert.That(((AdsrInstance)first.Modulators[0]).Definition.Attack, Is.EqualTo(0.1));
             Assert.That(((AdsrInstance)laterVoice.Modulators[0]).Definition.Attack, Is.EqualTo(5));
             Assert.That(first.IsFinished(0.21), Is.True);
@@ -211,6 +229,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var voice = new VoiceInstance(PresetCompiler.Compile(document), new VoiceTime(0, 60));
             var items = voice.Evaluate(0.05, new ReferenceContext(100, 80));
             var nestedItem = items.Single(item => item.Kind == ShapeKind.Rectangle);
+
             Assert.That(nestedItem.WorldTransform.M02, Is.EqualTo(15).Within(1e-9));
             Assert.That(nestedItem.WorldTransform.M12, Is.EqualTo(3).Within(1e-9));
             Assert.That(nestedItem.Width, Is.EqualTo(8));
@@ -226,6 +245,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var userTarget = PresetCompiler.Compile(PresetDocument.CreateNew());
             var builtInTarget = PresetCatalog.Build(PerformanceSettings.CreateForPerformance(), "pad01", 1);
             var voices = new VoiceCollection();
+
             voices.Spawn(builtInTarget, 0, 120);
             voices.Spawn(userTarget, 0, 120);
 
@@ -299,7 +319,8 @@ namespace Krab.ShapeSynth.Tests.Editor
             AssertMoveRejectedWithoutMutation(document, () => document.MoveNode(moving.Id, descendant.Id, 0));
             AssertMoveRejectedWithoutMutation(document, () => document.MoveNode(moving.Id, leaf.Id, 0));
             AssertMoveRejectedWithoutMutation(document, () => document.MoveNode(moving.Id, root.Id, -1));
-            AssertMoveRejectedWithoutMutation(document, () => document.MoveNode(moving.Id, root.Id, root.Children.Count + 1));
+            AssertMoveRejectedWithoutMutation(
+                document, () => document.MoveNode(moving.Id, root.Id, root.Children.Count + 1));
         }
 
         [Test]
@@ -308,28 +329,33 @@ namespace Krab.ShapeSynth.Tests.Editor
             var document = PresetDocument.CreateNew();
             var deepestGroup = document.RootGroup;
             for (var depth = 1; depth <= 64; depth++)
+            {
                 deepestGroup = document.AddNode(deepestGroup.Id, PresetNodeKind.Group);
+            }
 
             var movingSubtree = document.AddNode(document.RootGroup.Id, PresetNodeKind.Group);
             document.AddNode(movingSubtree.Id, PresetNodeKind.Group);
             Assert.DoesNotThrow(document.Validate);
 
-            AssertMoveRejectedWithoutMutation(document,
-                () => document.MoveNode(movingSubtree.Id, deepestGroup.Id, 0));
+            AssertMoveRejectedWithoutMutation(
+                document, () => document.MoveNode(movingSubtree.Id, deepestGroup.Id, 0));
         }
 
         private static void AssertMoveRejectedWithoutMutation(PresetDocument document, TestDelegate move)
         {
-            var before = document.Nodes()
-                .Select(node => node.Id + ":" + string.Join(",", node.Children.Select(child => child.Id)))
-                .ToArray();
+            var before = DescribeTree(document);
 
             Assert.Catch<ArgumentException>(move);
-            var after = document.Nodes()
+
+            Assert.That(DescribeTree(document), Is.EqualTo(before));
+            Assert.DoesNotThrow(document.Validate);
+        }
+
+        private static string[] DescribeTree(PresetDocument document)
+        {
+            return document.Nodes()
                 .Select(node => node.Id + ":" + string.Join(",", node.Children.Select(child => child.Id)))
                 .ToArray();
-            Assert.That(after, Is.EqualTo(before));
-            Assert.DoesNotThrow(document.Validate);
         }
     }
 }

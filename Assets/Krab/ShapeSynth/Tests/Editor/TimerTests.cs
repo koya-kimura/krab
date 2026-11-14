@@ -6,12 +6,13 @@ using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor
 {
-    public class TimerTests
+    public sealed class TimerTests
     {
         [Test]
         public void ZeroDurationFinishesAtStartButNotBefore()
         {
             var timer = new TimerInstance(new TimerDefinition(0), new VoiceTime(10, 60));
+
             Assert.That(timer.IsFinished(9), Is.False);
             Assert.That(timer.IsFinished(10), Is.True);
         }
@@ -22,6 +23,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             double bpm = 60;
             var timer = new TimerInstance(new TimerDefinition(2), new VoiceTime(10, bpm));
             bpm = 120;
+
             Assert.That(timer.IsFinished(11.999), Is.False);
             Assert.That(timer.IsFinished(12), Is.True);
             Assert.That(timer.Time.StartBpm, Is.EqualTo(60));
@@ -31,6 +33,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void HugeJumpFinishesAndRepeatedQueriesAreStable()
         {
             var timer = new TimerInstance(new TimerDefinition(1), new VoiceTime(0, 60));
+
             Assert.That(timer.IsFinished(1e300), Is.True);
             Assert.That(timer.IsFinished(0.5), Is.False);
             Assert.That(timer.IsFinished(1e300), Is.True);
@@ -42,6 +45,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var definition = new TimerDefinition(2);
             var slow = new TimerInstance(definition, new VoiceTime(0, 60));
             var fast = new TimerInstance(definition, new VoiceTime(0, 120));
+
             Assert.That(slow.IsFinished(1), Is.False);
             Assert.That(fast.IsFinished(1), Is.True);
             Assert.That(slow.IsFinished(2), Is.True);
@@ -55,6 +59,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.Throws<ArgumentOutOfRangeException>(() => new TimerDefinition(double.PositiveInfinity));
             Assert.Throws<ArgumentNullException>(() => new TimerInstance(null, new VoiceTime(0, 60)));
             Assert.Throws<InvalidOperationException>(() => new TimerInstance(new TimerDefinition(1), default));
+
             var timer = new TimerInstance(new TimerDefinition(1), new VoiceTime(0, 60));
             Assert.Throws<ArgumentOutOfRangeException>(() => timer.IsFinished(double.PositiveInfinity));
         }
@@ -65,6 +70,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var adsr = new AdsrInstance(new AdsrDefinition(0, 0, 0, 0, 0), new VoiceTime(0, 60));
             var lfo = new LfoInstance(new LfoDefinition(1, 0, LfoWaveform.Sine), new VoiceTime(0, 60));
             var timer = new TimerInstance(new TimerDefinition(1), new VoiceTime(0, 60));
+
             Assert.That(adsr, Is.InstanceOf<IModulator>());
             Assert.That(adsr, Is.InstanceOf<ILifetime>());
             Assert.That(lfo, Is.InstanceOf<IModulator>());
