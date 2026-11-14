@@ -22,8 +22,12 @@ namespace Krab.ShapeSynth.Core.Geometry
             VoiceTime.RequireFinite(m10, nameof(m10));
             VoiceTime.RequireFinite(m11, nameof(m11));
             VoiceTime.RequireFinite(m12, nameof(m12));
-            M00 = m00; M01 = m01; M02 = m02;
-            M10 = m10; M11 = m11; M12 = m12;
+            M00 = m00;
+            M01 = m01;
+            M02 = m02;
+            M10 = m10;
+            M11 = m11;
+            M12 = m12;
         }
 
         public static Affine2D Trs(double x, double y, double rotationDegrees, double scaleX, double scaleY)

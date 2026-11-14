@@ -13,6 +13,7 @@ namespace Krab.ShapeSynth.Core.Runtime
             RequireFinite(startSeconds, nameof(startSeconds));
             RequireFinite(startBpm, nameof(startBpm));
             if (startBpm <= 0) throw new ArgumentOutOfRangeException(nameof(startBpm));
+
             StartSeconds = startSeconds;
             StartBpm = startBpm;
         }
@@ -20,7 +21,9 @@ namespace Krab.ShapeSynth.Core.Runtime
         public double ElapsedBeats(double nowSeconds)
         {
             RequireFinite(nowSeconds, nameof(nowSeconds));
-            if (StartBpm <= 0) throw new InvalidOperationException("VoiceTime must be constructed with a positive BPM.");
+            if (StartBpm <= 0)
+                throw new InvalidOperationException("VoiceTime must be constructed with a positive BPM.");
+
             return Math.Max(0, (nowSeconds - StartSeconds) * (StartBpm / 60.0));
         }
 

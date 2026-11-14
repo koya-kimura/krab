@@ -17,17 +17,22 @@ namespace Krab.ShapeSynth.Core.Evaluation
         {
             VoiceSeed = voiceSeed;
             if (path == null) throw new ArgumentNullException(nameof(path));
+
             _path = (int[])path.Clone();
             for (var i = 0; i < _path.Length; i++)
             {
-                if (_path[i] < 0) throw new ArgumentOutOfRangeException(nameof(path), "Path indices must be nonnegative.");
+                if (_path[i] < 0)
+                    throw new ArgumentOutOfRangeException(nameof(path), "Path indices must be nonnegative.");
             }
+
             _readOnlyPath = Array.AsReadOnly(_path);
         }
 
         public VariationContext Child(int index)
         {
-            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index), "Path indices must be nonnegative.");
+            if (index < 0)
+                throw new ArgumentOutOfRangeException(nameof(index), "Path indices must be nonnegative.");
+
             var childPath = new int[_path.Length + 1];
             Array.Copy(_path, childPath, _path.Length);
             childPath[_path.Length] = index;

@@ -1,4 +1,5 @@
 using Krab.ShapeSynth.Core.Runtime;
+
 namespace Krab.ShapeSynth.Core.Geometry
 {
     /// <summary>Fixed display color; numeric modulation remains scalar. No implicit clamping.</summary>
@@ -16,7 +17,10 @@ namespace Krab.ShapeSynth.Core.Geometry
             VoiceTime.RequireFinite(g, nameof(g));
             VoiceTime.RequireFinite(b, nameof(b));
             VoiceTime.RequireFinite(a, nameof(a));
-            R = r; G = g; B = b; A = a;
+            R = r;
+            G = g;
+            B = b;
+            A = a;
         }
     }
 }

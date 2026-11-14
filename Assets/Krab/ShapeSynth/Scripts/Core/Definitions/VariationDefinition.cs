@@ -37,7 +37,9 @@ namespace Krab.ShapeSynth.Core.Definitions
         {
             VoiceTime.RequireFinite(min, nameof(min));
             VoiceTime.RequireFinite(max, nameof(max));
-            if (min > max) throw new ArgumentOutOfRangeException(nameof(max), "Maximum must be greater than or equal to minimum.");
+            if (min > max)
+                throw new ArgumentOutOfRangeException(nameof(max), "Maximum must be greater than or equal to minimum.");
+
             return new VariationDefinition(VariationKind.Random, min, max, salt);
         }
 

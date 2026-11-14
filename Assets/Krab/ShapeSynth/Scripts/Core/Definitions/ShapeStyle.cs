@@ -16,7 +16,9 @@ namespace Krab.ShapeSynth.Core.Definitions
             RgbaColor? strokeColor = null)
         {
             VoiceTime.RequireFinite(strokeWidth, nameof(strokeWidth));
-            if (strokeWidth < 0) throw new ArgumentOutOfRangeException(nameof(strokeWidth), "Stroke width cannot be negative.");
+            if (strokeWidth < 0)
+                throw new ArgumentOutOfRangeException(nameof(strokeWidth), "Stroke width cannot be negative.");
+
             FillEnabled = fill;
             StrokeEnabled = stroke;
             StrokeWidth = strokeWidth;

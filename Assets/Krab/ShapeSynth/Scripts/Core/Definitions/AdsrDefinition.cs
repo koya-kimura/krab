@@ -21,6 +21,7 @@ namespace Krab.ShapeSynth.Core.Definitions
             VoiceTime.RequireFinite(sustainLevel, nameof(sustainLevel));
             if (sustainLevel < 0 || sustainLevel > 1)
                 throw new ArgumentOutOfRangeException(nameof(sustainLevel));
+
             VoiceTime.RequireFinite(attack + decay + sustainTime + release, "totalDuration");
             Attack = attack;
             Decay = decay;

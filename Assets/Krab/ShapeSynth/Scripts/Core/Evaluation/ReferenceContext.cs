@@ -15,6 +15,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
             VoiceTime.RequireFinite(canvasHeight, nameof(canvasHeight));
             if (canvasWidth < 0) throw new ArgumentOutOfRangeException(nameof(canvasWidth));
             if (canvasHeight < 0) throw new ArgumentOutOfRangeException(nameof(canvasHeight));
+
             CanvasWidth = canvasWidth;
             CanvasHeight = canvasHeight;
         }

@@ -13,6 +13,7 @@ namespace Krab.ShapeSynth.Core.Definitions
         public BindingDefinition(int modulatorIndex, double depth, VariationDefinition depthVariation = null)
         {
             if (modulatorIndex < 0) throw new ArgumentOutOfRangeException(nameof(modulatorIndex));
+
             VoiceTime.RequireFinite(depth, nameof(depth));
             ModulatorIndex = modulatorIndex;
             Depth = depth;

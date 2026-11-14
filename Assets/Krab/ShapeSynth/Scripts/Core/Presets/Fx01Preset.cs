@@ -26,7 +26,6 @@ namespace Krab.ShapeSynth.Core.Presets
             var circleCount = settings.CircleCount;
             var envelopeId = settings.EnvelopeId;
             var oscillatorId = settings.OscillatorId;
-
             if (circleCount < 1 || circleCount > 2000)
                 throw new ArgumentOutOfRangeException(nameof(settings.CircleCount), circleCount,
                     "Circle count must be between 1 and 2000.");
@@ -51,7 +50,9 @@ namespace Krab.ShapeSynth.Core.Presets
             var red = CreateCircle(0, new RgbaColor(199.0 / 255, 25.0 / 255, 12.0 / 255));
             var cyan = CreateCircle(1, new RgbaColor(57.0 / 255, 225.0 / 255, 191.0 / 255));
             for (var i = 0; i < children.Length; i++)
+            {
                 children[i] = (i & 1) == 0 ? red : cyan;
+            }
 
             var root = new GroupDefinition(null, new GroupRuntimeDefinition(slots), children);
             return new TriggerTarget(root);

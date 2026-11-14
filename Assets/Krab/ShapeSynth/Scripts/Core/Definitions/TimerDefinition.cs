@@ -12,6 +12,7 @@ namespace Krab.ShapeSynth.Core.Definitions
         {
             VoiceTime.RequireFinite(durationBeats, nameof(durationBeats));
             if (durationBeats < 0) throw new ArgumentOutOfRangeException(nameof(durationBeats));
+
             DurationBeats = durationBeats;
         }
     }

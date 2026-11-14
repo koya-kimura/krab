@@ -25,7 +25,10 @@ namespace Krab.ShapeSynth.Core.Definitions
         {
             var copy = new T[input?.Count ?? 0];
             for (var i = 0; i < copy.Length; i++)
+            {
                 copy[i] = input[i] ?? throw new ArgumentException("Runtime elements cannot contain null.", name);
+            }
+
             return Array.AsReadOnly(copy);
         }
     }

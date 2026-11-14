@@ -21,6 +21,7 @@ namespace Krab.ShapeSynth.Core.Modulation
         {
             var beats = Time.ElapsedBeats(nowSeconds);
             VoiceTime.RequireFinite(beats, nameof(nowSeconds));
+
             var frequency = Definition.CyclesPerBeat;
             double cycles = 0;
             if (frequency > 0)

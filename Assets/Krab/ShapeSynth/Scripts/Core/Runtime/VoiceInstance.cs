@@ -8,14 +8,15 @@ namespace Krab.ShapeSynth.Core.Runtime
     /// <summary>One trigger's owned signal/lifetime states and compiled hierarchy.</summary>
     public sealed class VoiceInstance
     {
+        private readonly HierarchyEvaluator _evaluator;
+        private readonly List<AdsrInstance> _envelopes = new();
+        private bool _stopped;
+
         public TriggerTarget Target { get; }
         public VoiceTime Time { get; }
         public int VoiceSeed { get; }
         public IReadOnlyList<IModulator> Modulators { get; }
         public IReadOnlyList<ILifetime> Lifetimes { get; }
-        private readonly HierarchyEvaluator _evaluator;
-        private bool _stopped;
-        private readonly List<AdsrInstance> _envelopes = new List<AdsrInstance>();
 
         public VoiceInstance(TriggerTarget target, VoiceTime time, int voiceSeed = 0)
         {
@@ -29,8 +30,14 @@ namespace Krab.ShapeSynth.Core.Runtime
             {
                 var runtime = group.Runtime;
                 if (runtime == null) return inherited;
-                foreach (var timer in runtime.Timers) lifetimes.Add(new TimerInstance(timer, time));
+
+                foreach (var timer in runtime.Timers)
+                {
+                    lifetimes.Add(new TimerInstance(timer, time));
+                }
+
                 if (runtime.InheritModulators) return inherited;
+
                 // Every occurrence gets its own dictionary: shared subtree Definitions never share state accidentally.
                 var states = new Dictionary<object, IModulator>();
                 var releasePolicies = new Dictionary<object, bool>();
@@ -41,10 +48,16 @@ namespace Krab.ShapeSynth.Core.Runtime
                     if (states.TryGetValue(slot.Source, out var existing))
                     {
                         if (slot.Adsr != null && releasePolicies[slot.Source] != slot.AutoRelease)
-                            throw new ArgumentException("One ADSR source cannot have conflicting release policies in the same scope.", nameof(target));
+                        {
+                            throw new ArgumentException(
+                                "One ADSR source cannot have conflicting release policies in the same scope.",
+                                nameof(target));
+                        }
+
                         scope[i] = existing;
                         continue;
                     }
+
                     var signal = slot.Create(time);
                     scope[i] = signal;
                     states.Add(slot.Source, signal);
@@ -53,8 +66,10 @@ namespace Krab.ShapeSynth.Core.Runtime
                     if (signal is ILifetime lifetime) lifetimes.Add(lifetime);
                     if (signal is AdsrInstance envelope) _envelopes.Add(envelope);
                 }
+
                 return Array.AsReadOnly(scope);
             }, voiceSeed);
+
             if (lifetimes.Count == 0)
                 throw new ArgumentException("A triggered Group hierarchy needs at least one ADSR or Timer.", nameof(target));
             Modulators = modulators.AsReadOnly();
@@ -65,24 +80,36 @@ namespace Krab.ShapeSynth.Core.Runtime
         {
             VoiceTime.RequireFinite(nowSeconds, nameof(nowSeconds));
             if (_stopped) return true;
+
             foreach (var lifetime in Lifetimes)
+            {
                 if (!lifetime.IsFinished(nowSeconds)) return false;
+            }
+
             return true;
         }
-
-        internal void Stop() => _stopped = true;
 
         public void Release(double nowSeconds)
         {
             Time.ElapsedBeats(nowSeconds);
             if (nowSeconds < Time.StartSeconds) throw new ArgumentOutOfRangeException(nameof(nowSeconds));
-            foreach (var envelope in _envelopes) envelope.Release(nowSeconds);
+
+            foreach (var envelope in _envelopes)
+            {
+                envelope.Release(nowSeconds);
+            }
         }
 
         public IReadOnlyList<DrawItem> Evaluate(double nowSeconds, ReferenceContext context)
         {
             if (IsFinished(nowSeconds) || nowSeconds < Time.StartSeconds) return Array.Empty<DrawItem>();
+
             return _evaluator.Evaluate(nowSeconds, context);
+        }
+
+        internal void Stop()
+        {
+            _stopped = true;
         }
     }
 }

@@ -22,9 +22,11 @@ namespace Krab.ShapeSynth.Core.Definitions
         {
             VoiceTime.RequireFinite(cyclesPerBeat, nameof(cyclesPerBeat));
             if (cyclesPerBeat < 0) throw new ArgumentOutOfRangeException(nameof(cyclesPerBeat));
+
             VoiceTime.RequireFinite(phaseOffset, nameof(phaseOffset));
             if (waveform < LfoWaveform.Sine || waveform > LfoWaveform.Square)
                 throw new ArgumentOutOfRangeException(nameof(waveform));
+
             CyclesPerBeat = cyclesPerBeat;
             PhaseOffset = WrapPhase(phaseOffset);
             Waveform = waveform;

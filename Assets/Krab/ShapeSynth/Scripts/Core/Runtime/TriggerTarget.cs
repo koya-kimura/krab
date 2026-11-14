@@ -7,7 +7,10 @@ namespace Krab.ShapeSynth.Core.Runtime
     public sealed class TriggerTarget
     {
         public GroupDefinition Definition { get; }
-        public TriggerTarget(GroupDefinition definition) =>
+
+        public TriggerTarget(GroupDefinition definition)
+        {
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
+        }
     }
 }

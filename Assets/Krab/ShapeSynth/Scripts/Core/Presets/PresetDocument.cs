@@ -7,7 +7,13 @@ using Krab.ShapeSynth.Core.Performance;
 
 namespace Krab.ShapeSynth.Core.Presets
 {
-    public enum PresetNodeKind { Group, Circle, Rectangle, Polygon }
+    public enum PresetNodeKind
+    {
+        Group,
+        Circle,
+        Rectangle,
+        Polygon
+    }
 
     /// <summary>Mutable authoring model. Runtime definitions are always independent snapshots.</summary>
     [Serializable]
@@ -16,41 +22,55 @@ namespace Krab.ShapeSynth.Core.Presets
         public int SchemaVersion = 1;
         public string Id;
         public string Name = "New Preset";
-        public List<ModulatorSettings> Modulators = new List<ModulatorSettings>();
+        public List<ModulatorSettings> Modulators = new();
         public PresetNode RootGroup;
 
         public static string NewId() => Guid.NewGuid().ToString("N");
+
         public static void RequireId(string id)
         {
             if (id == null || !Regex.IsMatch(id, @"\A[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}\z"))
-                throw new ArgumentException("ID must be 1–80 ASCII letters, numbers, underscores or hyphens, starting with a letter or number.");
+            {
+                throw new ArgumentException(
+                    "ID must be 1–80 ASCII letters, numbers, underscores or hyphens, starting with a letter or number.");
+            }
         }
 
         public static PresetDocument CreateNew()
         {
-            var envelope = new ModulatorSettings { Id = NewId(), Name = "Default ADSR", Kind = ModulatorKind.Adsr,
-                Attack = 0.1, Decay = 0.2, SustainLevel = 0.8, SustainTime = 1, Release = 1 };
+            var envelope = new ModulatorSettings
+            {
+                Id = NewId(),
+                Name = "Default ADSR",
+                Kind = ModulatorKind.Adsr,
+                Attack = 0.1,
+                Decay = 0.2,
+                SustainLevel = 0.8,
+                SustainTime = 1,
+                Release = 1
+            };
             var root = PresetNode.Create(PresetNodeKind.Group);
             root.Name = "Root Group";
             var circle = PresetNode.Create(PresetNodeKind.Circle);
             circle.Opacity.Base = 0;
             circle.Opacity.Bindings.Add(new PresetBinding { ModulatorId = envelope.Id, Depth = 1 });
             root.Children.Add(circle);
-            return new PresetDocument { Id = NewId(), RootGroup = root, Modulators = new List<ModulatorSettings> { envelope } };
+            return new PresetDocument
+            {
+                Id = NewId(),
+                RootGroup = root,
+                Modulators = new List<ModulatorSettings> { envelope }
+            };
         }
 
         public IEnumerable<PresetNode> Nodes() => Walk(RootGroup);
-        private static IEnumerable<PresetNode> Walk(PresetNode node)
-        {
-            yield return node;
-            foreach (var child in node.Children)
-                foreach (var descendant in Walk(child)) yield return descendant;
-        }
 
         public PresetNode AddNode(string parentId, PresetNodeKind kind)
         {
             var parent = Nodes().SingleOrDefault(node => node.Id == parentId);
-            if (parent == null || parent.Kind != PresetNodeKind.Group) throw new ArgumentException("Select a Group to add a child.");
+            if (parent == null || parent.Kind != PresetNodeKind.Group)
+                throw new ArgumentException("Select a Group to add a child.");
+
             var child = PresetNode.Create(kind);
             parent.Children.Add(child);
             return child;
@@ -104,22 +124,41 @@ namespace Krab.ShapeSynth.Core.Presets
             targetParent.Children.Insert(finalIndex, node);
         }
 
+        private static IEnumerable<PresetNode> Walk(PresetNode node)
+        {
+            yield return node;
+
+            foreach (var child in node.Children)
+            {
+                foreach (var descendant in Walk(child))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+
         private static bool ContainsNode(PresetNode root, PresetNode candidate)
         {
             if (ReferenceEquals(root, candidate)) return true;
+
             foreach (var child in root.Children)
+            {
                 if (ContainsNode(child, candidate)) return true;
+            }
+
             return false;
         }
 
         private static int FindDepth(PresetNode root, PresetNode target, int depth)
         {
             if (ReferenceEquals(root, target)) return depth;
+
             foreach (var child in root.Children)
             {
                 var childDepth = FindDepth(child, target, depth + 1);
                 if (childDepth >= 0) return childDepth;
             }
+
             return -1;
         }
 
@@ -128,12 +167,14 @@ namespace Krab.ShapeSynth.Core.Presets
             var maximum = depth;
             foreach (var child in node.Children)
                 maximum = Math.Max(maximum, MaximumDepth(child, depth + 1));
+
             return maximum;
         }
 
         public bool DeleteNode(string id)
         {
             if (RootGroup.Id == id) throw new ArgumentException("Root Group cannot be deleted.");
+
             foreach (var group in Nodes().Where(node => node.Kind == PresetNodeKind.Group))
             {
                 var index = group.Children.FindIndex(node => node.Id == id);
@@ -141,13 +182,19 @@ namespace Krab.ShapeSynth.Core.Presets
                 group.Children.RemoveAt(index);
                 return true;
             }
+
             return false;
         }
 
         public void DeleteModulator(string id)
         {
-            if (Nodes().SelectMany(node => node.Parameters()).SelectMany(parameter => parameter.Bindings).Any(binding => binding.ModulatorId == id))
+            var inUse = Nodes()
+                .SelectMany(node => node.Parameters())
+                .SelectMany(parameter => parameter.Bindings)
+                .Any(binding => binding.ModulatorId == id);
+            if (inUse)
                 throw new ArgumentException("Modulator is in use. Remove its Bindings first.");
+
             Modulators.RemoveAll(modulator => modulator.Id == id);
         }
 
@@ -161,38 +208,48 @@ namespace Krab.ShapeSynth.Core.Presets
         public string Id;
         public string Name;
         public PresetNodeKind Kind;
-        public List<PresetNode> Children = new List<PresetNode>();
-        public PresetParameter PositionX = new PresetParameter();
-        public PresetParameter PositionY = new PresetParameter();
-        public PresetParameter Rotation = new PresetParameter();
-        public PresetParameter ScaleX = new PresetParameter { Base = 1 };
-        public PresetParameter ScaleY = new PresetParameter { Base = 1 };
-        public PresetParameter Width = new PresetParameter { Base = 0.2, Reference = ReferenceSource.MinDimension };
-        public PresetParameter Height = new PresetParameter { Base = 0.2, Reference = ReferenceSource.MinDimension };
-        public PresetParameter Opacity = new PresetParameter { Base = 1 };
+        public List<PresetNode> Children = new();
+        public PresetParameter PositionX = new();
+        public PresetParameter PositionY = new();
+        public PresetParameter Rotation = new();
+        public PresetParameter ScaleX = new() { Base = 1 };
+        public PresetParameter ScaleY = new() { Base = 1 };
+        public PresetParameter Width = new() { Base = 0.2, Reference = ReferenceSource.MinDimension };
+        public PresetParameter Height = new() { Base = 0.2, Reference = ReferenceSource.MinDimension };
+        public PresetParameter Opacity = new() { Base = 1 };
         public double Red = 1, Green = 1, Blue = 1, Alpha = 1;
         public bool Fill = true, Stroke;
         public double StrokeWidth = 1;
         public double StrokeRed = 1, StrokeGreen = 1, StrokeBlue = 1, StrokeAlpha = 1;
-        public List<PresetPoint> Vertices = new List<PresetPoint>();
+        public List<PresetPoint> Vertices = new();
 
         public static PresetNode Create(PresetNodeKind kind)
         {
             if (!Enum.IsDefined(typeof(PresetNodeKind), kind)) throw new ArgumentException("Unknown node kind.");
+
             var node = new PresetNode { Id = PresetDocument.NewId(), Name = kind.ToString(), Kind = kind };
             if (kind == PresetNodeKind.Polygon)
+            {
                 for (var i = 0; i < 3; i++)
                 {
                     var angle = Math.PI / 2 + i * Math.PI * 2 / 3;
                     node.Vertices.Add(new PresetPoint { X = Math.Cos(angle) * 100, Y = Math.Sin(angle) * 100 });
                 }
+            }
+
             return node;
         }
 
         public IEnumerable<PresetParameter> Parameters()
         {
-            yield return PositionX; yield return PositionY; yield return Rotation; yield return ScaleX; yield return ScaleY;
-            yield return Width; yield return Height; yield return Opacity;
+            yield return PositionX;
+            yield return PositionY;
+            yield return Rotation;
+            yield return ScaleX;
+            yield return ScaleY;
+            yield return Width;
+            yield return Height;
+            yield return Opacity;
         }
     }
 
@@ -201,7 +258,7 @@ namespace Krab.ShapeSynth.Core.Presets
     {
         public ReferenceSource Reference;
         public double Multiplier = 1, AbsoluteValue = 1, Base;
-        public List<PresetBinding> Bindings = new List<PresetBinding>();
+        public List<PresetBinding> Bindings = new();
     }
 
     [Serializable]
@@ -212,5 +269,8 @@ namespace Krab.ShapeSynth.Core.Presets
     }
 
     [Serializable]
-    public sealed class PresetPoint { public double X, Y; }
+    public sealed class PresetPoint
+    {
+        public double X, Y;
+    }
 }

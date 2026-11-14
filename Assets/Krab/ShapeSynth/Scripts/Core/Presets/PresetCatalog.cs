@@ -10,7 +10,13 @@ namespace Krab.ShapeSynth.Core.Presets
         public string Id { get; }
         public string Name { get; }
         public char Key { get; }
-        internal PresetDescriptor(string id, string name, char key) { Id = id; Name = name; Key = key; }
+
+        internal PresetDescriptor(string id, string name, char key)
+        {
+            Id = id;
+            Name = name;
+            Key = key;
+        }
     }
 
     /// <summary>The five sample presets, independent of Unity input and Modulator IDs.</summary>
@@ -18,22 +24,35 @@ namespace Krab.ShapeSynth.Core.Presets
     {
         public static IReadOnlyList<PresetDescriptor> Entries { get; } = Array.AsReadOnly(new[]
         {
-            new PresetDescriptor("fx01", "FX01", 'q'), new PresetDescriptor("pad01", "Pad01", 'w'),
-            new PresetDescriptor("snare01", "Snare01", 'e'), new PresetDescriptor("lead01", "Lead01", 'a'),
+            new PresetDescriptor("fx01", "FX01", 'q'),
+            new PresetDescriptor("pad01", "Pad01", 'w'),
+            new PresetDescriptor("snare01", "Snare01", 'e'),
+            new PresetDescriptor("lead01", "Lead01", 'a'),
             new PresetDescriptor("lead03", "Lead03", 's')
         });
 
         public static string IdForKey(char key)
         {
-            foreach (var preset in Entries) if (preset.Key == char.ToLowerInvariant(key)) return preset.Id;
+            foreach (var preset in Entries)
+            {
+                if (preset.Key == char.ToLowerInvariant(key)) return preset.Id;
+            }
+
             return null;
         }
 
         public static PresetSettings SettingsFor(PerformanceSettings settings, string id)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));
+
             if (settings.Presets != null)
-                foreach (var preset in settings.Presets) if (preset.Id == id) return preset;
+            {
+                foreach (var preset in settings.Presets)
+                {
+                    if (preset.Id == id) return preset;
+                }
+            }
+
             throw new ArgumentException("Unknown preset ID: " + id, nameof(id));
         }
 
@@ -44,14 +63,20 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             var library = settings.BuildLibrary();
             if (id == "fx01") return Fx01Preset.Build(library, settings.Fx01);
+
             var preset = SettingsFor(settings, id);
             switch (id)
             {
-                case "pad01": return AdditionalPresets.Pad01(library, preset, seed);
-                case "snare01": return AdditionalPresets.Snare01(library, preset, seed);
-                case "lead01": return AdditionalPresets.Lead01(library, preset, seed);
-                case "lead03": return AdditionalPresets.Lead03(library, preset, seed);
-                default: throw new ArgumentException("Unknown preset ID: " + id, nameof(id));
+                case "pad01":
+                    return AdditionalPresets.Pad01(library, preset, seed);
+                case "snare01":
+                    return AdditionalPresets.Snare01(library, preset, seed);
+                case "lead01":
+                    return AdditionalPresets.Lead01(library, preset, seed);
+                case "lead03":
+                    return AdditionalPresets.Lead03(library, preset, seed);
+                default:
+                    throw new ArgumentException("Unknown preset ID: " + id, nameof(id));
             }
         }
     }

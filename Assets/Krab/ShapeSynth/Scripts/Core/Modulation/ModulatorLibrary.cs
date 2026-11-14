@@ -41,9 +41,9 @@ namespace Krab.ShapeSynth.Core.Modulation
     /// <summary>An immutable snapshot of reusable modulators, with one slot per entry.</summary>
     public sealed class ModulatorLibrary
     {
-        private readonly List<ModulatorEntry> _entries;
-        private readonly Dictionary<string, ModulatorEntry> _byId;
-        private readonly Dictionary<ModulatorEntry, ModulatorSlotDefinition> _slots;
+        private readonly List<ModulatorEntry> _entries = new();
+        private readonly Dictionary<string, ModulatorEntry> _byId = new(StringComparer.Ordinal);
+        private readonly Dictionary<ModulatorEntry, ModulatorSlotDefinition> _slots = new();
         private readonly IReadOnlyList<ModulatorEntry> _readOnlyEntries;
 
         public IReadOnlyList<ModulatorEntry> Entries => _readOnlyEntries;
@@ -51,37 +51,41 @@ namespace Krab.ShapeSynth.Core.Modulation
         public ModulatorLibrary(IEnumerable<ModulatorEntry> entries)
         {
             if (entries == null) throw new ArgumentNullException(nameof(entries));
-            _entries = new List<ModulatorEntry>();
-            _byId = new Dictionary<string, ModulatorEntry>(StringComparer.Ordinal);
-            _slots = new Dictionary<ModulatorEntry, ModulatorSlotDefinition>();
+
             foreach (var entry in entries)
             {
-                if (entry == null) throw new ArgumentException("The entry collection cannot contain null.", nameof(entries));
+                if (entry == null)
+                    throw new ArgumentException("The entry collection cannot contain null.", nameof(entries));
                 if (_byId.ContainsKey(entry.Id))
                     throw new ArgumentException($"Duplicate modulator ID '{entry.Id}'.", nameof(entries));
                 _entries.Add(entry);
                 _byId.Add(entry.Id, entry);
                 _slots.Add(entry, entry.Slot);
             }
+
             _readOnlyEntries = _entries.AsReadOnly();
         }
 
         public ModulatorEntry Get(string id)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
+
             if (_byId.TryGetValue(id, out var entry)) return entry;
+
             throw new ArgumentException($"No modulator with ID '{id}' exists in this library.", nameof(id));
         }
 
         public ModulatorSlotDefinition[] ResolveSlots(params string[] ids)
         {
             if (ids == null) throw new ArgumentNullException(nameof(ids));
+
             var slots = new ModulatorSlotDefinition[ids.Length];
             for (var i = 0; i < ids.Length; i++)
             {
                 var entry = Get(ids[i]);
                 slots[i] = _slots[entry];
             }
+
             return slots;
         }
     }

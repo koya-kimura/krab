@@ -10,7 +10,8 @@ namespace Krab.ShapeSynth.Core.Definitions
         public ParameterDefinition ScaleY { get; }
 
         public TransformDefinition(ParameterDefinition positionX = null, ParameterDefinition positionY = null,
-            ParameterDefinition rotationDegrees = null, ParameterDefinition scaleX = null, ParameterDefinition scaleY = null)
+            ParameterDefinition rotationDegrees = null, ParameterDefinition scaleX = null,
+            ParameterDefinition scaleY = null)
         {
             PositionX = positionX ?? ParameterDefinition.Constant(0);
             PositionY = positionY ?? ParameterDefinition.Constant(0);

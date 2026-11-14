@@ -7,10 +7,15 @@ namespace Krab.ShapeSynth.Core.Modulation
     /// <summary>One trigger's state. Sampling is side-effect free; release events use absolute seconds.</summary>
     public sealed class AdsrInstance : IModulator, ILifetime
     {
-        public AdsrDefinition Definition { get; }
-        public VoiceTime Time { get; }
         private readonly bool _autoRelease;
         private double _externalReleaseBeat = double.PositiveInfinity;
+
+        public AdsrDefinition Definition { get; }
+        public VoiceTime Time { get; }
+
+        private double ReleaseBeat => Math.Min(_externalReleaseBeat, _autoRelease
+            ? Definition.Attack + Definition.Decay + Definition.SustainTime
+            : double.PositiveInfinity);
 
         public AdsrInstance(AdsrDefinition definition, VoiceTime time, bool autoRelease = true)
         {
@@ -26,6 +31,7 @@ namespace Krab.ShapeSynth.Core.Modulation
         {
             var beat = Time.ElapsedBeats(nowSeconds);
             if (nowSeconds < Time.StartSeconds) throw new ArgumentOutOfRangeException(nameof(nowSeconds));
+
             if (double.IsPositiveInfinity(_externalReleaseBeat)) _externalReleaseBeat = beat;
         }
 
@@ -33,6 +39,7 @@ namespace Krab.ShapeSynth.Core.Modulation
         {
             var beat = Time.ElapsedBeats(nowSeconds);
             if (nowSeconds < Time.StartSeconds) return 0;
+
             var releaseBeat = ReleaseBeat;
             if (beat < releaseBeat) return BeforeRelease(beat);
             if (Definition.Release == 0 || beat - releaseBeat >= Definition.Release) return 0;
@@ -45,16 +52,12 @@ namespace Krab.ShapeSynth.Core.Modulation
             return nowSeconds >= Time.StartSeconds && beat >= ReleaseBeat + Definition.Release;
         }
 
-        private double ReleaseBeat => Math.Min(_externalReleaseBeat, _autoRelease
-            ? Definition.Attack + Definition.Decay + Definition.SustainTime
-            : double.PositiveInfinity);
-
         private double BeforeRelease(double beat)
         {
             if (beat < Definition.Attack) return beat / Definition.Attack;
             beat -= Definition.Attack;
-            if (beat < Definition.Decay)
-                return 1 + (Definition.SustainLevel - 1) * beat / Definition.Decay;
+            if (beat < Definition.Decay) return 1 + (Definition.SustainLevel - 1) * beat / Definition.Decay;
+
             return Definition.SustainLevel;
         }
     }

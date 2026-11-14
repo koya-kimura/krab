@@ -9,22 +9,32 @@ namespace Krab.ShapeSynth.Core.Evaluation
     /// <summary>Resolves binding slots once to existing instances. Never creates or clones modulators.</summary>
     public sealed class ParameterEvaluator
     {
-        public ParameterDefinition Definition { get; }
+        private const string UnresolvedVariationMessage =
+            "Resolve Variation with a placement context before evaluating.";
+
         private readonly IModulator[] _signals;
+
+        public ParameterDefinition Definition { get; }
 
         public ParameterEvaluator(ParameterDefinition definition, IReadOnlyList<IModulator> modulators,
             VariationContext context, ulong parameterKey)
-            : this(VariationResolver.Resolve(definition, context, parameterKey), modulators) { }
+            : this(VariationResolver.Resolve(definition, context, parameterKey), modulators)
+        {
+        }
 
         public ParameterEvaluator(ParameterDefinition definition, IReadOnlyList<IModulator> modulators)
         {
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             if (modulators == null) throw new ArgumentNullException(nameof(modulators));
             if (definition.BaseVariation != null)
-                throw new ArgumentException("Resolve Variation with a placement context before evaluating.", nameof(definition));
+                throw new ArgumentException(UnresolvedVariationMessage, nameof(definition));
+
             foreach (var binding in definition.Bindings)
+            {
                 if (binding.DepthVariation != null)
-                    throw new ArgumentException("Resolve Variation with a placement context before evaluating.", nameof(definition));
+                    throw new ArgumentException(UnresolvedVariationMessage, nameof(definition));
+            }
+
             _signals = new IModulator[definition.Bindings.Count];
             for (var i = 0; i < _signals.Length; i++)
             {
@@ -48,6 +58,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 value += contribution;
                 VoiceTime.RequireFinite(value, "parameterSum");
             }
+
             var result = Definition.Reference.Evaluate(context) * value;
             VoiceTime.RequireFinite(result, "parameterResult");
             return result;

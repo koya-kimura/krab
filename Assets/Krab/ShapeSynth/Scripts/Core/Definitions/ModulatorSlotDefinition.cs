@@ -10,7 +10,6 @@ namespace Krab.ShapeSynth.Core.Definitions
         public AdsrDefinition Adsr { get; }
         public LfoDefinition Lfo { get; }
         public bool AutoRelease { get; }
-        internal object Source => (object)Adsr ?? Lfo;
 
         public ModulatorSlotDefinition(AdsrDefinition definition, bool autoRelease = true)
         {
@@ -23,8 +22,13 @@ namespace Krab.ShapeSynth.Core.Definitions
             Lfo = definition ?? throw new ArgumentNullException(nameof(definition));
         }
 
-        internal IModulator Create(VoiceTime time) => Adsr != null
-            ? (IModulator)new AdsrInstance(Adsr, time, AutoRelease)
-            : new LfoInstance(Lfo, time);
+        internal object Source => (object)Adsr ?? Lfo;
+
+        internal IModulator Create(VoiceTime time)
+        {
+            if (Adsr != null) return new AdsrInstance(Adsr, time, AutoRelease);
+
+            return new LfoInstance(Lfo, time);
+        }
     }
 }
