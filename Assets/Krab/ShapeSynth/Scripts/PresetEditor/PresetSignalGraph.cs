@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Modulation;
 using Krab.ShapeSynth.Core.Performance;
+using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Core.Runtime;
 using RosettaUI;
 using RosettaUI.UIToolkit.Builder;
@@ -16,25 +18,27 @@ namespace Krab.ShapeSynth.PresetEditor
     public static class PresetSignalSampler
     {
         public const float GraphBeats = 6;
+
         private static readonly VoiceTime OneBeatPerSecond = new(0, 60);
 
         /// <summary>Returns false while a draft value is invalid, e.g. a negative duration being typed.</summary>
-        public static bool TryCreate(ModulatorSettings model, out IModulator modulator)
+        public static bool TryCreate(PresetComponent component, out IModulator modulator)
         {
             modulator = null;
-            if (model == null) return false;
+            if (component == null) return false;
 
             try
             {
-                if (model.Kind == ModulatorKind.Adsr)
+                if (component.Kind == ModulatorKind.Adsr)
                 {
                     var adsr = new AdsrDefinition(
-                        model.Attack, model.Decay, model.SustainLevel, model.SustainTime, model.Release);
+                        component.Attack, component.Decay, component.SustainLevel, component.SustainTime,
+                        component.Release);
                     modulator = new AdsrInstance(adsr, OneBeatPerSecond);
                 }
                 else
                 {
-                    var lfo = new LfoDefinition(model.CyclesPerBeat, model.PhaseOffset, model.Waveform);
+                    var lfo = new LfoDefinition(component.CyclesPerBeat, component.PhaseOffset, component.Waveform);
                     modulator = new LfoInstance(lfo, OneBeatPerSecond);
                 }
 
@@ -46,13 +50,19 @@ namespace Krab.ShapeSynth.PresetEditor
             }
         }
 
-        public static double SampleOrZero(ModulatorSettings model, double beat)
+        public static double SampleOrZero(PresetComponent component, double beat)
         {
-            return TryCreate(model, out var modulator) ? modulator.Evaluate(beat) : 0;
+            return TryCreate(component, out var modulator) ? modulator.Evaluate(beat) : 0;
+        }
+
+        /// <summary>The Value's signal: Σ Weight × component.</summary>
+        public static double SampleOrZero(PresetValue value, double beat)
+        {
+            return value?.Components.Sum(component => component.Weight * SampleOrZero(component, beat)) ?? 0;
         }
     }
 
-    /// <summary>Output graph for the Values view, drawn with Painter2D and repainted only when its inputs change.</summary>
+    /// <summary>Weighted components (thin) and their sum (thick) for one Value, repainted only when inputs change.</summary>
     public sealed class PresetSignalGraph
     {
         private const int Samples = 180;
@@ -61,23 +71,18 @@ namespace Krab.ShapeSynth.PresetEditor
         private static readonly Color Background = new(0.07f, 0.08f, 0.1f);
         private static readonly Color Grid = new(1, 1, 1, 0.06f);
         private static readonly Color Zero = new(1, 1, 1, 0.2f);
-        private static readonly Color Selected = new(0.95f, 0.95f, 0.95f);
+        private static readonly Color Sum = new(0.95f, 0.95f, 0.95f);
         private static readonly Color Cursor = new(1, 1, 1, 0.35f);
 
-        private readonly Func<IReadOnlyList<ModulatorSettings>> _models;
-        private readonly Func<string> _selectedId;
+        private readonly Func<PresetValue> _value;
         private readonly Func<float> _cursorBeat;
 
         private VisualElement _view;
         private string _signature;
 
-        public PresetSignalGraph(
-            Func<IReadOnlyList<ModulatorSettings>> models,
-            Func<string> selectedId,
-            Func<float> cursorBeat)
+        public PresetSignalGraph(Func<PresetValue> value, Func<float> cursorBeat)
         {
-            _models = models ?? throw new ArgumentNullException(nameof(models));
-            _selectedId = selectedId ?? throw new ArgumentNullException(nameof(selectedId));
+            _value = value ?? throw new ArgumentNullException(nameof(value));
             _cursorBeat = cursorBeat ?? throw new ArgumentNullException(nameof(cursorBeat));
         }
 
@@ -117,13 +122,16 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private string Signature()
         {
-            var builder = new StringBuilder(_selectedId()).Append('|').Append(_cursorBeat().ToString("F3"));
-            foreach (var model in _models())
+            var value = _value();
+            var builder = new StringBuilder(value?.Id).Append('|').Append(_cursorBeat().ToString("F3"));
+            if (value == null) return builder.ToString();
+
+            foreach (var c in value.Components)
             {
-                builder.Append('|').Append(model.Id).Append(model.Kind).Append(model.Attack).Append(',').Append(model.Decay)
-                    .Append(',').Append(model.SustainLevel).Append(',').Append(model.SustainTime).Append(',')
-                    .Append(model.Release).Append(',').Append(model.CyclesPerBeat).Append(',')
-                    .Append(model.PhaseOffset).Append(model.Waveform);
+                builder.Append('|').Append(c.Kind).Append(c.Weight).Append(',').Append(c.Attack).Append(',')
+                    .Append(c.Decay).Append(',').Append(c.SustainLevel).Append(',').Append(c.SustainTime).Append(',')
+                    .Append(c.Release).Append(',').Append(c.CyclesPerBeat).Append(',').Append(c.PhaseOffset)
+                    .Append(c.Waveform);
             }
 
             return builder.ToString();
@@ -138,59 +146,81 @@ namespace Krab.ShapeSynth.PresetEditor
             painter.lineWidth = 1;
             painter.strokeColor = Grid;
             for (var i = 1; i < 6; i++)
-                Line(painter, new Vector2(0, rect.height * i / 6), new Vector2(rect.width, rect.height * i / 6));
-
-            for (var i = 1; i < 6; i++)
-                Line(painter, new Vector2(rect.width * i / 6, 0), new Vector2(rect.width * i / 6, rect.height));
-
-            painter.strokeColor = Zero;
-            Line(painter, new Vector2(0, Y(0, rect)), new Vector2(rect.width, Y(0, rect)));
-
-            var selected = _selectedId();
-            ModulatorSettings highlighted = null;
-            foreach (var model in _models())
             {
-                if (model.Id == selected)
-                {
-                    highlighted = model;
-                    continue;
-                }
-
-                var color = model.Kind == ModulatorKind.Adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
-                Curve(painter, model, rect, new Color(color.r, color.g, color.b, 0.45f), 1.5f);
+                Line(painter, new Vector2(0, rect.height * i / 6), new Vector2(rect.width, rect.height * i / 6));
+                Line(painter, new Vector2(rect.width * i / 6, 0), new Vector2(rect.width * i / 6, rect.height));
             }
 
-            if (highlighted != null) Curve(painter, highlighted, rect, Selected, 2.5f);
+            var value = _value();
+            if (value != null)
+            {
+                var curves = value.Components
+                    .Select(component => (component, points: SampleCurve(beat =>
+                        component.Weight * PresetSignalSampler.SampleOrZero(component, beat))))
+                    .ToArray();
+                var sum = SampleCurve(beat => PresetSignalSampler.SampleOrZero(value, beat));
+                var scale = Scale(curves.Select(curve => curve.points).Append(sum));
 
-            var beat = Mathf.Clamp(_cursorBeat(), 0, PresetSignalSampler.GraphBeats);
-            var cursor = beat / PresetSignalSampler.GraphBeats * rect.width;
+                painter.strokeColor = Zero;
+                Line(painter, new Vector2(0, Y(0, scale, rect)), new Vector2(rect.width, Y(0, scale, rect)));
+                foreach (var (component, points) in curves)
+                {
+                    var color = component.Kind == ModulatorKind.Adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
+                    Curve(painter, points, scale, rect, new Color(color.r, color.g, color.b, 0.6f), 1.5f);
+                }
+
+                Curve(painter, sum, scale, rect, Sum, 2.5f);
+            }
+
+            var cursor = Mathf.Clamp(_cursorBeat(), 0, PresetSignalSampler.GraphBeats) / PresetSignalSampler.GraphBeats
+                         * rect.width;
             painter.strokeColor = Cursor;
             painter.lineWidth = 1;
             Line(painter, new Vector2(cursor, 0), new Vector2(cursor, rect.height));
         }
 
-        private static void Curve(Painter2D painter, ModulatorSettings model, Rect rect, Color color, float width)
+        private static double[] SampleCurve(Func<double, double> sample)
         {
-            if (!PresetSignalSampler.TryCreate(model, out var signal)) return;
+            var points = new double[Samples + 1];
+            for (var i = 0; i <= Samples; i++)
+            {
+                points[i] = sample(PresetSignalSampler.GraphBeats * i / Samples);
+            }
 
+            return points;
+        }
+
+        // Keeps ±1 in view and grows to fit a sum that exceeds it.
+        private static double Scale(IEnumerable<double[]> curves)
+        {
+            var peak = curves.SelectMany(points => points)
+                .Where(point => !double.IsNaN(point) && !double.IsInfinity(point))
+                .Select(Math.Abs)
+                .DefaultIfEmpty(1)
+                .Max();
+            return Math.Max(1, peak);
+        }
+
+        private static void Curve(Painter2D painter, double[] points, double scale, Rect rect, Color color, float width)
+        {
             painter.strokeColor = color;
             painter.lineWidth = width;
             painter.lineJoin = LineJoin.Round;
             painter.BeginPath();
-            for (var i = 0; i <= Samples; i++)
+            for (var i = 0; i < points.Length; i++)
             {
-                var beat = PresetSignalSampler.GraphBeats * i / Samples;
-                var point = new Vector2(rect.width * i / Samples, Y(signal.Evaluate(beat), rect));
+                var point = new Vector2(rect.width * i / (points.Length - 1), Y(points[i], scale, rect));
                 if (i == 0) painter.MoveTo(point);
                 else painter.LineTo(point);
             }
+
             painter.Stroke();
         }
 
-        // Same framing as the reference graph: zero in the middle, ±1 at roughly 28% from each edge.
-        private static float Y(double value, Rect rect)
+        // Zero in the middle; ±scale at 40% of the height from the center.
+        private static float Y(double value, double scale, Rect rect)
         {
-            return Mathf.Clamp(rect.height * 0.5f - rect.height * 0.28f * (float)value, 3, rect.height - 3);
+            return Mathf.Clamp(rect.height * 0.5f - rect.height * 0.4f * (float)(value / scale), 3, rect.height - 3);
         }
 
         private static void Line(Painter2D painter, Vector2 from, Vector2 to)

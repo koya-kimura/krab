@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
@@ -55,16 +56,18 @@ namespace Krab.ShapeSynth.Tests.Editor
 
             Assert.Throws<ArgumentException>(duplicateNode.Validate);
 
-            var duplicateModulator = PresetDocument.CreateNew();
-            duplicateModulator.Modulators.Add(new ModulatorSettings
-            {
-                Id = duplicateModulator.Modulators[0].Id, Name = "Duplicate", Kind = ModulatorKind.Adsr
-            });
+            var duplicateValue = PresetDocument.CreateNew();
+            duplicateValue.Values.Add(new PresetValue { Id = duplicateValue.Values[0].Id, Name = "Duplicate" });
 
-            Assert.Throws<ArgumentException>(duplicateModulator.Validate);
+            Assert.Throws<ArgumentException>(duplicateValue.Validate);
+
+            var nonFiniteWeight = PresetDocument.CreateNew();
+            nonFiniteWeight.Values[0].Components[0].Weight = double.NaN;
+
+            Assert.Throws<ArgumentOutOfRangeException>(nonFiniteWeight.Validate);
 
             var unknownBinding = PresetDocument.CreateNew();
-            unknownBinding.RootGroup.Children[0].Opacity.Bindings[0].ModulatorId = "missing";
+            unknownBinding.RootGroup.Children[0].Opacity.Bindings[0].ValueId = "missing";
 
             Assert.Throws<ArgumentException>(unknownBinding.Validate);
 
@@ -79,19 +82,19 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var document = PresetDocument.CreateNew();
             var opacity = document.RootGroup.Children[0].Opacity;
-            var adsrId = document.Modulators.Single().Id;
-            var lfo = new ModulatorSettings { Id = "lfo", Name = "LFO", Kind = ModulatorKind.Lfo, CyclesPerBeat = 1 };
-            document.Modulators.Add(lfo);
+            var adsrId = document.Values.Single().Id;
+            var lfo = LfoValue("lfo", 1);
+            document.Values.Add(lfo);
 
             var binding = opacity.Bind(lfo.Id, 0.5);
 
             Assert.That(opacity.Bindings, Has.Count.EqualTo(1));
             Assert.That(opacity.GetBinding(), Is.SameAs(binding));
-            Assert.That(binding.ModulatorId, Is.EqualTo(lfo.Id));
+            Assert.That(binding.ValueId, Is.EqualTo(lfo.Id));
             Assert.That(binding.Depth, Is.EqualTo(0.5));
             Assert.DoesNotThrow(document.Validate);
 
-            opacity.Bindings.Add(new PresetBinding { ModulatorId = adsrId, Depth = 1 });
+            opacity.Bindings.Add(new PresetBinding { ValueId = adsrId, Depth = 1 });
 
             var exception = Assert.Throws<ArgumentException>(document.Validate);
             Assert.That(exception.Message, Does.Contain("at most one Value"));
@@ -104,16 +107,17 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
-        public void ModulatorCannotBeDeletedWhileReferenced()
+        public void ValueCannotBeDeletedWhileReferenced()
         {
             var document = PresetDocument.CreateNew();
-            var id = document.Modulators.Single().Id;
-            Assert.Throws<ArgumentException>(() => document.DeleteModulator(id));
+            var id = document.Values.Single().Id;
+            Assert.That(document.BindingCount(id), Is.EqualTo(1));
+            Assert.Throws<ArgumentException>(() => document.DeleteValue(id));
 
-            document.RootGroup.Children[0].Opacity.Bindings.Clear();
-            document.DeleteModulator(id);
+            document.RootGroup.Children[0].Opacity.Unbind();
+            document.DeleteValue(id);
 
-            Assert.That(document.Modulators, Is.Empty);
+            Assert.That(document.Values, Is.Empty);
             Assert.DoesNotThrow(document.Validate);
         }
 
@@ -122,13 +126,9 @@ namespace Krab.ShapeSynth.Tests.Editor
         {
             var document = PresetDocument.CreateNew();
             var root = document.RootGroup;
-            Assert.That(document.Modulators, Has.Count.EqualTo(1));
-            var lfo = new ModulatorSettings
-            {
-                Id = "osc", Name = "Oscillator", Kind = ModulatorKind.Lfo,
-                CyclesPerBeat = 0.25, Waveform = LfoWaveform.Square
-            };
-            document.Modulators.Add(lfo);
+            Assert.That(document.Values, Has.Count.EqualTo(1));
+            var lfo = LfoValue("osc", 0.25, LfoWaveform.Square);
+            document.Values.Add(lfo);
             var subgroup = document.AddNode(root.Id, PresetNodeKind.Group);
             subgroup.PositionX.Base = 12;
             subgroup.Rotation.Base = 30;
@@ -141,7 +141,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             rectangle.Fill = false;
             rectangle.Stroke = true;
             rectangle.StrokeWidth = 3;
-            rectangle.PositionY.Bindings.Add(new PresetBinding { ModulatorId = lfo.Id, Depth = 2 });
+            rectangle.PositionY.Bind(lfo.Id, 2);
 
             var compiled = PresetCompiler.CompileGroup(document);
             var childGroup = (GroupDefinition)compiled.Children[1];
@@ -163,10 +163,34 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
+        public void CompositeValueBindsEveryComponentWithDepthTimesWeight()
+        {
+            var document = PresetDocument.CreateNew();
+            var opacity = document.RootGroup.Children[0].Opacity;
+            var mix = LfoValue("mix", 1);
+            mix.Components[0].Weight = 0.5;
+            mix.Components.Insert(0, PresetComponent.Create(ModulatorKind.Adsr));
+            document.Values.Add(mix);
+            opacity.Bind(mix.Id, 2);
+
+            var compiled = PresetCompiler.CompileGroup(document);
+            var bindings = ((ShapeDefinition)compiled.Children.Single()).Opacity.Bindings;
+
+            Assert.That(compiled.Runtime.Modulators, Has.Count.EqualTo(3));
+            Assert.That(bindings.Select(binding => binding.ModulatorIndex), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(bindings.Select(binding => binding.Depth), Is.EqualTo(new[] { 2.0, 1.0 }));
+
+            mix.Components.Clear();
+            var empty = (ShapeDefinition)PresetCompiler.CompileGroup(document).Children.Single();
+
+            Assert.That(empty.Opacity.Bindings, Is.Empty);
+        }
+
+        [Test]
         public void DraftWithoutLifetimeValidatesAndCompilesGroupButCannotCompileTrigger()
         {
             var document = PresetDocument.CreateNew();
-            document.Modulators.Clear();
+            document.Values.Clear();
             document.RootGroup.Children[0].Opacity.Bindings.Clear();
 
             Assert.DoesNotThrow(document.Validate);
@@ -178,7 +202,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void CompiledTargetsAreSnapshotsAndEachVoiceHasIndependentModulatorState()
         {
             var document = PresetDocument.CreateNew();
-            var envelope = document.Modulators.Single();
+            var envelope = document.Values.Single().Components.Single();
             envelope.SustainTime = 0.1;
             envelope.Release = 0.1;
             var target = PresetCompiler.Compile(document);
@@ -239,7 +263,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void NestedTransformEvaluatesAndCompiledVoiceEndsNaturally()
         {
             var document = PresetDocument.CreateNew();
-            var envelope = document.Modulators.Single();
+            var envelope = document.Values.Single().Components.Single();
             envelope.Attack = 0;
             envelope.Decay = 0;
             envelope.SustainTime = 0.1;
@@ -385,6 +409,14 @@ namespace Krab.ShapeSynth.Tests.Editor
             return document.Nodes()
                 .Select(node => node.Id + ":" + string.Join(",", node.Children.Select(child => child.Id)))
                 .ToArray();
+        }
+
+        private static PresetValue LfoValue(string id, double cyclesPerBeat, LfoWaveform waveform = LfoWaveform.Sine)
+        {
+            var component = PresetComponent.Create(ModulatorKind.Lfo);
+            component.CyclesPerBeat = cyclesPerBeat;
+            component.Waveform = waveform;
+            return new PresetValue { Id = id, Name = id, Components = new List<PresetComponent> { component } };
         }
     }
 }

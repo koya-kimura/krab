@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
@@ -6,6 +7,7 @@ using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Unity.Persistence;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor.Adapter
@@ -34,8 +36,10 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var source = PresetDocument.CreateNew();
             source.Id = "performance_main-01";
             source.Name = "Main performance";
-            source.Modulators[0].Name = "Envelope custom";
-            source.Modulators[0].Attack = 0.42;
+            source.Values[0].Name = "Envelope custom";
+            source.Values[0].Components[0].Attack = 0.42;
+            source.Values[0].Components.Add(PresetComponent.Create(ModulatorKind.Lfo));
+            source.Values[0].Components[1].Weight = -0.25;
             var circle = source.RootGroup.Children[0];
             circle.Name = "Pulse circle";
             circle.Width.Base = 0.37;
@@ -54,11 +58,13 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
 
             Assert.That(repository.Exists(source.Id), Is.True);
             var loaded = repository.Load(source.Id);
-            Assert.That(loaded.SchemaVersion, Is.EqualTo(1));
+            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
             Assert.That(loaded.Name, Is.EqualTo("Main performance"));
-            Assert.That(loaded.Modulators[0].Id, Is.EqualTo(source.Modulators[0].Id));
-            Assert.That(loaded.Modulators[0].Name, Is.EqualTo("Envelope custom"));
-            Assert.That(loaded.Modulators[0].Attack, Is.EqualTo(0.42));
+            Assert.That(loaded.Values[0].Id, Is.EqualTo(source.Values[0].Id));
+            Assert.That(loaded.Values[0].Name, Is.EqualTo("Envelope custom"));
+            Assert.That(loaded.Values[0].Components[0].Attack, Is.EqualTo(0.42));
+            Assert.That(loaded.Values[0].Components[1].Kind, Is.EqualTo(ModulatorKind.Lfo));
+            Assert.That(loaded.Values[0].Components[1].Weight, Is.EqualTo(-0.25));
             Assert.That(loaded.RootGroup.Children[0].Name, Is.EqualTo("Pulse circle"));
             Assert.That(loaded.RootGroup.Children[0].Width.Base, Is.EqualTo(0.37));
             Assert.That(loaded.RootGroup.Children[0].Red, Is.EqualTo(0.25));
@@ -76,16 +82,19 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var repository = new PresetRepository(_directory);
             var source = PresetDocument.CreateNew();
             var lfoId = "motion-lfo";
-            source.Modulators.Add(new ModulatorSettings
+            var lfo = PresetComponent.Create(ModulatorKind.Lfo);
+            lfo.CyclesPerBeat = 1.75;
+            lfo.PhaseOffset = 0.375;
+            lfo.Waveform = LfoWaveform.Triangle;
+            source.Values.Add(new PresetValue
             {
-                Id = lfoId, Name = "Motion", Kind = ModulatorKind.Lfo,
-                CyclesPerBeat = 1.75, PhaseOffset = 0.375, Waveform = LfoWaveform.Triangle
+                Id = lfoId, Name = "Motion", Components = new List<PresetComponent> { lfo }
             });
             var circle = source.RootGroup.Children[0];
             circle.PositionX.Reference = ReferenceSource.CanvasWidth;
             circle.PositionX.Multiplier = 0.23;
             circle.PositionX.Base = -0.12;
-            circle.PositionX.Bindings.Add(new PresetBinding { ModulatorId = lfoId, Depth = 0.8 });
+            circle.PositionX.Bind(lfoId, 0.8);
             circle.Rotation.Reference = ReferenceSource.MaxDimension;
             circle.Rotation.Multiplier = 0.5;
             circle.Rotation.AbsoluteValue = 37.5;
@@ -94,14 +103,15 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             repository.Save(source);
 
             var loaded = repository.Load(source.Id);
-            Assert.That(loaded.Modulators[1].Kind, Is.EqualTo(ModulatorKind.Lfo));
-            Assert.That(loaded.Modulators[1].CyclesPerBeat, Is.EqualTo(1.75));
-            Assert.That(loaded.Modulators[1].PhaseOffset, Is.EqualTo(0.375));
-            Assert.That(loaded.Modulators[1].Waveform, Is.EqualTo(LfoWaveform.Triangle));
+            var loadedLfo = loaded.Values[1].Components.Single();
+            Assert.That(loadedLfo.Kind, Is.EqualTo(ModulatorKind.Lfo));
+            Assert.That(loadedLfo.CyclesPerBeat, Is.EqualTo(1.75));
+            Assert.That(loadedLfo.PhaseOffset, Is.EqualTo(0.375));
+            Assert.That(loadedLfo.Waveform, Is.EqualTo(LfoWaveform.Triangle));
             Assert.That(loaded.RootGroup.Children[0].PositionX.Reference, Is.EqualTo(ReferenceSource.CanvasWidth));
             Assert.That(loaded.RootGroup.Children[0].PositionX.Multiplier, Is.EqualTo(0.23));
             Assert.That(loaded.RootGroup.Children[0].PositionX.Base, Is.EqualTo(-0.12));
-            Assert.That(loaded.RootGroup.Children[0].PositionX.Bindings[0].ModulatorId, Is.EqualTo(lfoId));
+            Assert.That(loaded.RootGroup.Children[0].PositionX.Bindings[0].ValueId, Is.EqualTo(lfoId));
             Assert.That(loaded.RootGroup.Children[0].PositionX.Bindings[0].Depth, Is.EqualTo(0.8));
             Assert.That(loaded.RootGroup.Children[0].Rotation.Reference, Is.EqualTo(ReferenceSource.MaxDimension));
             Assert.That(loaded.RootGroup.Children[0].Rotation.Multiplier, Is.EqualTo(0.5));
@@ -110,11 +120,45 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         }
 
         [Test]
+        public void LoadUpgradesSchemaV1ModulatorsToSingleComponentValues()
+        {
+            var repository = new PresetRepository(_directory);
+            var current = PresetDocument.CreateNew();
+            var v1 = JObject.FromObject(current);
+            var value = (JObject)v1["Values"][0];
+            var component = (JObject)value["Components"][0];
+            component.Remove("Weight");
+            component["Id"] = value["Id"];
+            component["Name"] = value["Name"];
+            component["Attack"] = 0.33;
+            v1.Remove("Values");
+            v1["Modulators"] = new JArray(component);
+            v1["SchemaVersion"] = 1;
+            foreach (var binding in v1.Descendants().OfType<JObject>().Where(token => token["ValueId"] != null).ToArray())
+            {
+                binding["ModulatorId"] = binding["ValueId"];
+                binding.Remove("ValueId");
+            }
+
+            Directory.CreateDirectory(_directory);
+            File.WriteAllText(FilePath(current.Id + ".json"), v1.ToString());
+
+            var loaded = repository.Load(current.Id);
+
+            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
+            Assert.That(loaded.Values.Single().Id, Is.EqualTo(current.Values[0].Id));
+            Assert.That(loaded.Values.Single().Name, Is.EqualTo(current.Values[0].Name));
+            Assert.That(loaded.Values.Single().Components.Single().Weight, Is.EqualTo(1));
+            Assert.That(loaded.Values.Single().Components.Single().Attack, Is.EqualTo(0.33));
+            Assert.That(loaded.RootGroup.Children[0].Opacity.GetBinding().ValueId, Is.EqualTo(current.Values[0].Id));
+        }
+
+        [Test]
         public void SaveLoadAllowsDraftWithoutLifetime()
         {
             var repository = new PresetRepository(_directory);
             var draft = PresetDocument.CreateNew();
-            draft.Modulators.Clear();
+            draft.Values.Clear();
             foreach (var node in draft.Nodes())
             {
                 foreach (var parameter in node.Parameters())
@@ -126,7 +170,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             repository.Save(draft);
 
             var loaded = repository.Load(draft.Id);
-            Assert.That(loaded.Modulators, Is.Empty);
+            Assert.That(loaded.Values, Is.Empty);
             Assert.That(loaded.RootGroup.Children, Has.Count.EqualTo(1));
         }
 

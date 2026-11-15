@@ -19,10 +19,12 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetDocument
     {
-        public int SchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
+
+        public int SchemaVersion = CurrentSchemaVersion;
         public string Id;
         public string Name = "New Preset";
-        public List<ModulatorSettings> Modulators = new();
+        public List<PresetValue> Values = new();
         public PresetNode RootGroup;
 
         public static string NewId() => Guid.NewGuid().ToString("N");
@@ -38,28 +40,23 @@ namespace Krab.ShapeSynth.Core.Presets
 
         public static PresetDocument CreateNew()
         {
-            var envelope = new ModulatorSettings
+            var envelope = new PresetValue
             {
                 Id = NewId(),
                 Name = "Default ADSR",
-                Kind = ModulatorKind.Adsr,
-                Attack = 0.1,
-                Decay = 0.2,
-                SustainLevel = 0.8,
-                SustainTime = 1,
-                Release = 1
+                Components = new List<PresetComponent> { PresetComponent.Create(ModulatorKind.Adsr) }
             };
             var root = PresetNode.Create(PresetNodeKind.Group);
             root.Name = "Root Group";
             var circle = PresetNode.Create(PresetNodeKind.Circle);
             circle.Opacity.Base = 0;
-            circle.Opacity.Bindings.Add(new PresetBinding { ModulatorId = envelope.Id, Depth = 1 });
+            circle.Opacity.Bind(envelope.Id, 1);
             root.Children.Add(circle);
             return new PresetDocument
             {
                 Id = NewId(),
                 RootGroup = root,
-                Modulators = new List<ModulatorSettings> { envelope }
+                Values = new List<PresetValue> { envelope }
             };
         }
 
@@ -186,16 +183,19 @@ namespace Krab.ShapeSynth.Core.Presets
             return false;
         }
 
-        public void DeleteModulator(string id)
+        public void DeleteValue(string id)
         {
-            var inUse = Nodes()
+            if (BindingCount(id) > 0) throw new ArgumentException("Value is in use. Unbind it first.");
+
+            Values.RemoveAll(value => value.Id == id);
+        }
+
+        public int BindingCount(string valueId)
+        {
+            return Nodes()
                 .SelectMany(node => node.Parameters())
                 .SelectMany(parameter => parameter.Bindings)
-                .Any(binding => binding.ModulatorId == id);
-            if (inUse)
-                throw new ArgumentException("Modulator is in use. Remove its Bindings first.");
-
-            Modulators.RemoveAll(modulator => modulator.Id == id);
+                .Count(binding => binding.ValueId == valueId);
         }
 
         /// <summary>Validates a draft, including references/numbers, without requiring a Lifetime.</summary>
@@ -269,11 +269,11 @@ namespace Krab.ShapeSynth.Core.Presets
         }
 
         /// <summary>Binds one Value, replacing any previous Binding.</summary>
-        public PresetBinding Bind(string modulatorId, double depth)
+        public PresetBinding Bind(string valueId, double depth)
         {
-            if (modulatorId == null) throw new ArgumentNullException(nameof(modulatorId));
+            if (valueId == null) throw new ArgumentNullException(nameof(valueId));
 
-            var binding = new PresetBinding { ModulatorId = modulatorId, Depth = depth };
+            var binding = new PresetBinding { ValueId = valueId, Depth = depth };
             Bindings.Clear();
             Bindings.Add(binding);
             return binding;
@@ -288,7 +288,7 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetBinding
     {
-        public string ModulatorId;
+        public string ValueId;
         public double Depth = 1;
     }
 

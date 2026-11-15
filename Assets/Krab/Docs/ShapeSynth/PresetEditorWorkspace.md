@@ -10,8 +10,10 @@
 - Visualタブ
   - Hierarchy: Nodeをボタンで選択する（選択中は青）。種類は記号で示す（■ Group、○ Circle、◻ Rectangle、▲ Polygon）。`▼` / `►` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ドラッグ中はドロップできる行を暗い緑、今ドロップする行を明るい緑、ドラッグ中のNodeを灰色で示す。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
   - Preview: 出力RTを枠に収まるように表示する（Zoomなし）。`Play` / `Stop`、Beatスライダー、BPM、Seed。ModeはBeat（BPMクロック）だけ。各Valueを現在のBeatで評価して静止Hierarchyを描画し、Playでは最長ADSRの寿命（上限6拍）でループする。編集は0.3秒後に自動でCompileする。
-  - Inspector: Name、Transform / Shape / StyleのFold。各ParameterはFoldで、見出しに現在の出力値と接続中のValue名を出す。Valueが接続されているParameterの見出しは緑。中身はBase、Reference、Value（`None` または1つのValue）、Depth（接続中のみ）、Ref. Multiplier、Absolute Value。
-- Valuesタブ: Value一覧（選択中は青、ADSRは青の ●、LFOは橙の ◆。グラフと同じ色）、`+ ADSR` / `+ LFO`、出力グラフ（0–6 beat、選択中を白、Beat位置の縦線）、選択ValueのName / ADSR 5項目 / LFO 3項目、Remove（どのParameterにも接続されていないときだけ有効）。
+  - Inspector: Name、Transform / Shape / StyleのFold。各Parameterは「Fold（見出しに現在の出力値）+ 右端のBindボタン」。Foldの中身はBase、Reference、Ref. Multiplier、Absolute Value。Valueが接続されていると見出しとボタンは緑で、ボタンにValue名が出る。
+  - Bindボタンを押すと、Inspectorの左にそのParameter用の小さなBindウィンドウが開く（編集中のボタンは青）。中身はValue（`None` または1つのValue）、Depth（接続中のみ）、Base、現在のOutput、Unbind、Close。Node選択の変更、New / Openで閉じる。
+- Valuesタブ: Value一覧（選択中は青）と `+ Value`。Valueは複数のComponent（ADSR / LFO、Weight付き）の合成で、信号は `Σ Weight × Component`。出力グラフ（0–6 beat）には選択ValueのComponentを細線（ADSRは青、LFOは橙、Weight込み）、合計を白の太線で描き、Beat位置に縦線を引く。縦軸は±1を基本に、合計がはみ出すと自動で広げる。その下にName、各ComponentのFold（Weight、ADSR 5項目 / LFO 3項目、Remove Component）、`+ ADSR` / `+ LFO`、Remove Value（どのParameterにも接続されていないときだけ有効）。
+- 保存形式はSchemaVersion 2（`Values[].Components[]`、Bindingは `ValueId`）。v1のファイルは読み込み時に、各Modulatorを「Weight 1のComponentを1つ持つValue」へ変換する（`PresetJsonMigration`）。ファイルは保存し直すまでv1のまま。CompilerはBound Valueを「Componentごとに Depth × Weight のBinding」へ展開するので、Runtime（`ParameterDefinition` の合算）は変更していない。
 - Visual側でValueを新規作成する機能、Static / Animatedモード、Preview Zoom、UI倍率、右クリックメニュー、未保存確認、Open一覧ブラウザ、ステータスバーは削除した。
 - 各ペインの先頭に Hierarchy / Preview / Inspector / Values / Output の見出しだけを置く。状態を示す色は `PresetEditorPalette` にまとめ、RosettaUIの `Style.Color` / `Style.BackgroundColor` だけで付ける。記号はRosettaUI既定フォントにあるもの（○ ◻ ▲ ■ ● ◆ ▼ ►）に限る。
 - Play中にスクリプトが再読み込みされるとDocumentは消える（シリアライズしないため）。そのときは新規Documentに置き換えてエラー欄に表示する。保存していない編集は失われる。

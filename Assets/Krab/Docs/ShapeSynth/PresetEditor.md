@@ -27,7 +27,7 @@ Phase 8の作業ツリーを引き継いで追加した。Phase 8、Phase 9と�
 - `CreateNew()` / `NewId()`、`Validate()`、`AddNode(parentId, kind)`、`DeleteNode(id)`、`DeleteModulator(id)`、`Nodes()`。
 - SchemaVersion=1、安定したId、変更可能なName、既存の `ModulatorSettings` 一覧、必須RootGroupを持つ。
 - `PresetNode` は明示的なKind（Group/Circle/Rectangle/Polygon）、Id、Name、順序付きChildren、Transform/Geometry/Opacityの `PresetParameter`、Color/Style、Polygon頂点を持つ。
-- `PresetParameter` はReference/Multiplier/AbsoluteValue/Baseと `PresetBinding(ModulatorId, Depth)`。BindingはList形式で保存するが、1 Parameterにつき最大1件。編集モデルはPrefsGUIへ変換しない。
+- `PresetParameter` はReference/Multiplier/AbsoluteValue/Baseと `PresetBinding(ValueId, Depth)`。BindingはList形式で保存するが、1 Parameterにつき最大1件。Value（`PresetValue`）はWeight付きComponent（`PresetComponent`: ADSR / LFO）の合成（SchemaVersion 2）。編集モデルはPrefsGUIへ変換しない。
 - IDは先頭英数字、以降英数字・underscore・hyphen、1〜80文字。重複Node ID・重複Modulator ID、未知のBinding参照、1 Parameterに2件以上のBinding、null、非有限値、無効なenum/ADSR/LFO/Stroke設定を拒否する。IDと兄弟Indexは別概念。最大64階層・2000 Node、Modulator/Polygon頂点も上限2000。Root以外のShapeに子は持てない。
 
 ### PresetCompiler（Core）
@@ -41,7 +41,7 @@ Phase 8の作業ツリーを引き継いで追加した。Phase 8、Phase 9と�
 
 - `new PresetRepository(directoryPath = null)`、`DirectoryPath`、`Save(document)`、`Load(id)`、`Exists(id)`、`List()`、`List(out errors)`。
 - 既定保存先：`Application.persistentDataPath/ShapeSynth/Presets/<preset-id>.json`。Nameを変えてもファイル名は変わらない。既存Performance.v1.jsonとは別の形式。
-- JSONはSchemaVersion、Id/Name、Modulators、再帰的RootGroup/Children、Node ID、Parameter/Binding、Color/Style、Geometryを保存する。Voice、進行状態、GameObject、UI、RTは保存しない。
+- JSONはSchemaVersion、Id/Name、Values（Components）、再帰的RootGroup/Children、Node ID、Parameter/Binding、Color/Style、Geometryを保存する。Voice、進行状態、GameObject、UI、RTは保存しない。
 - Unityに既に導入されている `com.unity.nuget.newtonsoft-json` 3.2.2を使う。JsonUtilityは深い再帰でNodeを省略することを実検証で確認したため採用していない。CoreにJSON依存を追加していない。型メタデータの実行は無効。SchemaVersionの必須・整数・対応値、重複JSONキー、Document構造、ファイル名とIDの一致を検証する。
 - 保存は検証とシリアライズ後、同じフォルダの一時ファイルへ書いてMove/Replaceする。失敗時は既存ファイルを保持する。一覧取得は壊れたファイルをerrorsへ返し、UIに表示する。黙って参照やIDを補修しない。
 

@@ -30,7 +30,7 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             get
             {
-                var lifetime = Document.Modulators
+                var lifetime = PresetCompiler.Components(Document)
                     .Where(model => model.Kind == ModulatorKind.Adsr)
                     .Select(model => model.Attack + model.Decay + model.SustainTime + model.Release)
                     .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
@@ -49,7 +49,7 @@ namespace Krab.ShapeSynth.PresetEditor
             Guard(() =>
             {
                 var target = PresetCompiler.Compile(Document);
-                _previewSignals = Document.Modulators.Select(model => new PreviewSignal(model)).ToArray();
+                _previewSignals = PresetCompiler.Components(Document).Select(model => new PreviewSignal(model)).ToArray();
                 UpdatePreviewSignals();
                 _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, _seed);
             });
@@ -130,21 +130,20 @@ namespace Krab.ShapeSynth.PresetEditor
         }
 
         /// <summary>The current value of a Value at the preview Beat.</summary>
-        private double SignalAtBeat(string modulatorId)
+        private double SignalAtBeat(string valueId)
         {
-            var model = Document.Modulators.FirstOrDefault(entry => entry.Id == modulatorId);
-            return model == null ? 0 : PresetSignalSampler.SampleOrZero(model, _beat);
+            return PresetSignalSampler.SampleOrZero(FindValue(valueId), _beat);
         }
 
-        /// <summary>A still signal whose value can change without recompiling the hierarchy.</summary>
+        /// <summary>A still component signal whose value can change without recompiling the hierarchy.</summary>
         private sealed class PreviewSignal : IModulator
         {
-            public PreviewSignal(ModulatorSettings model)
+            public PreviewSignal(PresetComponent model)
             {
                 Model = model;
             }
 
-            public ModulatorSettings Model { get; }
+            public PresetComponent Model { get; }
 
             public double Value { get; set; }
 

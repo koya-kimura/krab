@@ -24,12 +24,12 @@ namespace Krab.ShapeSynth.PresetEditor
         private PresetRepository _repository;
         private WindowElement _workspace;
         private string _selectedId;
-        private string _selectedModulatorId;
+        private string _selectedValueId;
         private string _error;
         private bool _dirty;
         private bool _openOnUpdate;
         private int _documentRevision;
-        private int _modulatorsRevision;
+        private int _valuesRevision;
 
         private void Awake()
         {
@@ -65,6 +65,7 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             StopPreview();
             _workspace?.Close();
+            CloseBind();
         }
 
         // The node tree is recursive; keep Unity's reload serialization from walking it. Files are the source of truth.
@@ -79,8 +80,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public PresetNode Selected => Document.Nodes().First(node => node.Id == _selectedId);
 
-        private ModulatorSettings SelectedModulator =>
-            Document.Modulators.FirstOrDefault(model => model.Id == _selectedModulatorId);
+        private PresetValue SelectedValue => FindValue(_selectedValueId);
 
         /// <summary>A selected Group receives the child; a selected Shape adds a sibling into its parent Group.</summary>
         private PresetNode AddTarget =>
@@ -115,12 +115,14 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public void SelectNode(string id)
         {
+            if (_selectedId != id) CloseBind();
+
             _selectedId = id;
         }
 
-        public void SelectModulator(string id)
+        public void SelectValue(string id)
         {
-            _selectedModulatorId = id;
+            _selectedValueId = id;
         }
 
         public void AddNode(PresetNodeKind kind)
@@ -148,6 +150,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 SelectNode(parent.Id);
                 Changed();
             });
+        }
+
+        private PresetValue FindValue(string id)
+        {
+            return id == null ? null : Document.Values.FirstOrDefault(value => value.Id == id);
         }
 
         private PresetNode ParentOf(string id)
@@ -182,12 +189,13 @@ namespace Krab.ShapeSynth.PresetEditor
         private void ResetDocumentView()
         {
             _selectedId = Document.RootGroup.Children.FirstOrDefault()?.Id ?? Document.RootGroup.Id;
-            _selectedModulatorId = Document.Modulators.FirstOrDefault()?.Id;
+            _selectedValueId = Document.Values.FirstOrDefault()?.Id;
             _childrenRevisions.Clear();
             _expandedGroups.Clear();
             _expandedGroups.Add(Document.RootGroup.Id);
             _documentRevision++;
-            _modulatorsRevision++;
+            _valuesRevision++;
+            CloseBind();
             QueuePreview();
         }
 

@@ -14,7 +14,7 @@ namespace Krab.ShapeSynth.Core.Presets
         public static TriggerTarget Compile(PresetDocument document)
         {
             var group = CompileGroup(document);
-            if (!document.Modulators.Any(model => model.Kind == ModulatorKind.Adsr))
+            if (!Components(document).Any(component => component.Kind == ModulatorKind.Adsr))
             {
                 throw new ArgumentException(
                     "Preview/Trigger requires at least one ADSR Lifetime. The draft can still be saved.");
@@ -27,35 +27,56 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             ValidateDocument(document);
 
-            var slots = document.Modulators.Select(Slot).ToArray();
-            var indices = document.Modulators
-                .Select((model, index) => (model.Id, index))
-                .ToDictionary(pair => pair.Id, pair => pair.index);
+            var slots = Components(document).Select(Slot).ToArray();
+            var indices = new ValueIndices();
+            var next = 0;
+            foreach (var value in document.Values)
+            {
+                indices.Add(value.Id, (next, value));
+                next += value.Components.Count;
+            }
+
             return (GroupDefinition)CompileNode(document.RootGroup, indices, new GroupRuntimeDefinition(slots));
+        }
+
+        /// <summary>Every component in Value order; this is the Root scope slot order.</summary>
+        public static IEnumerable<PresetComponent> Components(PresetDocument document)
+        {
+            return document.Values.SelectMany(value => value.Components);
         }
 
         internal static void ValidateDocument(PresetDocument document)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
-            if (document.SchemaVersion != 1)
+            if (document.SchemaVersion != PresetDocument.CurrentSchemaVersion)
                 throw new ArgumentException($"Unsupported preset schema version {document.SchemaVersion}.");
 
             PresetDocument.RequireId(document.Id);
             if (string.IsNullOrWhiteSpace(document.Name)) throw new ArgumentException("Preset name is required.");
-            if (document.Modulators == null || document.Modulators.Count > 2000)
-                throw new ArgumentException("Invalid Modulator list.");
+            if (document.Values == null || document.Values.Count > 2000)
+                throw new ArgumentException("Invalid Value list.");
 
             var ids = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var model in document.Modulators)
+            var componentCount = 0;
+            foreach (var value in document.Values)
             {
-                if (model == null) throw new ArgumentException("Null Modulator.");
+                if (value == null) throw new ArgumentException("Null Value.");
 
-                PresetDocument.RequireId(model.Id);
-                if (!ids.Add(model.Id)) throw new ArgumentException("Duplicate Modulator ID: " + model.Id);
-                if (string.IsNullOrWhiteSpace(model.Name))
-                    throw new ArgumentException("Modulator name is required.");
+                PresetDocument.RequireId(value.Id);
+                if (!ids.Add(value.Id)) throw new ArgumentException("Duplicate Value ID: " + value.Id);
+                if (string.IsNullOrWhiteSpace(value.Name)) throw new ArgumentException("Value name is required.");
+                if (value.Components == null) throw new ArgumentException("Null Value components.");
 
-                Slot(model);
+                foreach (var component in value.Components)
+                {
+                    if (component == null) throw new ArgumentException("Null Value component.");
+
+                    VoiceTime.RequireFinite(component.Weight, "Component Weight");
+                    Slot(component);
+                }
+
+                componentCount += value.Components.Count;
+                if (componentCount > 2000) throw new ArgumentException("A preset can have at most 2000 components.");
             }
 
             if (document.RootGroup == null || document.RootGroup.Kind != PresetNodeKind.Group)
@@ -88,8 +109,8 @@ namespace Krab.ShapeSynth.Core.Presets
                 VoiceTime.RequireFinite(parameter.Base, "Parameter Base");
                 foreach (var binding in parameter.Bindings)
                 {
-                    if (binding == null || !modulators.Contains(binding.ModulatorId ?? ""))
-                        throw new ArgumentException("Binding refers to an unknown Modulator ID.");
+                    if (binding == null || !modulators.Contains(binding.ValueId ?? ""))
+                        throw new ArgumentException("Binding refers to an unknown Value ID.");
 
                     VoiceTime.RequireFinite(binding.Depth, "Binding Depth");
                 }
@@ -117,7 +138,7 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        private static ModulatorSlotDefinition Slot(ModulatorSettings model)
+        private static ModulatorSlotDefinition Slot(PresetComponent model)
         {
             switch (model.Kind)
             {
@@ -132,11 +153,20 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        private static ParameterDefinition Parameter(PresetParameter model, Dictionary<string, int> indices) =>
-            new ParameterDefinition(
-                new ReferenceDefinition(model.Reference, model.Multiplier, model.AbsoluteValue), model.Base,
-                model.Bindings.Select(binding => new BindingDefinition(indices[binding.ModulatorId], binding.Depth))
-                    .ToArray());
+        // A bound Value becomes one Binding per component, so the runtime sum equals Depth × Σ Weight × signal.
+        private static ParameterDefinition Parameter(PresetParameter model, ValueIndices indices)
+        {
+            var bindings = model.Bindings.SelectMany(binding =>
+            {
+                var (first, value) = indices[binding.ValueId];
+                return value.Components.Select((component, index) =>
+                    new BindingDefinition(first + index, binding.Depth * component.Weight));
+            });
+            return new ParameterDefinition(
+                new ReferenceDefinition(model.Reference, model.Multiplier, model.AbsoluteValue),
+                model.Base,
+                bindings.ToArray());
+        }
 
         private static RgbaColor Color(PresetNode node) =>
             new RgbaColor(node.Red, node.Green, node.Blue, node.Alpha);
@@ -144,7 +174,7 @@ namespace Krab.ShapeSynth.Core.Presets
         private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke, node.StrokeWidth,
             new RgbaColor(node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha));
 
-        private static INodeDefinition CompileNode(PresetNode node, Dictionary<string, int> indices,
+        private static INodeDefinition CompileNode(PresetNode node, ValueIndices indices,
             GroupRuntimeDefinition runtime = null)
         {
             var transform = new TransformDefinition(Parameter(node.PositionX, indices),
@@ -171,6 +201,13 @@ namespace Krab.ShapeSynth.Core.Presets
                         Color(node), Style(node));
                 default:
                     throw new ArgumentException("Unknown Node kind.");
+            }
+        }
+
+        private sealed class ValueIndices : Dictionary<string, (int First, PresetValue Value)>
+        {
+            public ValueIndices() : base(StringComparer.Ordinal)
+            {
             }
         }
     }
