@@ -4,14 +4,16 @@ using UnityEngine;
 
 namespace Krab.TypeLayout.Performance
 {
-    /// <summary>What every layer needs for one frame.</summary>
-    public readonly struct LayerContext
+    /// <summary>What every pattern needs for one frame.</summary>
+    public readonly struct PatternContext
     {
-        public LayerContext(LayoutFrame frame, Rect2 safeArea, double beats, TypeLayoutDrawer drawer, Color color)
+        public PatternContext(LayoutFrame frame, Rect2 safeArea, double beats, float bpm, TypeLayoutDrawer drawer,
+            Color color)
         {
             Frame = frame;
             SafeArea = safeArea;
             Beats = beats;
+            Bpm = bpm;
             Drawer = drawer;
             Color = color;
         }
@@ -24,8 +26,13 @@ namespace Krab.TypeLayout.Performance
         /// <summary>Running beat count of the tempo clock.</summary>
         public double Beats { get; }
 
+        public float Bpm { get; }
+
         public TypeLayoutDrawer Drawer { get; }
 
         public Color Color { get; }
+
+        /// <summary>Reference pixels (1080 tall) to output pixels.</summary>
+        public double Px(double reference) => Frame.ToPixels(reference);
     }
 }

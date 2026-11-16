@@ -1,0 +1,67 @@
+using System;
+using Krab.TypeLayout.Core.Distribution;
+using Krab.TypeLayout.Core.Geometry;
+using Krab.TypeLayout.Core.Paths;
+using Krab.TypeLayout.Core.Placement;
+using PrefsGUI;
+using PrefsGUI.RosettaUI;
+using RosettaUI;
+
+namespace Krab.TypeLayout.Performance.Patterns
+{
+    public sealed class CornersPattern : TypePattern
+    {
+        private readonly PrefsString _topLeft;
+        private readonly PrefsString _topRight;
+        private readonly PrefsString _bottomLeft;
+        private readonly PrefsString _bottomRight;
+        private readonly PrefsFloat _size;
+
+        public CornersPattern() : base("Corners",
+            "Four labels flush to the safe-area corners. {bpm} and {beat} are replaced live.")
+        {
+            _topLeft = new PrefsString(Key("Top Left"), "KRAB");
+            _topRight = new PrefsString(Key("Top Right"), "{bpm} BPM");
+            _bottomLeft = new PrefsString(Key("Bottom Left"), "TYPE LAYOUT");
+            _bottomRight = new PrefsString(Key("Bottom Right"), "{beat}");
+            _size = new PrefsFloat(Key("Size"), 36);
+        }
+
+        protected override Element CreateParameters()
+        {
+            return UI.Column(
+                _topLeft.CreateElement("Top Left"),
+                _topRight.CreateElement("Top Right"),
+                _bottomLeft.CreateElement("Bottom Left"),
+                _bottomRight.CreateElement("Bottom Right"),
+                _size.CreateSlider("Size", 8f, 200f));
+        }
+
+        protected override void DrawPattern(in PatternContext context)
+        {
+            var area = context.SafeArea;
+            var top = new LinePath(area.PointAt(Anchor.TopLeft), area.PointAt(Anchor.TopRight));
+            var bottom = new LinePath(area.PointAt(Anchor.BottomLeft), area.PointAt(Anchor.BottomRight));
+            var size = context.Px(_size.Get());
+            var hang = new PlacementOptions(size, vertical: VerticalAnchor.CapTop);
+            var rest = new PlacementOptions(size, vertical: VerticalAnchor.Baseline);
+            var start = new FlowOptions(inkFlush: true);
+            var end = new FlowOptions(alignment: FlowAlignment.End, inkFlush: true);
+
+            context.Drawer.DrawFlow(top, Expand(_topLeft.Get(), context), start, hang, context.Color);
+            context.Drawer.DrawFlow(top, Expand(_topRight.Get(), context), end, hang, context.Color);
+            context.Drawer.DrawFlow(bottom, Expand(_bottomLeft.Get(), context), start, rest, context.Color);
+            context.Drawer.DrawFlow(bottom, Expand(_bottomRight.Get(), context), end, rest, context.Color);
+        }
+
+        private static string Expand(string text, in PatternContext context)
+        {
+            if (string.IsNullOrEmpty(text) || text.IndexOf('{') < 0) return text;
+
+            var beat = (long)Math.Floor(context.Beats);
+            var bar = Math.Floor(beat / 4.0) + 1;
+            return text.Replace("{bpm}", context.Bpm.ToString("0"))
+                .Replace("{beat}", $"{bar:0}.{beat - (bar - 1) * 4 + 1:0}");
+        }
+    }
+}

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Krab.Common.Timing;
 using Krab.Common.Views;
 using Krab.TypeLayout.Core.Geometry;
+using Krab.TypeLayout.Performance.Patterns;
 using Krab.TypeLayout.Unity.Fonts;
 using Krab.TypeLayout.Unity.Rendering;
 using PrefsGUI;
@@ -13,15 +14,15 @@ using UnitySimpleContainer;
 namespace Krab.TypeLayout.Performance
 {
     /// <summary>
-    /// Overlay text for performances: switchable layers drawn on the output camera, edited from the settings UI
-    /// and moving with the BPM clock.
+    /// Overlay text for performances: script-written patterns drawn on the output camera, switched and tuned from
+    /// the settings UI and moving with the BPM clock.
     /// </summary>
     [RequireComponent(typeof(TypeLayoutCanvas), typeof(TypeLayoutFont))]
     [UiTarget("TypeLayout/Performance", "Type Layout", 0)]
     public sealed class TypeLayoutPerformance : MonoBehaviour, IUiTarget
     {
-        // Used only when no tempo clock is injected, so scrolling still moves in a bare Scene.
-        private const double FallbackBpm = 120;
+        // Used only when no tempo clock is injected, so patterns still move in a bare Scene.
+        private const float FallbackBpm = 120;
 
         private static readonly Color SafeAreaGuideColor = new(0.2f, 0.9f, 1f, 0.5f);
 
@@ -32,13 +33,16 @@ namespace Krab.TypeLayout.Performance
         private readonly PrefsColor _color = new("TypeLayout Color", Color.white);
         private readonly PrefsFloat _margin = new("TypeLayout Margin", 40);
 
-        private readonly TextLayer[] _layers =
+        private readonly TypePattern[] _patterns =
         {
-            new FrameTextLayer(),
-            new LineTextLayer("Line A", false, "Gigandect", false, 0.25f),
-            new LineTextLayer("Line B", false, "Gigandect", true, 0.75f),
-            new CircleTextLayer(),
-            new GridTextLayer()
+            new FrameLoopPattern(),
+            new CornersPattern(),
+            new TickerPattern(),
+            new ColumnsPattern(),
+            new CrossPattern(),
+            new WavePattern(),
+            new OrbitPattern(),
+            new LetterGridPattern()
         };
 
         private TypeLayoutCanvas _canvas;
@@ -68,13 +72,14 @@ namespace Krab.TypeLayout.Performance
             var frame = new LayoutFrame(_outputCamera.pixelWidth, _outputCamera.pixelHeight);
             var margin = Mathf.Clamp(_margin.Get(), 0, (float)(frame.ReferenceHeight / 2 - 1));
             var safeArea = frame.SafeArea(margin);
+            var bpm = _bpmManager?.CurrentBpm ?? FallbackBpm;
             var beats = _bpmManager?.Beat ?? Time.timeAsDouble * FallbackBpm / 60;
             _drawer.ShowGuides = _showGuides.Get();
             if (_drawer.ShowGuides) UniteGuideRenderer.DrawRect(_canvas, safeArea, SafeAreaGuideColor);
 
-            var context = new LayerContext(frame, safeArea, beats, _drawer, _color.Get());
-            foreach (var layer in _layers)
-                layer.Draw(context);
+            var context = new PatternContext(frame, safeArea, beats, bpm, _drawer, _color.Get());
+            foreach (var pattern in _patterns)
+                pattern.Draw(context);
         }
 
         public bool Visible
@@ -83,26 +88,61 @@ namespace Krab.TypeLayout.Performance
             set => _visible.Set(value);
         }
 
-        public IReadOnlyList<TextLayer> Layers => _layers;
+        public IReadOnlyList<TypePattern> Patterns => _patterns;
 
         public Element CreateElement()
         {
-            var layers = new Element[_layers.Length];
-            for (var i = 0; i < _layers.Length; i++)
-                layers[i] = _layers[i].CreateElement();
-
-            return UI.Column(
-                _visible.CreateElement("Visible"),
-                _showGuides.CreateElement("Guides"),
-                _color.CreateElement("Color"),
-                _margin.CreateSlider("Margin", 0f, 300f),
-                UI.Column(layers));
+            return UI.Tabs(
+                ("Patterns", CreatePatternsTab),
+                ("Display", CreateDisplayTab));
         }
 
         [Inject]
         public void Construct(IBPMManager bpmManager)
         {
             _bpmManager = bpmManager;
+        }
+
+        private Element CreatePatternsTab()
+        {
+            var elements = new List<Element>
+            {
+                UI.Row(
+                    UI.Button("All Off", SetAllPatternsOff),
+                    UI.Label(() => $"{CountEnabled()} / {_patterns.Length} on")),
+                UI.Space()
+            };
+            foreach (var pattern in _patterns)
+                elements.Add(pattern.CreateElement());
+
+            return UI.Column(elements);
+        }
+
+        private Element CreateDisplayTab()
+        {
+            return UI.Column(
+                _visible.CreateElement("Visible"),
+                _color.CreateElement("Color"),
+                _margin.CreateSlider("Safe Area Margin", 0f, 300f),
+                _showGuides.CreateElement("Guides"),
+                UI.Label("Guides: cyan = safe area, yellow = paths, magenta = glyph anchors."));
+        }
+
+        private void SetAllPatternsOff()
+        {
+            foreach (var pattern in _patterns)
+                pattern.Enabled = false;
+        }
+
+        private int CountEnabled()
+        {
+            var count = 0;
+            foreach (var pattern in _patterns)
+            {
+                if (pattern.Enabled) count++;
+            }
+
+            return count;
         }
     }
 }

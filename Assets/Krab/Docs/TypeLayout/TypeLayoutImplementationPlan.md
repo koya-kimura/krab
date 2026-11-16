@@ -34,7 +34,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 | 3 | p5.Unite Textでの描画Adapter、フォント読み込み、検証Scene、ガイド線表示 | 完了 |
 | 4 | 文字列の繰り返し・Seed付きランダム、拍単位のスクロールと入れ替え | 完了 |
 | 5 | 演奏用コンポーネント、RosettaUIでの操作、Prefsへの保存 | 完了 |
-| 6 | MIDI、性能計測 | 未着手 |
+| 6 | サンプルSceneでUI操作をMIDIへBindする機能、性能計測 | 未着手（後回し） |
 
 ## Phase 0の記録
 
@@ -80,20 +80,25 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 
 ## 演奏用コンポーネント（Phase 5）
 
-`Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブ → Performance → Type Layout から操作する。Saveボタン（⌘S）でPrefsに保存する。
+`Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブ → Performance → Type Layout から操作し、Saveボタン（⌘S）でPrefsに保存する。
 
-| 設定 | 内容 |
-|---|---|
-| 全体 | Visible、Guides（セーフエリア・パス・基準点）、Color、Margin（基準px） |
-| Frame | セーフエリアの外周を繰り返し文字で囲む。Inset、Tracking、Corner Gap、Scroll（px/拍） |
-| Line A / Line B | セーフエリアを横切る直線。Vertical、Position（0〜1）、Alignment（Start/Center/End/Justify）、Tracking、Repeat、Scroll |
-| Circle | 出力中央のリング。Radius、Clockwise（外向き/内向き）、Tracking、Scroll |
-| Grid | セルごとに1文字。Columns、Rows、Use Safe Area、Random、Seed、Beats Per Change（0で固定） |
+配置と動きはパターンごとにコードで書く（`Scripts/Performance/Patterns/`）。UIから変えられるのは各パターンのON/OFFとパラメータ（文字列・サイズ・速さなど）だけで、配置そのものは変えない。新しいパターンは `TypePattern` を継承し、`CreateParameters()` と `DrawPattern()` を書いて `TypeLayoutPerformance` の一覧に加える。
 
-各レイヤーに共通の設定：Enabled、Text、Size（基準px）。範囲外の値でレイアウトが作れない場合は、そのレイヤーだけ描画を省き、UIに理由を表示する。`TypeLayoutDrawer`（Unity層）は、文字の分割と送り幅をテキスト×サイズごとにキャッシュし、描画用のバッファを使い回す。
+| パターン | 配置と動き | パラメータ |
+|---|---|---|
+| Frame Loop（既定でON） | セーフエリアの外周を繰り返し文字が内側に吊られて回る。角は空ける | Text, Size, Speed |
+| Corners | セーフエリアの四隅に字形を揃えたラベル。`{bpm}` `{beat}` を置き換える | 4か所の文字列, Size |
+| Ticker | 横の帯が交互の向きに流れる | Text, Size, Rows, Speed |
+| Columns | 縦の列が列ごとに異なる速さで落ちる | Text, Size, Columns, Speed |
+| Cross | 中心を通る縦横に単語を均等配置。中心の文字を共有し、ステップごとに1文字ずれる | Text, Size, Beats Per Step |
+| Wave | 中央を進む正弦波に沿った文字列（`PolylinePath`） | Text, Size, Amplitude, Wavelength, Cycles Per Beat |
+| Orbit | 中心の二重リングが逆向きに回る。外は外向き、内は内向き | Outer/Inner Text, Size, Radius, Speed |
+| Letter Grid | 出力の縦横比に合わせたグリッドに1文字ずつ。拍でランダムに入れ替わる | Letters, Size, Rows, Beats Per Change, Seed |
+
+UIは「Patterns」と「Display」の2タブに分けた。Patternsタブには、全OFFボタン・ON数の表示と、パターンごとの折りたたみ（見出しがON/OFFのトグル、中に説明とパラメータ）を置く。Displayタブには、表示、色、セーフエリアの余白、ガイド線を置く。範囲外の値でレイアウトが作れない場合は、そのパターンだけ描画を省き、折りたたみの中に警告を出す。速さはすべて拍基準で、BPM（Common/Timing）に同期する。
 
 ### 検証（2026-11-17）
 
-- EditModeテスト：TypeLayout 42件成功。
-- Performance SceneをPlayし、既定の状態（Frameのみ）・全レイヤーON・スクロール中の出力RTを保存して確認した。Console Errorなし、各レイヤーのErrorなし。Gridの文字が拍ごとに入れ替わり、FrameとLine（Repeat）が拍に合わせて流れることを、時間をずらした2枚の画像で確認した。
+- EditModeテスト：TypeLayout 44件成功（全体269件）。
+- Performance SceneをPlayし、8パターンを1つずつ単独で表示した出力RTを保存して目視確認した。全パターンON時もConsole Errorなし、各パターンのErrorなし。スクロールとLetter Gridの入れ替えが拍に合わせて動くことを、時間をずらした画像で確認した（パターン化前の版で確認し、同じCoreの動きを使う）。
 - 設定UIに「TypeLayout」タブが出ることを画面キャプチャで確認した。UIの実操作（各項目の編集・Save）は未確認。
