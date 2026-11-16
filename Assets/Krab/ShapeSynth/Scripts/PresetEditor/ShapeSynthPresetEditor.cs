@@ -111,8 +111,10 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 Repository.Save(Document);
                 _dirty = false;
-                RefreshSavedPresets();
             });
+
+            // Outside Guard: its success would clear the list's read errors.
+            if (!_dirty) RefreshSavedPresets();
         }
 
         public void SelectNode(string id)

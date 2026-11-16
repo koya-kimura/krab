@@ -51,8 +51,9 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             _workspace.Open();
-            RefreshSavedPresets();
             Preview();
+            // After Preview: a successful compile clears the error line, which would hide list read errors.
+            RefreshSavedPresets();
         }
 
         private Element BuildFileBar()
@@ -89,13 +90,16 @@ namespace Krab.ShapeSynth.PresetEditor
             return UI.Label(title).SetColor(PresetEditorPalette.Title);
         }
 
+        /// <summary>Reloads the Open list; unreadable files stay out of it and their reasons go to the error line.</summary>
         private void RefreshSavedPresets()
         {
+            IReadOnlyList<string> errors = Array.Empty<string>();
             Guard(() =>
             {
-                _savedPresets = Repository.List();
+                _savedPresets = Repository.List(out errors);
                 _savedRevision++;
             });
+            if (errors.Count > 0) _error = "Some presets could not be read: " + string.Join("; ", errors);
         }
 
         // RosettaUI's custom dropdown menu uses a Unity internal interface removed in this Unity version.
