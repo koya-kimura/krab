@@ -4,13 +4,14 @@ namespace Krab.TypeLayout.Core.Distribution
     public readonly struct FlowOptions
     {
         public FlowOptions(double tracking = 0, FlowAlignment alignment = FlowAlignment.Start,
-            FlowFill fill = FlowFill.None, double offset = 0, bool keepOverflow = false)
+            FlowFill fill = FlowFill.None, double offset = 0, bool keepOverflow = false, bool inkFlush = false)
         {
             Tracking = Require.Finite(tracking, nameof(tracking));
             Alignment = alignment;
             Fill = fill;
             Offset = Require.Finite(offset, nameof(offset));
             KeepOverflow = keepOverflow;
+            InkFlush = inkFlush;
         }
 
         /// <summary>
@@ -29,5 +30,12 @@ namespace Krab.TypeLayout.Core.Distribution
         /// Open paths only: keeps glyphs whose advance box leaves the path. By default they are dropped.
         /// </summary>
         public bool KeepOverflow { get; }
+    
+
+        /// <summary>
+        /// Open paths only: aligns the drawn shapes of the first and last glyph (not their advance boxes) to the
+        /// path ends, so Start/End/Justify text sits exactly on a margin.
+        /// </summary>
+        public bool InkFlush { get; }
     }
 }

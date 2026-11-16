@@ -148,5 +148,45 @@ namespace Krab.TypeLayout.Tests.Editor
             TextSequence.Cycle(new[] { "a", "b", "c" }, 5, -1, results);
             Assert.That(results, Is.EqualTo(new[] { "c", "a", "b", "c", "a" }));
         }
+    
+
+        [Test]
+        public void InkFlushPutsTheDrawnShapesExactlyOnTheOpenPathEnds()
+        {
+            // "M" ink spans 10..70 of an 80 box, "i" 8..16 of 25 (size 100).
+            var glyphs = Glyphs("Mi");
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(inkFlush: true), _items);
+            Assert.That(_items[0].Distance - 40 + 10, Is.EqualTo(0).Within(1e-9));
+
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(alignment: FlowAlignment.End, inkFlush: true), _items);
+            Assert.That(_items[1].Distance + 12.5 - 9, Is.EqualTo(1000).Within(1e-9));
+
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(alignment: FlowAlignment.Justify, inkFlush: true), _items);
+            Assert.That(_items[0].Distance - 40 + 10, Is.EqualTo(0).Within(1e-9));
+            Assert.That(_items[1].Distance + 12.5 - 9, Is.EqualTo(1000).Within(1e-9));
+
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(alignment: FlowAlignment.Center, inkFlush: true), _items);
+            var inkStart = _items[0].Distance - 40 + 10;
+            var inkEnd = _items[1].Distance + 12.5 - 9;
+            Assert.That(inkStart, Is.EqualTo(1000 - inkEnd).Within(1e-9));
+        }
+
+        [Test]
+        public void ClipJudgesByInkSoBearingsMayOverhangTheEnds()
+        {
+            var glyphs = Glyphs("M");
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(offset: 930), _items);
+            Assert.That(_items.Count, Is.EqualTo(1));
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(offset: 931), _items);
+            Assert.That(_items, Is.Empty);
+            FlowDistributor.Flow(Line, glyphs, new FlowOptions(offset: -10), _items);
+            Assert.That(_items.Count, Is.EqualTo(1));
+        }
+
+        private static FlowGlyph[] Glyphs(string text)
+        {
+            var clusters = TextClusters.Split(text);
+            return clusters.Select(cluster => FlowGlyph.FromMeasure(Metrics.Measure(cluster), 100)).ToArray();
+        }
     }
 }

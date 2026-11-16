@@ -58,6 +58,8 @@ namespace Krab.TypeLayout.Core.Placement
             return anchor switch
             {
                 VerticalAnchor.Baseline => 0,
+                VerticalAnchor.CapTop => -metrics.CapHeight,
+                VerticalAnchor.EmBottom => metrics.Descent,
                 VerticalAnchor.EmCenter => (metrics.Descent - metrics.Ascent) / 2,
                 VerticalAnchor.CapCenter => -metrics.CapHeight / 2,
                 VerticalAnchor.InkCenter when measure.HasInk => (measure.InkTop + measure.InkBottom) / 2,

@@ -98,5 +98,17 @@ namespace Krab.TypeLayout.Tests.Editor
                 GlyphPlacer.Place(slots, new[] { "M" }, Metrics, new PlacementOptions(100), results));
             Assert.Throws<ArgumentOutOfRangeException>(() => new PlacementOptions(0));
         }
+    
+
+        [Test]
+        public void EdgeAnchorsHangFromATopEdgeAndRestOnABottomEdge()
+        {
+            var top = GlyphPlacer.Place(Right, "e", Metrics, new PlacementOptions(100, vertical: VerticalAnchor.CapTop));
+            Assert.That(top.Origin.Y, Is.EqualTo(370).Within(1e-9));
+
+            var bottom = GlyphPlacer.Place(Right, "g", Metrics,
+                new PlacementOptions(100, vertical: VerticalAnchor.EmBottom));
+            Assert.That(bottom.Origin.Y, Is.EqualTo(280).Within(1e-9));
+        }
     }
 }
