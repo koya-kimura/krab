@@ -29,7 +29,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 |---|---|---|
 | 0 | p5.Unite 0.2.1とText 0.2.0を導入。ShapeSynthの `TargetCameraCanvas` を `SetCamera` ベースへ移行 | 完了 |
 | 1 | Frame/Rect/Anchor、Line/Edge/Arc/RectPerimeter、等間隔スロット、グリッド | 完了 |
-| 2 | 文字幅を考慮した流し込み、閉じたパスの継ぎ目合わせ、基準点（Baseline/Em/Ink）、回転モード | 未着手 |
+| 2 | 文字幅を考慮した流し込み、閉じたパスの継ぎ目合わせ、基準点（Baseline/Em/Cap/Ink）、回転モード | 完了 |
 | 3 | p5.Unite Textでの描画Adapter、フォント読み込み、検証Scene、ガイド線表示 | 未着手 |
 | 4 | 文字列の繰り返し・Seed付きランダム、拍単位のスクロールと入れ替え | 未着手 |
 | 5–6 | UI・保存、MIDI、性能計測 | 未着手 |
@@ -40,3 +40,15 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 - 0.2系のUCanvasは `CreateCanvas(targetCamera)` で1つのCameraに描画し、`LateUpdate` でText拡張のアトラス更新（`FrameCapturing`）を発行する。派生クラスでライフサイクルを置き換えるとTextが動かないため、置き換えない。
 - Editorでは、Scene Viewにフォーカスすると描画先がScene View Cameraへ切り替わる。出力用Canvasではシリアライズ専用の `_drawInSceneView` をfalseにする。
 - 確認：EditModeテスト225件成功。ShapeSynthSmokeTestをPlayし、出力RT（1920×1080）への図形描画とエラーなしを確認。
+
+## Core API（Phase 1–2）
+
+1. 配置先を作る：`LayoutFrame.SafeArea(margin)` → `Rect2`。`LinePath.AlongEdge(rect, edge)`、`ArcPath.Circle(center, radius)`、`RectPerimeterPath(rect)`、`GridDistributor.Distribute(rect, columns, rows)`。
+2. 文字の位置を決める（どちらか）：
+   - スロット方式：`SlotDistributor.Distribute(path, count, SlotSpacing)` で等間隔に1文字ずつ配置する。`Ends` は開いたパスの両端に最初と最後の文字を置く。`Cells` はパスを等分したセルの中央に置く。閉じたパスでは継ぎ目に文字が重ならない。
+   - 流し込み方式：`FlowDistributor.Flow(path, advances, FlowOptions, results)` で、各文字の送り幅で並べる。`Justify` は開いたパスの両端に箱を接し、閉じたパスでは継ぎ目の間隔をほかの字間と同じにする。`FlowFill.WholeText` は文字列を丸ごと繰り返し、ループの継ぎ目でも単語が切れない。開いたパスからはみ出す文字は、既定で除く（`KeepOverflow`）。字間カーニングは適用しない。
+3. 描画位置にする：`GlyphPlacer.Place(slot, cluster, metrics, PlacementOptions)` → `GlyphPlacement`（ペン原点・回転・サイズ）。描画側は原点へ移動・回転し、左・ベースライン揃えで1文字ずつ描くだけでよい。
+   - 横の基準：`AdvanceCenter`（送り幅の中央）／`InkCenter`（字形の中央）。
+   - 縦の基準：`Baseline`／`EmCenter`／`CapCenter`（既定。行内でベースラインを共有したまま、大文字の中心を揃える）／`InkCenter`（字ごとに中心を揃える。ベースラインは揃わない）。
+   - 回転：`FollowPath`（パスの向き）／`Upright`。`RotationOffsetDegrees` で各字を基準点まわりに回す。
+   - `IGlyphMetrics` はサイズ1の値を返す。描画Adapterがフォントから実測し、テストでは固定値を使う。

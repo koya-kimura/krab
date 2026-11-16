@@ -2,7 +2,9 @@ using Krab.TypeLayout.Core.Geometry;
 
 namespace Krab.TypeLayout.Core.Paths
 {
-    /// <summary>A point to place one glyph at, with the reading direction there (0 = rightward, clockwise positive).</summary>
+    /// <summary>
+    /// A point to place one glyph at, with the reading direction there (0 = rightward, clockwise positive).
+    /// </summary>
     public readonly struct LayoutSlot
     {
         public LayoutSlot(Point2 position, double directionDegrees)

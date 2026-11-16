@@ -18,7 +18,8 @@ namespace Krab.TypeLayout.Tests.Editor
             Assert.That(slots[0].Position, Is.EqualTo(new Point2(100, 50)));
             Assert.That(slots[2].Position, Is.EqualTo(new Point2(960, 50)));
             Assert.That(slots[4].Position, Is.EqualTo(new Point2(1820, 50)));
-            Assert.That(SlotDistributor.Distribute(Line, 1, SlotSpacing.Ends)[0].Position, Is.EqualTo(new Point2(960, 50)));
+            var single = SlotDistributor.Distribute(Line, 1, SlotSpacing.Ends);
+            Assert.That(single[0].Position, Is.EqualTo(new Point2(960, 50)));
         }
 
         [Test]

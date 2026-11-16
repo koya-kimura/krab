@@ -28,7 +28,9 @@ namespace Krab.TypeLayout.Core.Paths
 
         public bool IsClosed => false;
 
-        /// <summary>Runs along one side of the rectangle in clockwise reading order (the bottom reads right to left).</summary>
+        /// <summary>
+        /// Runs along one side of the rectangle in clockwise reading order (the bottom reads right to left).
+        /// </summary>
         public static LinePath AlongEdge(Rect2 rect, RectEdge edge)
         {
             return edge switch
