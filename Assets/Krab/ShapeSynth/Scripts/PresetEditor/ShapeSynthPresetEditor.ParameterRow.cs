@@ -60,7 +60,7 @@ namespace Krab.ShapeSynth.PresetEditor
                         ? DepthField(parameter).SetWidth(NumberColumnWidth)
                         : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource)),
                 UnitColumn(parameter, quantity).SetWidth(UnitColumnWidth),
-                UI.Label(() => NowText(parameter, quantity)).SetWidth(NowColumnWidth),
+                UI.Label(() => NowText(parameter, quantity, copies)).SetWidth(NowColumnWidth),
                 UI.DynamicElementOnStatusChanged(
                     () => copies != null && copies.Kind != PresetLayoutKind.None && parameter.GetBinding() != null,
                     flippable => flippable
@@ -109,15 +109,20 @@ namespace Krab.ShapeSynth.PresetEditor
                 units.Select(PresetUnits.Symbol));
         }
 
-        /// <summary>The output only adds information while bound or when a screen unit hides the pixels.</summary>
-        private string NowText(PresetParameter parameter, PresetQuantity quantity)
+        /// <summary>
+        /// Output of Base + Depth × signal at the preview Beat. It is shown while bound, for screen units, or
+        /// with Rand. A leading "~" means copies differ from it (Rand, Flip or Delay are not applied here).
+        /// </summary>
+        private string NowText(PresetParameter parameter, PresetQuantity quantity, PresetLayout copies)
         {
-            var screen = PresetUnits.IsScreenRelative(PresetUnits.UnitOf(parameter, quantity));
-            if (parameter.GetBinding() == null && !screen) return "";
-
             var binding = parameter.GetBinding();
+            var screen = PresetUnits.IsScreenRelative(PresetUnits.UnitOf(parameter, quantity));
+            if (binding == null && !screen && parameter.Random == 0) return "";
+
             var value = binding == null ? parameter.Base : parameter.Base + binding.Depth * SignalAtBeat(binding.ValueId);
-            return OutputText(parameter, quantity, value);
+            var varies = parameter.Random != 0 || (binding != null && copies != null
+                && ((copies.Kind != PresetLayoutKind.None && parameter.Flip != PresetFlip.None) || copies.Delay > 0));
+            return (varies ? "~" : "") + OutputText(parameter, quantity, value);
         }
 
         /// <summary>Reference × value as text with the output unit, or "-" for an invalid Reference.</summary>
