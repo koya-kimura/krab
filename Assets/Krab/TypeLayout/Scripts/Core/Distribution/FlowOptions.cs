@@ -23,7 +23,10 @@ namespace Krab.TypeLayout.Core.Distribution
 
         public FlowFill Fill { get; }
 
-        /// <summary>Shift along the path in output pixels, applied after alignment (scrolling).</summary>
+        /// <summary>
+        /// Shift along the path in output pixels, applied after alignment (scrolling). Closed paths wrap; repeated
+        /// text on an open path scrolls as an endless band.
+        /// </summary>
         public double Offset { get; }
 
         /// <summary>

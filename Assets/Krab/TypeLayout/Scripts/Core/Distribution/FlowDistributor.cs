@@ -56,8 +56,22 @@ namespace Krab.TypeLayout.Core.Distribution
                 spacing = (path.Length - total + leadingTrim + trailingTrim) / gaps;
 
             var span = total + spacing * (count - 1) - leadingTrim - trailingTrim;
-            var distance = StartDistance(path, span, options.Alignment, gaps) - leadingTrim + options.Offset;
-            for (var i = 0; i < count; i++)
+            var distance = StartDistance(path, span, options.Alignment, gaps) - leadingTrim;
+            var drawCount = count;
+            var period = advanceSum + spacing * glyphs.Count;
+            if (IsMarquee(path, options) && period > 0)
+            {
+                // Repeated text on an open path scrolls as an endless band: wrap the offset by one repeat and
+                // add a repeat on each side so neither end shows a gap; clipping removes what falls outside.
+                distance += PathMath.Wrap(options.Offset, period) - period;
+                drawCount += glyphs.Count * 2;
+            }
+            else
+            {
+                distance += options.Offset;
+            }
+
+            for (var i = 0; i < drawCount; i++)
             {
                 var cluster = i % glyphs.Count;
                 var glyph = glyphs[cluster];
@@ -140,6 +154,11 @@ namespace Krab.TypeLayout.Core.Distribution
             var start = center - glyph.Advance / 2 + Math.Max(0, glyph.LeadingBearing);
             var end = center + glyph.Advance / 2 - Math.Max(0, glyph.TrailingBearing);
             return start < -epsilon || end > path.Length + epsilon;
+        }
+
+        private static bool IsMarquee(ILayoutPath path, FlowOptions options)
+        {
+            return !path.IsClosed && options.Fill != FlowFill.None && options.Offset != 0 && !options.KeepOverflow;
         }
 
         private static double Epsilon(ILayoutPath path) => path.Length * 1e-9;
