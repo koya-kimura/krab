@@ -6,7 +6,8 @@
 ._*
 
 # Custom folder icons
-Icon
+Icon
+
 
 # Volume root files
 .DocumentRevisions-V100
@@ -96,6 +97,10 @@ x86/
 *.nupkg
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
+
+# Unity package manifest (the NuGet rule above would hide it)
+!/Packages/manifest.json
+!/Packages/packages-lock.json
 *.nuget.props
 *.nuget.targets
 
@@ -167,6 +172,10 @@ x86/
 *.nupkg
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
+
+# Unity package manifest (the NuGet rule above would hide it)
+!/Packages/manifest.json
+!/Packages/packages-lock.json
 
 # .NET build artifacts
 artifacts/
