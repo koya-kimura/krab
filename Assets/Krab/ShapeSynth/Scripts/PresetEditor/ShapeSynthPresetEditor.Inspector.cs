@@ -12,7 +12,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private Element BuildInspectorPane()
         {
-            return _inspectorPane = UI.Column(
+            return UI.Column(
                 PaneTitle("Inspector"),
                 UI.ScrollViewVertical(
                     520,

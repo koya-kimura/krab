@@ -65,7 +65,6 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             StopPreview();
             _workspace?.Close();
-            CloseBind();
         }
 
         // The node tree is recursive; keep Unity's reload serialization from walking it. Files are the source of truth.
@@ -115,8 +114,6 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public void SelectNode(string id)
         {
-            if (_selectedId != id) CloseBind();
-
             _selectedId = id;
         }
 
@@ -195,7 +192,6 @@ namespace Krab.ShapeSynth.PresetEditor
             _expandedGroups.Add(Document.RootGroup.Id);
             _documentRevision++;
             _valuesRevision++;
-            CloseBind();
             QueuePreview();
         }
 

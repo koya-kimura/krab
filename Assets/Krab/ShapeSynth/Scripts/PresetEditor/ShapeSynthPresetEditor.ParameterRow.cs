@@ -8,7 +8,7 @@ using RosettaUI;
 namespace Krab.ShapeSynth.PresetEditor
 {
     /// <summary>
-    /// Parameters as table rows: Name | Base | Depth | Unit | Now | window icon.
+    /// Parameters as table rows: Name | Base | Depth | Unit | Now | Bind.
     /// Base and Depth are shown in the chosen unit; Now is the output at the preview Beat.
     /// </summary>
     public sealed partial class ShapeSynthPresetEditor
@@ -17,6 +17,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float NumberColumnWidth = 58;
         private const float UnitColumnWidth = 66;
         private const float NowColumnWidth = 74;
+        private const float BindColumnWidth = 96;
 
         /// <summary>Column headings, shown once above a block of Parameter rows.</summary>
         private static Element ParameterHeader()
@@ -29,7 +30,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 Heading("Base", NumberColumnWidth),
                 Heading("Depth", NumberColumnWidth),
                 Heading("Unit", UnitColumnWidth),
-                Heading("Now", NowColumnWidth));
+                Heading("Now", NowColumnWidth),
+                Heading("Bind", BindColumnWidth));
         }
 
         private Element ParameterRow(string name, PresetParameter parameter, PresetQuantity quantity)
@@ -49,7 +51,7 @@ namespace Krab.ShapeSynth.PresetEditor
                         : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource)),
                 UnitColumn(parameter, quantity).SetWidth(UnitColumnWidth),
                 UI.Label(() => NowText(parameter, quantity)).SetWidth(NowColumnWidth),
-                ParameterWindowButton(name, parameter, quantity));
+                BindChoice(name, parameter));
         }
 
         private Element DepthField(PresetParameter parameter)
