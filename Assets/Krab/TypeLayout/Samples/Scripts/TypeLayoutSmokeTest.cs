@@ -18,8 +18,6 @@ namespace Krab.TypeLayout.Samples
     {
         private const double Margin = 40;
 
-        private static readonly Color Pink = new(0.93f, 0.37f, 0.57f);
-        private static readonly Color Blue = new(0.24f, 0.29f, 0.68f);
         private static readonly Color SafeAreaColor = new(0.2f, 0.9f, 1f, 0.5f);
         private static readonly string[] ClockLabels = { "12", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
 
@@ -95,23 +93,12 @@ namespace Krab.TypeLayout.Samples
             if (keyboard.gKey.wasPressedThisFrame) _showGuides = !_showGuides;
         }
 
-        // Letters centered in vertical stripes, one per cell.
+        // One letter centered in every cell of the grid.
         private void DrawGrid(LayoutFrame frame)
         {
             const int columns = 10;
             const int rows = 6;
             var area = frame.Bounds;
-            _canvas.Push();
-            _canvas.NoStroke();
-            for (var column = 0; column < columns; column++)
-            {
-                var cell = GridDistributor.Cell(area, columns, 1, column, 0);
-                _canvas.Fill(column % 2 == 0 ? Blue : Pink);
-                _canvas.Rect((float)cell.X, (float)cell.Y, (float)cell.Width, (float)cell.Height);
-            }
-
-            _canvas.Pop();
-
             var slots = GridDistributor.Distribute(area, columns, rows);
             var placement = new PlacementOptions(frame.ToPixels(110), HorizontalAnchor.InkCenter,
                 VerticalAnchor.CapCenter, RotationMode.Upright);

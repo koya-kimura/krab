@@ -36,7 +36,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 
 ## Phase 0の記録
 
-- `Packages/manifest.json` は `#0.2.1` タグで `net.sbm.unite` と `net.sbm.unite.text` を参照する（PackageCache `net.sbm.unite@9304386ff376`、`net.sbm.unite.text@2750d0f0c429`）。このリポジトリでは `Packages/` が `.gitignore` 対象のため、manifestの変更はコミットに含まれない。
+- `Packages/manifest.json` は `#0.2.1` タグで `net.sbm.unite` と `net.sbm.unite.text` を参照する（PackageCache `net.sbm.unite@9304386ff376`、`net.sbm.unite.text@2750d0f0c429`）。このリポジトリでは `Packages/` はNuGet用の `.gitignore` 規則で除外されていたため、2026-11-17に `manifest.json` と `packages-lock.json` だけを追跡対象に戻した。
 - 0.2系のUCanvasは `CreateCanvas(targetCamera)` で1つのCameraに描画し、`LateUpdate` でText拡張のアトラス更新（`FrameCapturing`）を発行する。派生クラスでライフサイクルを置き換えるとTextが動かないため、置き換えない。
 - Editorでは、Scene Viewにフォーカスすると描画先がScene View Cameraへ切り替わる。出力用Canvasではシリアライズ専用の `_drawInSceneView` をfalseにする。
 - 確認：EditModeテスト225件成功。ShapeSynthSmokeTestをPlayし、出力RT（1920×1080）への図形描画とエラーなしを確認。
@@ -67,5 +67,4 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 - EditModeテスト：TypeLayout 37件成功。
 - `TypeLayoutSmokeTest.unity` をPlayし、4ケースの出力RT（1920×1080）を保存して目視確認。Console Errorなし。
 - ガイド線なしのAlignmentで字形の外接矩形を画素から計測した。左上ラベルの左端は40、右上ラベルの右端は1880で、セーフエリア（40〜1880）と一致した。"CENTER" の縦方向の中心は540。上下の1px未満のずれは "O" などのオーバーシュート。
-- 気づいた点：p5.Uniteは `Fill(Color)` をリニア空間の値として扱うため、sRGBのRTではストライプの色が明るく出る（ShapeSynthも同様）。白文字には影響しない。
 - 未確認：出力解像度やアスペクト比の変更時の見た目、Syphonでの受信、最終的な見た目の評価。
