@@ -27,14 +27,14 @@ namespace Krab.ShapeSynth.Core.Definitions
 
         private ShapeDefinition(ShapeKind kind, ParameterDefinition width, ParameterDefinition height,
             TransformDefinition transform, ParameterDefinition opacity, RgbaColor? color, Point2[] vertices,
-            ShapeStyle style)
+            ShapeStyle style, ColorDefinition fillColor)
         {
             Kind = kind;
             Width = width ?? throw new ArgumentNullException(nameof(width));
             Height = height ?? throw new ArgumentNullException(nameof(height));
             Transform = transform ?? new TransformDefinition();
             Opacity = opacity ?? ParameterDefinition.Constant(1);
-            FillColor = ColorDefinition.Constant(color ?? RgbaColor.White);
+            FillColor = fillColor ?? ColorDefinition.Constant(color ?? RgbaColor.White);
             Style = style ?? new ShapeStyle();
             Vertices = Array.AsReadOnly(vertices);
         }
@@ -54,20 +54,23 @@ namespace Krab.ShapeSynth.Core.Definitions
         /// <summary>Returns a copy whose fill color is evaluated from fillColor; this Definition is unchanged.</summary>
         public ShapeDefinition WithFillColor(ColorDefinition fillColor) => new ShapeDefinition(this, fillColor);
 
+        // fillColor, when given, replaces the constant color.
         public static ShapeDefinition Circle(ParameterDefinition diameter, TransformDefinition transform = null,
-            ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null) =>
+            ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null,
+            ColorDefinition fillColor = null) =>
             new ShapeDefinition(ShapeKind.Circle, diameter, diameter, transform, opacity, color,
-                Array.Empty<Point2>(), style);
+                Array.Empty<Point2>(), style, fillColor);
 
         public static ShapeDefinition Rectangle(ParameterDefinition width, ParameterDefinition height,
             TransformDefinition transform = null, ParameterDefinition opacity = null, RgbaColor? color = null,
-            ShapeStyle style = null) =>
+            ShapeStyle style = null, ColorDefinition fillColor = null) =>
             new ShapeDefinition(ShapeKind.Rectangle, width, height, transform, opacity, color,
-                Array.Empty<Point2>(), style);
+                Array.Empty<Point2>(), style, fillColor);
 
         /// <summary>Vertices are caller-defined offsets from local (0,0); never recentered by their bounds.</summary>
         public static ShapeDefinition Polygon(IReadOnlyList<Point2> vertices, TransformDefinition transform = null,
-            ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null)
+            ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null,
+            ColorDefinition fillColor = null)
         {
             if (vertices == null) throw new ArgumentNullException(nameof(vertices));
             if (vertices.Count < 3)
@@ -80,7 +83,7 @@ namespace Krab.ShapeSynth.Core.Definitions
             }
 
             return new ShapeDefinition(ShapeKind.Polygon, ParameterDefinition.Constant(0),
-                ParameterDefinition.Constant(0), transform, opacity, color, copy, style);
+                ParameterDefinition.Constant(0), transform, opacity, color, copy, style, fillColor);
         }
     }
 }

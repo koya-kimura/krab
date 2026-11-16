@@ -204,11 +204,11 @@ namespace Krab.ShapeSynth.Core.Presets
         private static INodeDefinition CompileNode(PresetNode node, ValueIndices indices,
             GroupRuntimeDefinition runtime = null)
         {
-            var transform = new TransformDefinition(Parameter(node.PositionX, indices),
-                Parameter(node.PositionY, indices), Parameter(node.Rotation, indices),
-                Parameter(node.ScaleX, indices), Parameter(node.ScaleY, indices));
             if (node.Kind == PresetNodeKind.Group)
             {
+                var transform = new TransformDefinition(Parameter(node.PositionX, indices),
+                    Parameter(node.PositionY, indices), Parameter(node.Rotation, indices),
+                    Parameter(node.ScaleX, indices), Parameter(node.ScaleY, indices));
                 return new GroupDefinition(transform, runtime,
                     node.Children.Select(child => CompileNode(child, indices)).ToArray());
             }
@@ -241,25 +241,25 @@ namespace Krab.ShapeSynth.Core.Presets
             var transform = new TransformDefinition(withPosition ? P(node.PositionX) : null,
                 withPosition ? P(node.PositionY) : null, P(node.Rotation), P(node.ScaleX), P(node.ScaleY));
             var fill = new ColorDefinition(Color(node), ToColor(node), P(node.ColorMix), P(node.HueShift));
-            return CompileGeometry(node, transform, P).WithFillColor(fill);
+            return CompileGeometry(node, transform, fill, P);
         }
 
         private static ShapeDefinition CompileGeometry(PresetNode node, TransformDefinition transform,
-            Func<PresetParameter, ParameterDefinition> parameter)
+            ColorDefinition fill, Func<PresetParameter, ParameterDefinition> parameter)
         {
             var opacity = parameter(node.Opacity);
             switch (node.Kind)
             {
                 case PresetNodeKind.Circle:
-                    return ShapeDefinition.Circle(parameter(node.Width), transform, opacity, Color(node),
-                        Style(node));
+                    return ShapeDefinition.Circle(parameter(node.Width), transform, opacity, style: Style(node),
+                        fillColor: fill);
                 case PresetNodeKind.Rectangle:
                     return ShapeDefinition.Rectangle(parameter(node.Width), parameter(node.Height),
-                        transform, opacity, Color(node), Style(node));
+                        transform, opacity, style: Style(node), fillColor: fill);
                 case PresetNodeKind.Polygon:
                     return ShapeDefinition.Polygon(
                         node.Vertices.Select(point => new Point2(point.X, point.Y)).ToArray(), transform, opacity,
-                        Color(node), Style(node));
+                        style: Style(node), fillColor: fill);
                 default:
                     throw new ArgumentException("Unknown Node kind.");
             }
