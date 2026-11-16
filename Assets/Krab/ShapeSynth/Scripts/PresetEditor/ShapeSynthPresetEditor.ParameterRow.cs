@@ -40,36 +40,33 @@ namespace Krab.ShapeSynth.PresetEditor
 
             return UI.Row(
                 label,
-                UnitField(parameter, quantity, () => parameter.Base, value => parameter.Base = value)
+                NumberCell(() => parameter.Base, value => parameter.Base = value)
                     .SetWidth(NumberColumnWidth),
                 UI.DynamicElementOnStatusChanged(
                     () => parameter.GetBinding() != null,
                     bound => bound
-                        ? DepthField(parameter, quantity).SetWidth(NumberColumnWidth)
+                        ? DepthField(parameter).SetWidth(NumberColumnWidth)
                         : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource)),
                 UnitColumn(parameter, quantity).SetWidth(UnitColumnWidth),
                 UI.Label(() => NowText(parameter, quantity)).SetWidth(NowColumnWidth),
                 ParameterWindowButton(name, parameter, quantity));
         }
 
-        private Element DepthField(PresetParameter parameter, PresetQuantity quantity)
+        private Element DepthField(PresetParameter parameter)
         {
-            return UnitField(parameter, quantity, () => parameter.GetBinding()?.Depth ?? 0, value =>
+            return NumberCell(() => parameter.GetBinding()?.Depth ?? 0, value =>
             {
                 var binding = parameter.GetBinding();
                 if (binding != null) binding.Depth = value;
             });
         }
 
-        /// <summary>A label-less number in the Parameter's display unit (percent units show ×100).</summary>
-        private Element UnitField(PresetParameter parameter, PresetQuantity quantity, Func<double> read,
-            Action<double> write)
+        /// <summary>A label-less number in the Parameter's unit; stored values are shown as they are.</summary>
+        private Element NumberCell(Func<double> read, Action<double> write)
         {
-            double Scale() => PresetUnits.DisplayScale(PresetUnits.UnitOf(parameter, quantity));
-
-            return UI.Field((LabelElement)null, () => (float)(read() * Scale()), value =>
+            return UI.Field((LabelElement)null, () => (float)read(), value =>
             {
-                write(value / Scale());
+                write(value);
                 Changed();
             });
         }
@@ -91,11 +88,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 units.Select(PresetUnits.Symbol));
         }
 
-        /// <summary>The output only adds information while bound or when a percent unit hides the pixels.</summary>
+        /// <summary>The output only adds information while bound or when a screen unit hides the pixels.</summary>
         private string NowText(PresetParameter parameter, PresetQuantity quantity)
         {
-            var percent = PresetUnits.IsPercent(PresetUnits.UnitOf(parameter, quantity));
-            if (parameter.GetBinding() == null && !percent) return "";
+            var screen = PresetUnits.IsScreenRelative(PresetUnits.UnitOf(parameter, quantity));
+            if (parameter.GetBinding() == null && !screen) return "";
 
             var binding = parameter.GetBinding();
             var value = binding == null ? parameter.Base : parameter.Base + binding.Depth * SignalAtBeat(binding.ValueId);

@@ -16,12 +16,13 @@ namespace Krab.ShapeSynth.Tests.Editor
             var node = PresetNode.Create(PresetNodeKind.Circle);
 
             Assert.That(PresetUnits.UnitOf(node.PositionX, PresetQuantity.Length), Is.EqualTo(PresetUnit.Pixel));
-            Assert.That(PresetUnits.UnitOf(node.Width, PresetQuantity.Length), Is.EqualTo(PresetUnit.PercentMin));
+            Assert.That(PresetUnits.UnitOf(node.Width, PresetQuantity.Length), Is.EqualTo(PresetUnit.ScreenMin));
             Assert.That(PresetUnits.UnitOf(node.Rotation, PresetQuantity.Angle), Is.EqualTo(PresetUnit.Degree));
             Assert.That(PresetUnits.UnitOf(node.ScaleX, PresetQuantity.Scale), Is.EqualTo(PresetUnit.Scale));
             Assert.That(PresetUnits.UnitOf(node.Opacity, PresetQuantity.Ratio), Is.EqualTo(PresetUnit.Ratio));
-            Assert.That(PresetUnits.DisplayScale(PresetUnit.PercentMin), Is.EqualTo(100));
-            Assert.That(PresetUnits.DisplayScale(PresetUnit.Pixel), Is.EqualTo(1));
+            Assert.That(PresetUnits.Symbol(PresetUnit.ScreenMin), Is.EqualTo("xMin"));
+            Assert.That(PresetUnits.IsScreenRelative(PresetUnit.ScreenMin), Is.True);
+            Assert.That(PresetUnits.IsScreenRelative(PresetUnit.Pixel), Is.False);
         }
 
         [Test]
@@ -36,9 +37,9 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(parameter.Base, Is.EqualTo(216).Within(1e-9));
             Assert.That(parameter.GetBinding().Depth, Is.EqualTo(108).Within(1e-9));
 
-            PresetUnits.SetUnit(parameter, PresetQuantity.Length, PresetUnit.PercentWidth, Canvas);
+            PresetUnits.SetUnit(parameter, PresetQuantity.Length, PresetUnit.ScreenWidth, Canvas);
 
-            Assert.That(PresetUnits.UnitOf(parameter, PresetQuantity.Length), Is.EqualTo(PresetUnit.PercentWidth));
+            Assert.That(PresetUnits.UnitOf(parameter, PresetQuantity.Length), Is.EqualTo(PresetUnit.ScreenWidth));
             Assert.That(parameter.Base, Is.EqualTo(216.0 / 1920).Within(1e-12));
         }
 
@@ -79,7 +80,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var parameter = new PresetParameter();
 
             Assert.Throws<ArgumentException>(() =>
-                PresetUnits.SetUnit(parameter, PresetQuantity.Angle, PresetUnit.PercentMin, Canvas));
+                PresetUnits.SetUnit(parameter, PresetQuantity.Angle, PresetUnit.ScreenMin, Canvas));
         }
     }
 }

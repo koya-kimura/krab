@@ -17,10 +17,10 @@ namespace Krab.ShapeSynth.Core.Presets
     public enum PresetUnit
     {
         Pixel,
-        PercentWidth,
-        PercentHeight,
-        PercentMin,
-        PercentMax,
+        ScreenWidth,
+        ScreenHeight,
+        ScreenMin,
+        ScreenMax,
         Degree,
         Turn,
         Scale,
@@ -29,7 +29,7 @@ namespace Krab.ShapeSynth.Core.Presets
 
     /// <summary>
     /// Authoring units on top of the stored Reference fields, so the JSON schema is unchanged.
-    /// Percent units are canvas references shown ×100; Turn is Absolute with Multiplier 360.
+    /// Screen units are canvas references: Base 0.1 in xW means 0.1 × canvas width. Turn is Absolute × 360.
     /// Every unit keeps AbsoluteValue at 1.
     /// </summary>
     public static class PresetUnits
@@ -38,8 +38,8 @@ namespace Krab.ShapeSynth.Core.Presets
 
         private static readonly PresetUnit[] LengthUnits =
         {
-            PresetUnit.Pixel, PresetUnit.PercentWidth, PresetUnit.PercentHeight, PresetUnit.PercentMin,
-            PresetUnit.PercentMax
+            PresetUnit.Pixel, PresetUnit.ScreenWidth, PresetUnit.ScreenHeight, PresetUnit.ScreenMin,
+            PresetUnit.ScreenMax
         };
 
         private static readonly PresetUnit[] AngleUnits = { PresetUnit.Degree, PresetUnit.Turn };
@@ -71,13 +71,13 @@ namespace Krab.ShapeSynth.Core.Presets
                     switch (parameter.Reference)
                     {
                         case ReferenceSource.CanvasWidth:
-                            return PresetUnit.PercentWidth;
+                            return PresetUnit.ScreenWidth;
                         case ReferenceSource.CanvasHeight:
-                            return PresetUnit.PercentHeight;
+                            return PresetUnit.ScreenHeight;
                         case ReferenceSource.MinDimension:
-                            return PresetUnit.PercentMin;
+                            return PresetUnit.ScreenMin;
                         case ReferenceSource.MaxDimension:
-                            return PresetUnit.PercentMax;
+                            return PresetUnit.ScreenMax;
                         default:
                             return PresetUnit.Pixel;
                     }
@@ -93,12 +93,9 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        /// <summary>Factor between the stored Base/Depth and the number shown to the user.</summary>
-        public static double DisplayScale(PresetUnit unit) => IsPercent(unit) ? 100 : 1;
-
-        public static bool IsPercent(PresetUnit unit) =>
-            unit == PresetUnit.PercentWidth || unit == PresetUnit.PercentHeight
-                                            || unit == PresetUnit.PercentMin || unit == PresetUnit.PercentMax;
+        public static bool IsScreenRelative(PresetUnit unit) =>
+            unit == PresetUnit.ScreenWidth || unit == PresetUnit.ScreenHeight
+                                            || unit == PresetUnit.ScreenMin || unit == PresetUnit.ScreenMax;
 
         /// <summary>ASCII labels; RosettaUI's default font lacks some symbols.</summary>
         public static string Symbol(PresetUnit unit)
@@ -107,14 +104,14 @@ namespace Krab.ShapeSynth.Core.Presets
             {
                 case PresetUnit.Pixel:
                     return "px";
-                case PresetUnit.PercentWidth:
-                    return "%W";
-                case PresetUnit.PercentHeight:
-                    return "%H";
-                case PresetUnit.PercentMin:
-                    return "%Min";
-                case PresetUnit.PercentMax:
-                    return "%Max";
+                case PresetUnit.ScreenWidth:
+                    return "xW";
+                case PresetUnit.ScreenHeight:
+                    return "xH";
+                case PresetUnit.ScreenMin:
+                    return "xMin";
+                case PresetUnit.ScreenMax:
+                    return "xMax";
                 case PresetUnit.Degree:
                     return "deg";
                 case PresetUnit.Turn:
@@ -166,13 +163,13 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             switch (unit)
             {
-                case PresetUnit.PercentWidth:
+                case PresetUnit.ScreenWidth:
                     return ReferenceSource.CanvasWidth;
-                case PresetUnit.PercentHeight:
+                case PresetUnit.ScreenHeight:
                     return ReferenceSource.CanvasHeight;
-                case PresetUnit.PercentMin:
+                case PresetUnit.ScreenMin:
                     return ReferenceSource.MinDimension;
-                case PresetUnit.PercentMax:
+                case PresetUnit.ScreenMax:
                     return ReferenceSource.MaxDimension;
                 default:
                     return ReferenceSource.Absolute;

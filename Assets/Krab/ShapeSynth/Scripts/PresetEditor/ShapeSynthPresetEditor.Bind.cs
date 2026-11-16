@@ -112,7 +112,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     () => UI.Column(
                         UI.Row(
                             UI.Label("Depth").SetWidth(NameColumnWidth),
-                            DepthField(parameter, quantity).SetWidth(NumberColumnWidth),
+                            DepthField(parameter).SetWidth(NumberColumnWidth),
                             UI.Label(() => PresetUnits.Symbol(PresetUnits.UnitOf(parameter, quantity)))),
                         UI.Label(() => "Range  " + RangeText(parameter, quantity)),
                         UI.Label(() => "Now  " + NowText(parameter, quantity)))),
