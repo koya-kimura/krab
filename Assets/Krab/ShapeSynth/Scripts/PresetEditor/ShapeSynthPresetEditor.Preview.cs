@@ -98,27 +98,25 @@ namespace Krab.ShapeSynth.PresetEditor
             UpdatePreviewSignals();
         }
 
-        private Element BuildPreviewPane()
+        /// <summary>Playback of the background output, shared by the Visual and Values tabs.</summary>
+        private Element BuildTransportBar()
         {
             return UI.Column(
-                PaneTitle("Preview"),
-                UI.Image(() => _controller && _controller.OutputCamera ? _controller.OutputCamera.targetTexture : null)
-                    .SetHeight(300),
                 UI.Row(
                     UI.Button(UI.Label(() => _playing ? "Stop" : "Play"), () =>
                     {
                         if (_playing) Stop();
                         else Play();
                     }),
-                    LoopButton()),
-                // Own row: sharing one with labeled fields pushed the slider past the pane edge.
-                UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats),
-                UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value)),
-                UI.Field("Seed", () => _seed, value =>
-                {
-                    _seed = value;
-                    QueuePreview();
-                }));
+                    LoopButton(),
+                    UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value)),
+                    UI.Field("Seed", () => _seed, value =>
+                    {
+                        _seed = value;
+                        QueuePreview();
+                    })),
+                // Own row: sharing one with labeled fields pushed the slider past the edge.
+                UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats));
         }
 
         /// <summary>A compact toggle button; highlighted while Loop is on.</summary>

@@ -6,7 +6,6 @@ using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Unity.Persistence;
 using Krab.ShapeSynth.Unity.Runtime;
-using RosettaUI;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 
@@ -22,12 +21,10 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private ShapeSynthController _controller;
         private PresetRepository _repository;
-        private WindowElement _workspace;
         private string _selectedId;
         private string _selectedValueId;
         private string _error;
         private bool _dirty;
-        private bool _openOnUpdate;
         private int _documentRevision;
         private int _valuesRevision;
 
@@ -39,7 +36,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private void Start()
         {
-            _openOnUpdate = true;
+            RefreshSavedPresets();
         }
 
         private void Update()
@@ -51,12 +48,6 @@ namespace Krab.ShapeSynth.PresetEditor
                 _error = "Script reload cleared the open preset.";
             }
 
-            if (_openOnUpdate)
-            {
-                _openOnUpdate = false;
-                ShowWorkspace();
-            }
-
             AdvancePlayback(Time.unscaledDeltaTime);
             if (_refreshPreview && Time.realtimeSinceStartupAsDouble >= _previewDue) Preview();
         }
@@ -64,7 +55,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private void OnDisable()
         {
             StopPreview();
-            _workspace?.Close();
         }
 
         // The node tree is recursive; keep Unity's reload serialization from walking it. Files are the source of truth.

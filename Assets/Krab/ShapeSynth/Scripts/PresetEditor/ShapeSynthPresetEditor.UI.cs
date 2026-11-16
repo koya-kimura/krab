@@ -12,9 +12,6 @@ namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
-        // Right of the shared settings window, which UiBuilder places at the top-left.
-        private static readonly Vector2 WorkspacePosition = new(390, 10);
-
         private IReadOnlyList<PresetDocument> _savedPresets = Array.Empty<PresetDocument>();
 
         // Kept apart from _error so that a later successful edit does not hide it; replaced on each list refresh.
@@ -22,17 +19,16 @@ namespace Krab.ShapeSynth.PresetEditor
         private int _savedRevision;
         private int _openIndex;
 
+        /// <summary>
+        /// The whole editor; UiBuilder opens it from the shared Settings window like any other target.
+        /// The preset is drawn in the background output, so the editor has no preview image of its own.
+        /// </summary>
         public Element CreateElement()
         {
-            return UI.Button("Open Preset Editor", ShowWorkspace);
-        }
-
-        public void ShowWorkspace()
-        {
             EnsureDocument();
-            _workspace ??= UI.Window(
-                UI.Label(() => "Preset Editor" + (_dirty ? " *" : "")),
+            return UI.Column(
                 BuildFileBar(),
+                BuildTransportBar(),
                 UI.DynamicElementIf(() => _error != null, () => UI.Label(() => _error).SetColor(PresetEditorPalette.Error)),
                 UI.DynamicElementIf(
                     () => _listWarning != null,
@@ -40,25 +36,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Tabs(
                     ("Visual", UI.Row(
                         BuildHierarchyPane().SetWidth(260),
-                        BuildPreviewPane().SetWidth(480),
                         BuildInspectorPane().SetWidth(620))),
-                    ("Values", BuildValuesView()))).SetPosition(WorkspacePosition);
-
-            if (!_workspace.HasBuilt)
-            {
-                var root = FindFirstObjectByType<RosettaUIRoot>();
-                if (!root)
-                {
-                    _error = $"{nameof(RosettaUIRoot)} is missing.";
-                    return;
-                }
-
-                root.Build(_workspace);
-            }
-
-            _workspace.Open();
-            Preview();
-            RefreshSavedPresets();
+                    ("Values", BuildValuesView())));
         }
 
         private Element BuildFileBar()
@@ -71,7 +50,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 }),
                 UI.Row(
                     UI.Button("New", NewDocument),
-                    UI.Button("Save", SaveDocument),
+                    // The window title belongs to UiBuilder, so the unsaved mark sits on Save.
+                    UI.Button(UI.Label(() => _dirty ? "Save *" : "Save"), SaveDocument),
                     UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildOpenChoice())));
         }
 

@@ -4,12 +4,12 @@
 
 独自テーマ・3ペインの可変レイアウト・UI倍率・Zoom/Panなどを削除し、RosettaUI標準のWindow / Tabs / Fold / Field / Dropdown / Buttonだけで組み直した（PresetEditorのスクリプトは約3200行から約1300行）。説明文・ヒント・ステータスバーは置かない。表示するのは処理に失敗したときのエラー文だけ。
 
-`Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayすると、共通Settingsウィンドウの右にPreset Editorウィンドウが開く。閉じた場合は Settings → ShapeSynth → Authoring → Preset Editor → Open Preset Editor。
+`Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayし、共通Settingsウィンドウの **ShapeSynth → Authoring → Preset Editor** を押すとPreset Editorウィンドウが開く（Commonの他のUIと同じ扱い。自動では開かない）。編集中のPresetは常に背景の出力へ描画される。
 
-- 上部: Preset名、New、Save、保存済みPresetのDropdownとOpen。未保存の確認はない（タイトルの `*` が未保存を示す）。
+- 上部: Preset名、New、Save、保存済みPresetのDropdownとOpen。未保存の確認はない（Saveボタンの `Save *` が未保存を示す）。
+- 再生（タブの外、Visual / Values共通）: `Play` / `Stop`、`Loop`、BPM、Seed、Beatスライダー。各Valueを現在のBeatで評価して静止Hierarchyを背景へ描画し、Playでは最長ADSRの寿命＋最長Delay（上限8拍）でループする。編集は0.3秒後に自動でCompileする。
 - Visualタブ
   - Hierarchy: Nodeをボタンで選択する（選択中は青）。種類は記号で示す（■ Group、○ Circle、◻ Rectangle、▲ Polygon）。`▼` / `►` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ドラッグ中はドロップできる行を暗い緑、今ドロップする行を明るい緑、ドラッグ中のNodeを灰色で示す。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
-  - Preview: 出力RTを枠に収まるように表示する（Zoomなし）。`Play` / `Stop`、Beatスライダー、BPM、Seed。ModeはBeat（BPMクロック）だけ。各Valueを現在のBeatで評価して静止Hierarchyを描画し、Playでは最長ADSRの寿命（上限6拍）でループする。編集は0.3秒後に自動でCompileする。
   - Inspector（幅620）: Name、Transform / Shape / Layout / StyleのFold（GroupはName/Transformのみ）。Parameterは表形式の1行「名前 | Base | Rand | Depth | Unit | Now | Flip | Bind」（Rand/Flipは `Variation.md`）で、列見出しは各ブロックの先頭に1回。名前とBindプルダウンはValue接続中に緑。Depthは未接続なら灰色の「-」。Nowは接続中・画面基準の単位・Randありのときだけ、プレビューBeat時点の Base＋Depth×信号 の出力（px / deg）を出す。Rand / Flip / Delayで複製ごとに値が変わる場合は先頭に「~」を付ける（それらは反映しない基準値）。アイコンはRosettaUI既定のopen-in-new画像。
   - 単位: Position / Size / Spacing / Radius は `px / xW / xH / xMin / xMax`（画面基準は倍率。0.1 xW = 画面幅 × 0.1。保存値をそのまま表示・入力）、Rotation / Hue Shift は `deg / turn`、Scaleは `x`、Opacity / Color Mixは `0-1` 固定。単位を変えるとBaseとDepthを換算し、出力を変えない。保存形式は変更せず、`PresetUnits` が既存のReference / Multiplier / AbsoluteValueへ対応付ける（画面基準→Canvas系Reference、turn→Absolute×Multiplier 360、AbsoluteValueは常に1）。Reference / Multiplier / Absolute ValueはUIに出さない。
   - Bind列: `None` と全Valueのプルダウン（RosettaUI Dropdown）。Noneで解除、Valueを選ぶとDepthは種類ごとの既定値（Position 100、Rotation 90deg/0.25turn、Hue 360deg/1turnなど）で接続。別のValueへ切り替えたときはDepthを維持する。Value追加・削除・名前変更で選択肢を作り直す。Bind用の別ウインドウは廃止。
@@ -17,7 +17,7 @@
 - Valuesタブ: Value一覧（選択中は青）と `+ Value`。Valueは複数のComponent（ADSR / LFO、Weight付き）の合成で、信号は `Σ Weight × Component`。出力グラフ（0–6 beat）には選択ValueのComponentを細線（ADSRは青、LFOは橙、Weight込み）、合計を白の太線で描き、Beat位置に縦線を引く。縦軸は±1を基本に、合計がはみ出すと自動で広げる。その下にName、各ComponentのFold（Weight、ADSR 5項目 / LFO 3項目、Remove Component）、`+ ADSR` / `+ LFO`、Remove Value（どのParameterにも接続されていないときだけ有効）。
 - 保存形式はSchemaVersion 2（`Values[].Components[]`、Bindingは `ValueId`）。v1のファイルは読み込み時に、各Modulatorを「Weight 1のComponentを1つ持つValue」へ変換する（`PresetJsonMigration`）。ファイルは保存し直すまでv1のまま。CompilerはBound Valueを「Componentごとに Depth × Weight のBinding」へ展開するので、Runtime（`ParameterDefinition` の合算）は変更していない。
 - Visual側でValueを新規作成する機能、Static / Animatedモード、Preview Zoom、UI倍率、右クリックメニュー、未保存確認、Open一覧ブラウザ、ステータスバーは削除した。
-- 各ペインの先頭に Hierarchy / Preview / Inspector / Values / Output の見出しだけを置く。状態を示す色は `PresetEditorPalette` にまとめ、RosettaUIの `Style.Color` / `Style.BackgroundColor` だけで付ける。記号はRosettaUI既定フォントにあるもの（○ ◻ ▲ ■ ● ◆ ▼ ►）に限る。
+- 各ペインの先頭に Hierarchy / Inspector / Values / Output の見出しだけを置く。状態を示す色は `PresetEditorPalette` にまとめ、RosettaUIの `Style.Color` / `Style.BackgroundColor` だけで付ける。記号はRosettaUI既定フォントにあるもの（○ ◻ ▲ ■ ● ◆ ▼ ►）に限る。
 - Play中にスクリプトが再読み込みされるとDocumentは消える（シリアライズしないため）。そのときは新規Documentに置き換えてエラー欄に表示する。保存していない編集は失われる。
 - `Samples/Settings/WorkspacePanelSettings.asset` はScale With Screen Size（1600×900、Match 0.5）。このSceneだけが使う。
 - RosettaUIのDropdownメニューはUnity 6000.3で削除された内部APIに依存するため、`Choice` で `createMenuCallback` を外してUnity標準のメニューを使う互換処理だけ残した。
@@ -234,3 +234,8 @@ ShapeのInspectorのStyleに **To Color**、**Color Mix**、**Hue Shift** を追
 - 対象は塗り色のみ。Stroke Colorは固定のまま。
 - 検証: EditMode 225件成功（`ColorDefinitionTests` 7件追加）。Preset Editor SceneのPlayで、ADSRにHue Shift(Depth 240)をBindした赤いCircle×5と、Color MixをBindした橙→青のRectangle×5が、Beat 0で基準色、Beat 1で変化した色になることを数値と画像で確認（`Reports/PresetColor-beat0.png` / `beat1.png`）。InspectorのUI実クリック操作は未確認。
 
+## 追補: Preview画面の廃止（2026-11-17）
+
+- Visualタブ中央のPreview画面（出力RTの `UI.Image`）を削除した。背景の出力と同じ映像を重ねて表示していただけで、ウインドウ幅の大半を占めて背景を覆っていた。VisualタブはHierarchy（260）とInspector（620）の2ペイン。
+- 再生操作（Play / Loop / BPM / Seed / Beat）はタブの外の上部へ移した。背景への描画（`ShapeSynthController.StaticPreview`）、Beatのスクラブ、Now表示、出力グラフのカーソルは従来どおり。
+- `IUiTarget.CreateElement()` がエディター本体を返す。以前は「Open Preset Editor」ボタンだけのウィンドウを経由し、Play開始時に専用ウィンドウを自動で開いていた。その専用ウィンドウ・自動表示・固定位置は廃止し、他のUiTargetと同じくUiBuilderのウィンドウに表示する。ShapeSynthの今後のUI（MIDIバインドなど）も同じくUiTargetとして追加する想定。
