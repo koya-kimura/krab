@@ -218,6 +218,11 @@ namespace Krab.ShapeSynth.Core.Presets
         public PresetParameter Height = new() { Base = 0.2, Reference = ReferenceSource.MinDimension };
         public PresetParameter Opacity = new() { Base = 1 };
         public double Red = 1, Green = 1, Blue = 1, Alpha = 1;
+
+        // Fill = blend(Color, To Color, ColorMix 0–1) with its hue rotated by HueShift degrees.
+        public double ToRed = 1, ToGreen = 1, ToBlue = 1, ToAlpha = 1;
+        public PresetParameter ColorMix = new();
+        public PresetParameter HueShift = new();
         public bool Fill = true, Stroke;
         public double StrokeWidth = 1;
         public double StrokeRed = 1, StrokeGreen = 1, StrokeBlue = 1, StrokeAlpha = 1;
@@ -253,6 +258,8 @@ namespace Krab.ShapeSynth.Core.Presets
             yield return Width;
             yield return Height;
             yield return Opacity;
+            yield return ColorMix;
+            yield return HueShift;
             yield return Layout.SpacingX;
             yield return Layout.SpacingY;
             yield return Layout.Radius;

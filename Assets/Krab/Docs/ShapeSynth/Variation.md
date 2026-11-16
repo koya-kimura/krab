@@ -35,7 +35,7 @@ Indexは親Groupの子配列内の順番で、Shape/Groupを区別しない。�
 
 UnityEngine.Randomや順番に取り出すRandomは使用しない。固定64bit整数のMix64（明示的unchecked）へ、VoiceSeed、パス長と各Index、channel、salt、範囲両端のdoubleビット列を混合する。上位53bitを[0,1)の値にし、両端の重み付き和で範囲へ写す。max-minを作らないため、±double.MaxValueの範囲にも対応する。丸めで上端と等しくなる場合は許容する。結果は範囲内に制限し、min=maxはその値そのもの。
 
-HierarchyのparameterKeyは固定：1=X、2=Y、3=RotationDegrees、4=ScaleX、5=ScaleY、6=Width/Diameter、7=Rectangle Height、8=Opacity。CircleのHeightはDiameterと同じ6。内部channelは `(parameterKey << 32) | component`、component0=Base、1+i=Binding iのDepth。単独ResolverのparameterKeyはuint範囲とする。
+HierarchyのparameterKeyは固定：1=X、2=Y、3=RotationDegrees、4=ScaleX、5=ScaleY、6=Width/Diameter、7=Rectangle Height、8=Opacity、9=Color Mix、10=Hue Shift（2026-11-16追加）。CircleのHeightはDiameterと同じ6。内部channelは `(parameterKey << 32) | component`、component0=Base、1+i=Binding iのDepth。単独ResolverのparameterKeyはuint範囲とする。
 
 既存位置より後へ子を追加しても既存パスの値は変化しない。他のParameterや別の配置を評価しても影響しない。子の挿入/削除/並べ替えやBinding順の変更でパス/channelが変わればRandom結果も変わる。異なるSeedは一般に異なる値だが、定数範囲・有限精度やhash衝突で必ず異なる保証はしない。これは暗号乱数ではない。
 

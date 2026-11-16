@@ -11,30 +11,56 @@ namespace Krab.ShapeSynth.PresetEditor
         private const string NoValueName = "None";
         private const float BindWindowWidth = 300;
 
+        // RosettaUI's own window-launcher icon ("open-in-new"), styled by its default USS.
+        private const string WindowIconClass = "rosettaui-window-launcher__checkmark";
+        private static readonly Color WindowIconTint = new(0.66f, 0.66f, 0.66f);
+
         private Element _inspectorPane;
         private WindowElement _bindWindow;
         private PresetParameter _bindParameter;
         private string _bindName;
+        private PresetQuantity _bindQuantity;
 
-        private Element BindButton(string name, PresetParameter parameter)
+        /// <summary>Icon-only button that opens the Parameter's Bind window.</summary>
+        private Element ParameterWindowButton(string name, PresetParameter parameter, PresetQuantity quantity)
         {
             ButtonElement button = null;
-            button = UI.Button(UI.Label(() => FindValue(parameter.GetBinding()?.ValueId)?.Name ?? "Bind"), () =>
-                OpenBind(name, parameter, button));
+            button = UI.Button("", () => OpenBind(name, parameter, quantity, button));
             button.RegisterUpdateCallback(element =>
             {
                 var editing = _bindParameter == parameter && _bindWindow is { IsOpen: true };
                 element.Style.BackgroundColor = editing ? PresetEditorPalette.Selected : null;
-                element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null;
+
+                var icon = WindowIcon(element);
+                if (icon != null)
+                {
+                    icon.style.unityBackgroundImageTintColor =
+                        parameter.GetBinding() != null ? PresetEditorPalette.Bound : WindowIconTint;
+                }
             });
-            return button.SetMinWidth(90);
+            return button.SetWidth(28);
+        }
+
+        private static UnityEngine.UIElements.VisualElement WindowIcon(Element button)
+        {
+            var view = UIToolkitBuilder.Instance.GetUIObj(button);
+            if (view == null) return null;
+
+            var icon = UnityEngine.UIElements.UQueryExtensions.Q(view, className: WindowIconClass);
+            if (icon != null) return icon;
+
+            icon = new UnityEngine.UIElements.VisualElement();
+            icon.AddToClassList(WindowIconClass);
+            view.Add(icon);
+            return icon;
         }
 
         /// <summary>Opens the Bind window left of the Inspector, level with the button that asked for it.</summary>
-        private void OpenBind(string name, PresetParameter parameter, Element button)
+        private void OpenBind(string name, PresetParameter parameter, PresetQuantity quantity, Element button)
         {
             _bindName = name;
             _bindParameter = parameter;
+            _bindQuantity = quantity;
             _bindWindow ??= UI.Window(
                 UI.Label(() => _bindName),
                 UI.DynamicElementOnStatusChanged(
@@ -66,10 +92,12 @@ namespace Krab.ShapeSynth.PresetEditor
             _bindWindow?.Close();
         }
 
+        /// <summary>Value choice, Depth in the row's unit, and the output range the Value sweeps.</summary>
         private Element BuildBindFields()
         {
             var parameter = _bindParameter;
             var name = _bindName;
+            var quantity = _bindQuantity;
             if (parameter == null) return UI.Space();
 
             var values = Document.Values.ToArray();
@@ -81,13 +109,13 @@ namespace Krab.ShapeSynth.PresetEditor
                     new[] { NoValueName }.Concat(values.Select(value => value.Name))),
                 UI.DynamicElementIf(
                     () => parameter.GetBinding() != null,
-                    () => NumberField("Depth", () => parameter.GetBinding()?.Depth ?? 0, depth =>
-                    {
-                        var binding = parameter.GetBinding();
-                        if (binding != null) binding.Depth = depth;
-                    })),
-                NumberField("Base", () => parameter.Base, value => parameter.Base = value),
-                UI.Label(() => "Output  " + ParameterValueText(parameter)),
+                    () => UI.Column(
+                        UI.Row(
+                            UI.Label("Depth").SetWidth(NameColumnWidth),
+                            DepthField(parameter, quantity).SetWidth(NumberColumnWidth),
+                            UI.Label(() => PresetUnits.Symbol(PresetUnits.UnitOf(parameter, quantity)))),
+                        UI.Label(() => "Range  " + RangeText(parameter, quantity)),
+                        UI.Label(() => "Now  " + NowText(parameter, quantity)))),
                 UI.Row(
                     UI.Button("Unbind", () => BindValue(name, parameter, null))
                         .RegisterUpdateCallback(element => element.Interactable = parameter.GetBinding() != null),
@@ -95,11 +123,25 @@ namespace Krab.ShapeSynth.PresetEditor
             ).SetWidth(BindWindowWidth);
         }
 
-        private string ParameterValueText(PresetParameter parameter)
+        /// <summary>Output at the lowest and highest Value sampled over the graph range (ADSR 0–1, LFO may be ±1).</summary>
+        private string RangeText(PresetParameter parameter, PresetQuantity quantity)
         {
             var binding = parameter.GetBinding();
-            var value = binding == null ? parameter.Base : parameter.Base + binding.Depth * SignalAtBeat(binding.ValueId);
-            return ParameterOutput(parameter, value);
+            var value = binding == null ? null : FindValue(binding.ValueId);
+            if (value == null) return "-";
+
+            const int samples = 96;
+            double low = double.MaxValue, high = double.MinValue;
+            for (var i = 0; i <= samples; i++)
+            {
+                var signal = PresetSignalSampler.SampleOrZero(value, PresetSignalSampler.GraphBeats * i / samples);
+                low = System.Math.Min(low, signal);
+                high = System.Math.Max(high, signal);
+            }
+
+            var from = OutputText(parameter, quantity, parameter.Base + binding.Depth * low);
+            var to = OutputText(parameter, quantity, parameter.Base + binding.Depth * high);
+            return from + " - " + to;
         }
 
         private void BindValue(string name, PresetParameter parameter, PresetValue value)
@@ -120,11 +162,14 @@ namespace Krab.ShapeSynth.PresetEditor
             Changed();
         }
 
+        /// <summary>A visible first Depth in stored units: Turn counts in turns, other angles in degrees.</summary>
         private static double DefaultDepth(string name, PresetParameter parameter)
         {
+            var turn = PresetUnits.UnitOf(parameter, PresetQuantity.Angle) == PresetUnit.Turn;
             if (name == "Opacity") return 1;
             if (name.StartsWith("Position")) return 100;
-            if (name == "Rotation") return 90;
+            if (name == "Rotation") return turn ? 0.25 : 90;
+            if (name == "Hue Shift") return turn ? 1 : 360;
 
             return parameter.Base == 0 ? 1 : parameter.Base;
         }

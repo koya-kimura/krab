@@ -16,10 +16,11 @@ namespace Krab.ShapeSynth.Core.Runtime
         public double Height { get; }
         public double Opacity { get; }
 
-        internal DrawItem(ShapeDefinition shape, Affine2D worldTransform, double width, double height, double opacity)
+        internal DrawItem(ShapeDefinition shape, Affine2D worldTransform, double width, double height, double opacity,
+            RgbaColor color)
         {
             Kind = shape.Kind;
-            Color = shape.Color;
+            Color = color;
             Style = shape.Style;
             Vertices = shape.Vertices;
             WorldTransform = worldTransform;

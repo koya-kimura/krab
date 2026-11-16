@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Krab.ShapeSynth.Core.Definitions;
-using Krab.ShapeSynth.Core.Evaluation;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 using UnityEngine;
@@ -12,7 +8,6 @@ namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
-        private static readonly string[] ReferenceNames = Enum.GetNames(typeof(ReferenceSource));
         private static readonly string[] LayoutNames = Enum.GetNames(typeof(PresetLayoutKind));
 
         private Element BuildInspectorPane()
@@ -38,11 +33,12 @@ namespace Krab.ShapeSynth.PresetEditor
                 }),
                 UI.Fold(
                     "Transform",
-                    ParameterFold("Position X", node.PositionX),
-                    ParameterFold("Position Y", node.PositionY),
-                    ParameterFold("Rotation", node.Rotation),
-                    ParameterFold("Scale X", node.ScaleX),
-                    ParameterFold("Scale Y", node.ScaleY)).Open()
+                    ParameterHeader(),
+                    ParameterRow("Position X", node.PositionX, PresetQuantity.Length),
+                    ParameterRow("Position Y", node.PositionY, PresetQuantity.Length),
+                    ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle),
+                    ParameterRow("Scale X", node.ScaleX, PresetQuantity.Scale),
+                    ParameterRow("Scale Y", node.ScaleY, PresetQuantity.Scale)).Open()
             };
             if (node.Kind == PresetNodeKind.Group) return UI.Column(elements);
 
@@ -54,15 +50,17 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private IEnumerable<Element> ShapeParameters(PresetNode node)
         {
-            if (node.Kind == PresetNodeKind.Circle) yield return ParameterFold("Diameter", node.Width);
+            yield return ParameterHeader();
+            if (node.Kind == PresetNodeKind.Circle)
+                yield return ParameterRow("Diameter", node.Width, PresetQuantity.Length);
 
             if (node.Kind == PresetNodeKind.Rectangle)
             {
-                yield return ParameterFold("Width", node.Width);
-                yield return ParameterFold("Height", node.Height);
+                yield return ParameterRow("Width", node.Width, PresetQuantity.Length);
+                yield return ParameterRow("Height", node.Height, PresetQuantity.Length);
             }
 
-            yield return ParameterFold("Opacity", node.Opacity);
+            yield return ParameterRow("Opacity", node.Opacity, PresetQuantity.Ratio);
         }
 
         /// <summary>None draws the Shape once; other kinds draw Count copies. Only the fields in use are shown.</summary>
@@ -94,104 +92,72 @@ namespace Krab.ShapeSynth.PresetEditor
                     }));
                 }
 
+                if (kind != PresetLayoutKind.None) fields.Add(ParameterHeader());
                 if (kind == PresetLayoutKind.Row || kind == PresetLayoutKind.Grid)
-                    fields.Add(ParameterFold("Spacing X", layout.SpacingX));
+                    fields.Add(ParameterRow("Spacing X", layout.SpacingX, PresetQuantity.Length));
                 if (kind == PresetLayoutKind.Column || kind == PresetLayoutKind.Grid)
-                    fields.Add(ParameterFold("Spacing Y", layout.SpacingY));
+                    fields.Add(ParameterRow("Spacing Y", layout.SpacingY, PresetQuantity.Length));
                 if (kind == PresetLayoutKind.Circle)
                 {
-                    fields.Add(ParameterFold("Radius", layout.Radius));
+                    fields.Add(ParameterRow("Radius", layout.Radius, PresetQuantity.Length));
                     fields.Add(NumberField("Start Angle", () => layout.StartAngle, value => layout.StartAngle = value));
-                    fields.Add(UI.Field("Face Outward", () => layout.FaceOutward, value =>
-                    {
-                        layout.FaceOutward = value;
-                        Changed();
-                    }));
+                    fields.Add(Toggle("Face Outward", () => layout.FaceOutward, value => layout.FaceOutward = value));
                 }
 
                 return UI.Column(fields);
             });
         }
 
+        /// <summary>Color items appear only while Fill is on, stroke items only while Stroke is on.</summary>
         private IEnumerable<Element> StyleFields(PresetNode node)
         {
-            yield return UI.Field(
-                "Color",
-                () => new Color((float)node.Red, (float)node.Green, (float)node.Blue, (float)node.Alpha),
-                value =>
-                {
-                    node.Red = value.r;
-                    node.Green = value.g;
-                    node.Blue = value.b;
-                    node.Alpha = value.a;
-                    Changed();
-                });
-            yield return UI.Field("Fill", () => node.Fill, value =>
+            yield return Toggle("Fill", () => node.Fill, value => node.Fill = value);
+            yield return UI.DynamicElementIf(() => node.Fill, () => UI.Column(FillFields(node)));
+            yield return Toggle("Stroke", () => node.Stroke, value => node.Stroke = value);
+            yield return UI.DynamicElementIf(() => node.Stroke, () => UI.Column(
+                NumberField("Stroke Width", () => node.StrokeWidth, value => node.StrokeWidth = value),
+                ColorField("Stroke Color",
+                    () => (node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha),
+                    value => (node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha) = value)));
+        }
+
+        /// <summary>To Color only matters while Color Mix can be above 0 (non-zero Base or a bound Value).</summary>
+        private IEnumerable<Element> FillFields(PresetNode node)
+        {
+            yield return ColorField("Color",
+                () => (node.Red, node.Green, node.Blue, node.Alpha),
+                value => (node.Red, node.Green, node.Blue, node.Alpha) = value);
+            yield return ParameterHeader();
+            yield return ParameterRow("Color Mix", node.ColorMix, PresetQuantity.Ratio);
+            yield return UI.DynamicElementIf(
+                () => node.ColorMix.Base != 0 || node.ColorMix.GetBinding() != null,
+                () => ColorField("To Color",
+                    () => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha),
+                    value => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha) = value));
+            yield return ParameterRow("Hue Shift", node.HueShift, PresetQuantity.Angle);
+        }
+
+        private Element Toggle(string label, Func<bool> read, Action<bool> write)
+        {
+            return UI.Field(label, read, value =>
             {
-                node.Fill = value;
+                write(value);
                 Changed();
             });
-            yield return UI.Field("Stroke", () => node.Stroke, value =>
+        }
+
+        private Element ColorField(string label, Func<(double R, double G, double B, double A)> read,
+            Action<(double R, double G, double B, double A)> write)
+        {
+            return UI.Field(label, () =>
             {
-                node.Stroke = value;
+                var (r, g, b, a) = read();
+                return new Color((float)r, (float)g, (float)b, (float)a);
+            }, value =>
+            {
+                write((value.r, value.g, value.b, value.a));
                 Changed();
             });
-            yield return NumberField("Stroke Width", () => node.StrokeWidth, value => node.StrokeWidth = value);
-            yield return UI.Field(
-                "Stroke Color",
-                () => new Color((float)node.StrokeRed, (float)node.StrokeGreen, (float)node.StrokeBlue, (float)node.StrokeAlpha),
-                value =>
-                {
-                    node.StrokeRed = value.r;
-                    node.StrokeGreen = value.g;
-                    node.StrokeBlue = value.b;
-                    node.StrokeAlpha = value.a;
-                    Changed();
-                });
-        }
-
-        /// <summary>Base and Reference in the Fold; the bound Value and Depth open from the Bind button.</summary>
-        private Element ParameterFold(string name, PresetParameter parameter)
-        {
-            var header = UI.Label(() => ParameterHeader(name, parameter));
-            header.RegisterUpdateCallback(element =>
-                element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
-            return UI.Fold(
-                header,
-                BindButton(name, parameter),
-                new[]
-                {
-                    NumberField("Base", () => parameter.Base, value => parameter.Base = value),
-                    Choice("Reference", () => (int)parameter.Reference, value =>
-                    {
-                        parameter.Reference = (ReferenceSource)value;
-                        Changed();
-                    }, ReferenceNames),
-                    NumberField("Ref. Multiplier", () => parameter.Multiplier, value => parameter.Multiplier = value),
-                    NumberField("Absolute Value", () => parameter.AbsoluteValue, value => parameter.AbsoluteValue = value)
-                });
-        }
-
-        private string ParameterHeader(string name, PresetParameter parameter)
-        {
-            return $"{name}  {ParameterValueText(parameter)}";
-        }
-
-        private string ParameterOutput(PresetParameter parameter, double value)
-        {
-            try
-            {
-                var texture = _controller && _controller.OutputCamera ? _controller.OutputCamera.targetTexture : null;
-                var context = texture
-                    ? new ReferenceContext(texture.width, texture.height)
-                    : new ReferenceContext(1920, 1080);
-                var reference = new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue);
-                return (reference.Evaluate(context) * value).ToString("F2");
-            }
-            catch (ArgumentException)
-            {
-                return "-";
-            }
         }
 
         private Element NumberField(string label, Func<double> read, Action<double> write)

@@ -26,7 +26,7 @@ var items = evaluator.Evaluate(nowSeconds, new ReferenceContext(width, height));
 - `ShapeDefinition.Polygon(vertices, transform?, opacity?, color?)`：3点以上の固定ローカル頂点。配列をコピーし、閉じた単純Polygonを描画する。頂点は作者がローカル原点の周囲へ配置する。Bounds/重心からの自動再中心化はしない。穴/ベジェ/自己交差の描画仕様は未定。
 - `GroupDefinition(transform?, params children)`：Shape/Groupの混在した順序付き子リスト。コピーして読み取り専用化する。Pivotはローカル(0,0)で固定し、子の配置/サイズ/Boundsには依存しない。
 - `INodeDefinition`：Transformの読み取り口のみ。現在の評価器が扱う実装は上記2つに限定し、独自ノードを受理するプラグイン構造にはしない。
-- `RgbaColor`：固定の4成分。有限値のみ。Color用の汎用Parameter型は追加しない。Opacityは既存のスカラーParameterで評価できる。
+- `RgbaColor`：固定の4成分。有限値のみ。Color用の汎用Parameter型は追加しない。2026-11-16に `ColorDefinition`（From→ToのMixとHue Shiftを各スカラーParameterで評価）を追加し、`ShapeDefinition.WithFillColor` で付けられるようにした。`ShapeDefinition.Color` は基準色（From）。Opacityは既存のスカラーParameterで評価できる。
 
 両Definitionはsealedかつ不変。同じオブジェクトを複数の親から参照できる（DAG）。永続ID/Unity InstanceIDは採用しない。
 

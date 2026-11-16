@@ -83,6 +83,8 @@ namespace Krab.ShapeSynth.Core.Evaluation
             private readonly ParameterEvaluator _width;
             private readonly ParameterEvaluator _height;
             private readonly ParameterEvaluator _opacity;
+            private readonly ParameterEvaluator _colorMix;
+            private readonly ParameterEvaluator _hueShift;
             private readonly EvaluatedNode[] _children;
 
             public EvaluatedNode(INodeDefinition definition, IReadOnlyList<IModulator> modulators,
@@ -105,6 +107,8 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 _height = new ParameterEvaluator(_shape.Height, modulators, context,
                     _shape.Kind == ShapeKind.Circle ? 6UL : 7UL);
                 _opacity = new ParameterEvaluator(_shape.Opacity, modulators, context, 8);
+                _colorMix = new ParameterEvaluator(_shape.FillColor.Mix, modulators, context, 9);
+                _hueShift = new ParameterEvaluator(_shape.FillColor.HueShiftDegrees, modulators, context, 10);
             }
 
             public void Append(double now, ReferenceContext context, Affine2D parent, List<DrawItem> output)
@@ -115,8 +119,10 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 var world = parent * local;
                 if (_shape != null)
                 {
+                    var color = _shape.FillColor.Resolve(_colorMix.Evaluate(now, context),
+                        _hueShift.Evaluate(now, context));
                     output.Add(new DrawItem(_shape, world, _width.Evaluate(now, context),
-                        _height.Evaluate(now, context), _opacity.Evaluate(now, context)));
+                        _height.Evaluate(now, context), _opacity.Evaluate(now, context), color));
                 }
 
                 foreach (var child in _children)

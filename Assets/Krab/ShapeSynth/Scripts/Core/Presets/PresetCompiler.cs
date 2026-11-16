@@ -128,6 +128,7 @@ namespace Krab.ShapeSynth.Core.Presets
             }
 
             Color(node);
+            ToColor(node);
             Style(node);
             if (node.Vertices == null || node.Vertices.Count > 2000
                 || (node.Kind == PresetNodeKind.Polygon && node.Vertices.Count < 3))
@@ -183,6 +184,9 @@ namespace Krab.ShapeSynth.Core.Presets
         private static RgbaColor Color(PresetNode node) =>
             new RgbaColor(node.Red, node.Green, node.Blue, node.Alpha);
 
+        private static RgbaColor ToColor(PresetNode node) =>
+            new RgbaColor(node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha);
+
         private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke, node.StrokeWidth,
             new RgbaColor(node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha));
 
@@ -210,6 +214,14 @@ namespace Krab.ShapeSynth.Core.Presets
         }
 
         private static INodeDefinition CompileShape(PresetNode node, TransformDefinition transform,
+            ValueIndices indices)
+        {
+            var fill = new ColorDefinition(Color(node), ToColor(node), Parameter(node.ColorMix, indices),
+                Parameter(node.HueShift, indices));
+            return CompileGeometry(node, transform, indices).WithFillColor(fill);
+        }
+
+        private static ShapeDefinition CompileGeometry(PresetNode node, TransformDefinition transform,
             ValueIndices indices)
         {
             var opacity = Parameter(node.Opacity, indices);

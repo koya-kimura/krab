@@ -10,8 +10,10 @@
 - Visualタブ
   - Hierarchy: Nodeをボタンで選択する（選択中は青）。種類は記号で示す（■ Group、○ Circle、◻ Rectangle、▲ Polygon）。`▼` / `►` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ドラッグ中はドロップできる行を暗い緑、今ドロップする行を明るい緑、ドラッグ中のNodeを灰色で示す。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
   - Preview: 出力RTを枠に収まるように表示する（Zoomなし）。`Play` / `Stop`、Beatスライダー、BPM、Seed。ModeはBeat（BPMクロック）だけ。各Valueを現在のBeatで評価して静止Hierarchyを描画し、Playでは最長ADSRの寿命（上限6拍）でループする。編集は0.3秒後に自動でCompileする。
-  - Inspector: Name、Transform / Shape / StyleのFold。各Parameterは「Fold（見出しに現在の出力値）+ 右端のBindボタン」。Foldの中身はBase、Reference、Ref. Multiplier、Absolute Value。Valueが接続されていると見出しとボタンは緑で、ボタンにValue名が出る。
-  - Bindボタンを押すと、Inspectorの左にそのParameter用の小さなBindウィンドウが開く（編集中のボタンは青）。中身はValue（`None` または1つのValue）、Depth（接続中のみ）、Base、現在のOutput、Unbind、Close。Node選択の変更、New / Openで閉じる。
+  - Inspector（幅420）: Name、Transform / Shape / Layout / StyleのFold（GroupはName/Transformのみ）。Parameterは表形式の1行「名前 | Base | Depth | Unit | Now | ウインドウアイコン」で、列見出しは各ブロックの先頭に1回。名前とアイコンはValue接続中に緑。Depthは未接続なら灰色の「-」。Nowは接続中か%単位のときだけ、プレビューBeat時点の出力（px / deg）を出す。アイコンはRosettaUI既定のopen-in-new画像。
+  - 単位: Position / Size / Spacing / Radius は `px / %W / %H / %Min / %Max`（%は保存値×100で表示・入力）、Rotation / Hue Shift は `deg / turn`、Scaleは `x`、Opacity / Color Mixは `0-1` 固定。単位を変えるとBaseとDepthを換算し、出力を変えない。保存形式は変更せず、`PresetUnits` が既存のReference / Multiplier / AbsoluteValueへ対応付ける（%→Canvas系Reference、turn→Absolute×Multiplier 360、AbsoluteValueは常に1）。Reference / Multiplier / Absolute ValueはUIに出さない。
+  - アイコンのウインドウ: Value（`None` または1つのValue）、Depth（接続中のみ）、Range（Valueをグラフ範囲で走査した最小〜最大時の出力）、Now、Unbind、Close。
+  - 必要な項目だけを出す: Fill ON時のみColor / Color Mix / Hue Shift、Color MixのBaseが0以外かValue接続中のみTo Color、Stroke ON時のみStroke Width / Stroke Color、LayoutはKindに応じた項目のみ。
 - Valuesタブ: Value一覧（選択中は青）と `+ Value`。Valueは複数のComponent（ADSR / LFO、Weight付き）の合成で、信号は `Σ Weight × Component`。出力グラフ（0–6 beat）には選択ValueのComponentを細線（ADSRは青、LFOは橙、Weight込み）、合計を白の太線で描き、Beat位置に縦線を引く。縦軸は±1を基本に、合計がはみ出すと自動で広げる。その下にName、各ComponentのFold（Weight、ADSR 5項目 / LFO 3項目、Remove Component）、`+ ADSR` / `+ LFO`、Remove Value（どのParameterにも接続されていないときだけ有効）。
 - 保存形式はSchemaVersion 2（`Values[].Components[]`、Bindingは `ValueId`）。v1のファイルは読み込み時に、各Modulatorを「Weight 1のComponentを1つ持つValue」へ変換する（`PresetJsonMigration`）。ファイルは保存し直すまでv1のまま。CompilerはBound Valueを「Componentごとに Depth × Weight のBinding」へ展開するので、Runtime（`ParameterDefinition` の合算）は変更していない。
 - Visual側でValueを新規作成する機能、Static / Animatedモード、Preview Zoom、UI倍率、右クリックメニュー、未保存確認、Open一覧ブラウザ、ステータスバーは削除した。
@@ -218,3 +220,17 @@ DiameterはDepthがReferenceに対する割合になる。例: Ref=MinDimension�
 - データ: `PresetNode.Layout`（`PresetLayout`: Kind, Count, Columns, SpacingX, SpacingY, Radius, StartAngle, FaceOutward）。旧JSONはLayoutなし→Noneとして読める。SchemaVersionは2のまま。GroupにNone以外を設定すると検証エラー。1 Presetで描画するShapeの総数は20000まで。
 - Compile: Layout付きShapeを「Positionだけを持つscopeなしGroup」→「各スロットへ平行移動するscopeなしGroup × Count」→「Position 0の同じShapeDefinition（共有）」に展開する。スロット座標 k は `Reference × (k·Base + Σ k·Depth × signal)` としてParameterに畳み込む。各個は別の出現として評価されるので、将来Variationを付ければ個ごとの差が出せる（Preset EditorはVariation未使用）。
 - 検証: EditMode 218件成功（`PresetLayoutTests` 10件）。Preset Editor SceneのPlayで、1つのGroup内にCircle×12（Circle配置）とRectangle×5（Row）を描画できることを画像で確認（`Reports/PresetLayout-shapes.png`）。InspectorのLayout UIの実クリック操作は未確認。
+
+## 追補: 色のBinding（2026-11-16）
+
+ShapeのInspectorのStyleに **To Color**、**Color Mix**、**Hue Shift** を追加。塗り色は毎フレーム次の順で決まる。
+
+1. `Color` と `To Color` をRGBAで線形補間する。比率は Color Mix（0=Color、1=To Color、範囲外は0〜1にClamp）。
+2. その色の色相をHSVで Hue Shift 度だけ回す（彩度・明度・Alphaは維持。灰色/白/黒は変化しない）。
+
+- Color Mix / Hue Shift は通常のParameterなので、Bindボタンで ADSR / LFO を接続できる。Hue ShiftのBind時の既定Depthは360（Value 0→1で1周）。
+- 既定は Mix=0、Hue=0、To Color=白なので、既存Presetの見た目は変わらない。旧JSONはこの3項目なしで読める（SchemaVersion 2のまま）。To Colorの非有限値は検証エラー。
+- Core: `ColorDefinition(From, To, Mix, HueShiftDegrees)` と `ShapeDefinition.WithFillColor`。`HierarchyEvaluator` が出現ごとにMix/Hueを評価して `DrawItem.Color` を作る（Variation parameterKey 9/10）。Coreは引き続きUnity非依存。
+- 対象は塗り色のみ。Stroke Colorは固定のまま。
+- 検証: EditMode 225件成功（`ColorDefinitionTests` 7件追加）。Preset Editor SceneのPlayで、ADSRにHue Shift(Depth 240)をBindした赤いCircle×5と、Color MixをBindした橙→青のRectangle×5が、Beat 0で基準色、Beat 1で変化した色になることを数値と画像で確認（`Reports/PresetColor-beat0.png` / `beat1.png`）。InspectorのUI実クリック操作は未確認。
+

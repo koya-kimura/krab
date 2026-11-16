@@ -35,7 +35,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     ("Visual", UI.Row(
                         BuildHierarchyPane().SetWidth(260),
                         BuildPreviewPane().SetWidth(480),
-                        BuildInspectorPane().SetWidth(340))),
+                        BuildInspectorPane().SetWidth(420))),
                     ("Values", BuildValuesView()))).SetPosition(WorkspacePosition);
 
             if (!_workspace.HasBuilt)
