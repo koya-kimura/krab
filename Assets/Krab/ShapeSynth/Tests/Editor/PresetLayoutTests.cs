@@ -126,6 +126,20 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
+        public void PositionMovesEveryCopyTheSameWayEvenWhenFacingOutward()
+        {
+            var document = DocumentWithShape(PresetLayoutKind.Circle, 4, out var shape);
+            shape.Layout.Radius = Absolute(10);
+            var plain = Positions(document);
+            shape.PositionX.Base = 5;
+            shape.PositionY.Base = 2;
+            shape.Layout.FaceOutward = true;
+
+            Assert.That(Positions(document),
+                Is.EqualTo(plain.Select(point => (point.X + 5, point.Y + 2)).ToArray()));
+        }
+
+        [Test]
         public void ValidationRejectsInvalidLayout()
         {
             Assert.Throws<ArgumentOutOfRangeException>(Invalid(shape => shape.Layout.Count = 0).Validate);

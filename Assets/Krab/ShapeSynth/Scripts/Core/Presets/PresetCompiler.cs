@@ -217,24 +217,29 @@ namespace Krab.ShapeSynth.Core.Presets
             if (layout.Kind == PresetLayoutKind.None)
                 return CompileShape(node, indices, new CopyModifier(layout, 0, 1));
 
-            // Each copy is compiled with its own Flip sign and Delay, then translated to its Layout slot.
+            // Each copy has its own Flip sign and Delay. Position stays outside the slot (and its Face Outward
+            // rotation), so it moves the copy in the Shape's parent space, as for the whole arrangement.
             var copies = new INodeDefinition[layout.Count];
             for (var i = 0; i < copies.Length; i++)
             {
-                copies[i] = Slot(layout, i, copies.Length,
-                    CompileShape(node, indices, new CopyModifier(layout, i, copies.Length)), indices);
+                var copy = new CopyModifier(layout, i, copies.Length);
+                var position = new TransformDefinition(Parameter(node.PositionX, indices, copy: copy),
+                    Parameter(node.PositionY, indices, copy: copy));
+                var slot = Slot(layout, i, copies.Length, CompileShape(node, indices, copy, false), indices);
+                copies[i] = new GroupDefinition(position, slot);
             }
 
             return new GroupDefinition(null, copies);
         }
 
-        /// <summary>The Shape with its full Transform; copies apply it around their own slot.</summary>
-        private static INodeDefinition CompileShape(PresetNode node, ValueIndices indices, CopyModifier copy)
+        /// <summary>The Shape with Rotation/Scale and, unless a copy wrapper owns it, its Position.</summary>
+        private static INodeDefinition CompileShape(PresetNode node, ValueIndices indices, CopyModifier copy,
+            bool withPosition = true)
         {
             ParameterDefinition P(PresetParameter model) => Parameter(model, indices, copy: copy);
 
-            var transform = new TransformDefinition(P(node.PositionX), P(node.PositionY), P(node.Rotation),
-                P(node.ScaleX), P(node.ScaleY));
+            var transform = new TransformDefinition(withPosition ? P(node.PositionX) : null,
+                withPosition ? P(node.PositionY) : null, P(node.Rotation), P(node.ScaleX), P(node.ScaleY));
             var fill = new ColorDefinition(Color(node), ToColor(node), P(node.ColorMix), P(node.HueShift));
             return CompileGeometry(node, transform, P).WithFillColor(fill);
         }
