@@ -30,7 +30,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 | 0 | p5.Unite 0.2.1とText 0.2.0を導入。ShapeSynthの `TargetCameraCanvas` を `SetCamera` ベースへ移行 | 完了 |
 | 1 | Frame/Rect/Anchor、Line/Edge/Arc/RectPerimeter、等間隔スロット、グリッド | 完了 |
 | 2 | 文字幅を考慮した流し込み、閉じたパスの継ぎ目合わせ、基準点（Baseline/Em/Cap/Ink）、回転モード | 完了 |
-| 3 | p5.Unite Textでの描画Adapter、フォント読み込み、検証Scene、ガイド線表示 | 未着手 |
+| 3 | p5.Unite Textでの描画Adapter、フォント読み込み、検証Scene、ガイド線表示 | 完了 |
 | 4 | 文字列の繰り返し・Seed付きランダム、拍単位のスクロールと入れ替え | 未着手 |
 | 5–6 | UI・保存、MIDI、性能計測 | 未着手 |
 
@@ -52,3 +52,20 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
    - 縦の基準：`Baseline`（下の辺に載せる）／`CapTop`（上の辺から大文字を吊るす）／`EmBottom`（ディセンダーを下の辺に載せる）／`EmCenter`／`CapCenter`（既定。行内でベースラインを共有したまま、大文字の中心を揃える）／`InkCenter`（字ごとに中心を揃える。ベースラインは揃わない）。
    - 回転：`FollowPath`（パスの向き）／`Upright`。`RotationOffsetDegrees` で各字を基準点まわりに回す。
    - `IGlyphMetrics` はサイズ1の値を返す。描画Adapterがフォントから実測し、テストでは固定値を使う。
+
+## Unity層（Phase 3）
+
+- `TypeLayoutCanvas`：1つのCameraへ描くUCanvas（ScreenOverlay、Y下）。Scene Viewへの描画切り替えを無効にする。
+- `TypeLayoutFont`：StreamingAssetsのフォントをAwakeで同期読み込みし、OnDestroyでアトラスを解放する。デスクトップ向け。Android/WebGLでは非同期読み込みが必要。
+- `UniteGlyphMetrics`：`IGlyphMetrics` の実装。1文字ごとに一度だけ実測してキャッシュする。単一文字の送り幅はフォントの値を直接読む（行幅の計測では末尾の空白が除かれるため）。字形の範囲は `TextBounds`、キャップハイトは "H" の字形の上端で測る。
+- `UniteTextRenderer`：`GlyphPlacement` ごとに Push → Translate → Rotate → 左・ベースライン揃えで描画 → Pop。
+- `UniteGuideRenderer`：矩形・パス・基準点のガイド線。検証用。
+- `RectPerimeterPath` の `cornerGap`：各辺を角の手前で止め、2辺の文字帯が角で重ならないようにする。
+
+### 検証（2026-11-17）
+
+- EditModeテスト：TypeLayout 37件成功。
+- `TypeLayoutSmokeTest.unity` をPlayし、4ケースの出力RT（1920×1080）を保存して目視確認。Console Errorなし。
+- ガイド線なしのAlignmentで字形の外接矩形を画素から計測した。左上ラベルの左端は40、右上ラベルの右端は1880で、セーフエリア（40〜1880）と一致した。"CENTER" の縦方向の中心は540。上下の1px未満のずれは "O" などのオーバーシュート。
+- 気づいた点：p5.Uniteは `Fill(Color)` をリニア空間の値として扱うため、sRGBのRTではストライプの色が明るく出る（ShapeSynthも同様）。白文字には影響しない。
+- 未確認：出力解像度やアスペクト比の変更時の見た目、Syphonでの受信、最終的な見た目の評価。

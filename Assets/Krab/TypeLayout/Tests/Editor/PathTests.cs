@@ -93,6 +93,20 @@ namespace Krab.TypeLayout.Tests.Editor
             Assert.Throws<ArgumentException>(() => new RectPerimeterPath(new Rect2(0, 0, 0, 10)));
         }
 
+        [Test]
+        public void CornerGapStopsEveryEdgeShortOfTheCorners()
+        {
+            var perimeter = new RectPerimeterPath(new Rect2(0, 0, 200, 100), cornerGap: 10);
+            Assert.That(perimeter.Length, Is.EqualTo(520));
+            AssertSlot(perimeter.Sample(0), 10, 0, 0);
+            AssertSlot(perimeter.Sample(180), 200, 10, 90);
+            AssertSlot(perimeter.Sample(260), 190, 100, 180);
+            AssertSlot(perimeter.Sample(440), 0, 90, -90);
+            AssertPoint(perimeter.Sample(519.5).Position, 0, 10.5);
+            Assert.Throws<ArgumentOutOfRangeException>(() => new RectPerimeterPath(new Rect2(0, 0, 200, 100),
+                cornerGap: 50));
+        }
+
         private static void AssertEdge(LinePath edge, double x0, double y0, double x1, double y1, double degrees)
         {
             Assert.That(edge.Sample(0).Position, Is.EqualTo(new Point2(x0, y0)));
