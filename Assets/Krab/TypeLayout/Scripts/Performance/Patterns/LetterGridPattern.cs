@@ -57,7 +57,7 @@ namespace Krab.TypeLayout.Performance.Patterns
             var step = BeatSteps.Step(context.Beats, Math.Max(0.25f, _beatsPerChange.Get()));
             var placement = new PlacementOptions(context.Px(_size.Get()), HorizontalAnchor.InkCenter,
                 VerticalAnchor.CapCenter, RotationMode.Upright);
-            context.Drawer.DrawRandom(_slots, _letters.Get().Replace(" ", string.Empty), _seed.Get(), step,
+            context.Drawer.DrawRandom(_slots, Letters(_letters.Get()), _seed.Get(), step,
                 placement, context.Color);
         }
     }

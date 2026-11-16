@@ -11,7 +11,13 @@ namespace Krab.TypeLayout.Performance
     /// </summary>
     public abstract class TypePattern
     {
+        private const float WindowWidth = 320f;
+        private const float LauncherWidth = 64f;
+
         private readonly PrefsBool _enabled;
+
+        private string _lettersSource;
+        private string _letters;
 
         protected TypePattern(string name, string description, bool enabled = false)
         {
@@ -33,15 +39,19 @@ namespace Krab.TypeLayout.Performance
         /// <summary>Why the last draw was skipped (an out-of-range parameter), or null.</summary>
         public string Error { get; private set; }
 
+        /// <summary>One row: the on/off toggle and a button opening this pattern's parameter window.</summary>
         public Element CreateElement()
         {
-            return UI.Fold(_enabled.CreateElement(Name), new[]
-            {
-                UI.Label(Description),
-                CreateParameters(),
-                UI.DynamicElementIf(() => Error != null,
-                    () => UI.HelpBox(UI.Label(() => $"Skipped: {Error}"), HelpBoxType.Warning))
-            });
+            var window = UI.Window(Name, UI.Page(
+                    UI.Label(Description),
+                    _enabled.CreateElement("Enabled"),
+                    CreateParameters(),
+                    UI.DynamicElementIf(() => Error != null,
+                        () => UI.HelpBox(UI.Label(() => $"Skipped: {Error}"), HelpBoxType.Warning))))
+                .SetWidth(WindowWidth);
+            return UI.Row(
+                _enabled.CreateElement(Name),
+                UI.WindowLauncher(UI.Label(() => Error == null ? "Edit" : "Edit !"), window).SetWidth(LauncherWidth));
         }
 
         public void Draw(in PatternContext context)
@@ -62,6 +72,18 @@ namespace Krab.TypeLayout.Performance
         }
 
         protected string Key(string setting) => $"TypeLayout {Name} {setting}";
+
+        /// <summary>
+        /// The text without spaces, for patterns that place single letters. Cached until the text changes.
+        /// </summary>
+        protected string Letters(string text)
+        {
+            if (text == _lettersSource) return _letters;
+
+            _lettersSource = text;
+            _letters = text?.Replace(" ", string.Empty) ?? string.Empty;
+            return _letters;
+        }
 
         protected abstract Element CreateParameters();
 

@@ -42,7 +42,15 @@ namespace Krab.TypeLayout.Performance
             new CrossPattern(),
             new WavePattern(),
             new OrbitPattern(),
-            new LetterGridPattern()
+            new LetterGridPattern(),
+            new SpiralPattern(),
+            new DiagonalPattern(),
+            new ZigzagPattern(),
+            new BigLetterPattern(),
+            new RadialPattern(),
+            new DialPattern(),
+            new ScatterPattern(),
+            new TunnelPattern()
         };
 
         private TypeLayoutCanvas _canvas;
@@ -51,22 +59,13 @@ namespace Krab.TypeLayout.Performance
 
         private void Start()
         {
-            var font = GetComponent<TypeLayoutFont>();
-            if (!_outputCamera || font.Face == null)
-            {
-                Debug.LogError($"{nameof(TypeLayoutPerformance)} requires an output {nameof(Camera)} and a loaded font.",
-                    this);
-                enabled = false;
-                return;
-            }
-
-            _canvas = GetComponent<TypeLayoutCanvas>();
-            _canvas.Initialize(_outputCamera);
-            _drawer = new TypeLayoutDrawer(_canvas, font.Face);
+            if (!TryInitialize()) enabled = false;
         }
 
         private void Update()
         {
+            // A script reload during Play clears the drawer without calling Start again.
+            if (_drawer == null && !TryInitialize()) return;
             if (!_visible.Get()) return;
 
             var frame = new LayoutFrame(_outputCamera.pixelWidth, _outputCamera.pixelHeight);
@@ -101,6 +100,22 @@ namespace Krab.TypeLayout.Performance
         public void Construct(IBPMManager bpmManager)
         {
             _bpmManager = bpmManager;
+        }
+
+        private bool TryInitialize()
+        {
+            var font = GetComponent<TypeLayoutFont>();
+            if (!_outputCamera || font.Face == null)
+            {
+                Debug.LogError($"{nameof(TypeLayoutPerformance)} requires an output {nameof(Camera)} and a loaded font.",
+                    this);
+                return false;
+            }
+
+            _canvas = GetComponent<TypeLayoutCanvas>();
+            _canvas.Initialize(_outputCamera);
+            _drawer = new TypeLayoutDrawer(_canvas, font.Face);
+            return true;
         }
 
         private Element CreatePatternsTab()

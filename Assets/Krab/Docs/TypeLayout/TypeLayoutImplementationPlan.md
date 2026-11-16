@@ -82,7 +82,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 
 `Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブ → Performance → Type Layout から操作し、Saveボタン（⌘S）でPrefsに保存する。
 
-配置と動きはパターンごとにコードで書く（`Scripts/Performance/Patterns/`）。UIから変えられるのは各パターンのON/OFFとパラメータ（文字列・サイズ・速さなど）だけで、配置そのものは変えない。新しいパターンは `TypePattern` を継承し、`CreateParameters()` と `DrawPattern()` を書いて `TypeLayoutPerformance` の一覧に加える。
+配置と動きはパターンごとにコードで書く（`Scripts/Performance/Patterns/`、16種類）。UIから変えられるのは各パターンのON/OFFとパラメータ（文字列・サイズ・速さなど）だけで、配置そのものは変えない。新しいパターンは `TypePattern` を継承し、`CreateParameters()` と `DrawPattern()` を書いて `TypeLayoutPerformance` の一覧に加える。
 
 | パターン | 配置と動き | パラメータ |
 |---|---|---|
@@ -94,11 +94,21 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 | Wave | 中央を進む正弦波に沿った文字列（`PolylinePath`） | Text, Size, Amplitude, Wavelength, Cycles Per Beat |
 | Orbit | 中心の二重リングが逆向きに回る。外は外向き、内は内向き | Outer/Inner Text, Size, Radius, Speed |
 | Letter Grid | 出力の縦横比に合わせたグリッドに1文字ずつ。拍でランダムに入れ替わる | Letters, Size, Rows, Beats Per Change, Seed |
+| Spiral | 中心から外へほどける渦巻き（`PolylinePath`）に沿って外向きに流れる | Text, Size, Turns, Speed |
+| Diagonal | 画面全体を横切る平行な斜めの帯。交互の向きに流れる。帯は画面の矩形で切り取る | Text, Size, Lines, Angle, Speed |
+| Zigzag | 中央を横切るジグザグに沿って流れる。歯の頂点で向きが急に変わる | Text, Size, Teeth, Height, Speed |
+| Big Letter | 中央に1文字を大きく表示し、字形の中心を画面中心に合わせる。ステップごとに次の文字 | Text, Size, Beats Per Step |
+| Radial | 中心から放射状に外向きに読むスポーク。ゆっくり回転する | Text, Size, Spokes, Inner Radius, Degrees Per Beat |
+| Dial | 円周上に等間隔の正立した文字（時計の文字盤）。ステップごとに1つずつ回る | Text, Size, Radius, Beats Per Step |
+| Scatter | 単語を4×8のセルへ重複なくランダムに置く（正立か逆さ）。拍で選び直す | Text (words), Size, Count, Beats Per Change, Seed |
+| Tunnel | セーフエリア内の入れ子の矩形。隣の輪と逆向きに回る | Text, Size, Rings, Gap, Speed |
 
-UIは「Patterns」と「Display」の2タブに分けた。Patternsタブには、全OFFボタン・ON数の表示と、パターンごとの折りたたみ（見出しがON/OFFのトグル、中に説明とパラメータ）を置く。Displayタブには、表示、色、セーフエリアの余白、ガイド線を置く。範囲外の値でレイアウトが作れない場合は、そのパターンだけ描画を省き、折りたたみの中に警告を出す。速さはすべて拍基準で、BPM（Common/Timing）に同期する。
+UIは「Patterns」と「Display」の2タブに分けた。Patternsタブには、全OFFボタン・ON数の表示と、パターンごとに1行（ON/OFFのトグルとEditボタン）を並べる。Editを押すと、そのパターン専用の小ウインドウ（説明、Enabled、パラメータ、警告）が開く。値が範囲外で描画できないときは、Editボタンが「Edit !」になる。Displayタブには、表示、色、セーフエリアの余白、ガイド線を置く。範囲外の値でレイアウトが作れない場合は、そのパターンだけ描画を省き、ウインドウ内に警告を出す。速さはすべて拍基準で、BPM（Common/Timing）に同期する。
 
 ### 検証（2026-11-17）
 
 - EditModeテスト：TypeLayout 44件成功（全体269件）。
+- 16パターンを1つずつ単独で表示した出力RTと、全パターンONの出力を保存して目視確認した。Console Errorなし、各パターンのErrorなし。
+- Play中にスクリプトを再コンパイルしても、`TypeLayoutPerformance` と `TypeLayoutFont` が次のフレームで初期化し直すことを確認した（以前はNullReferenceExceptionになった）。
 - Performance SceneをPlayし、8パターンを1つずつ単独で表示した出力RTを保存して目視確認した。全パターンON時もConsole Errorなし、各パターンのErrorなし。スクロールとLetter Gridの入れ替えが拍に合わせて動くことを、時間をずらした画像で確認した（パターン化前の版で確認し、同じCoreの動きを使う）。
 - 設定UIに「TypeLayout」タブが出ることを画面キャプチャで確認した。UIの実操作（各項目の編集・Save）は未確認。
