@@ -223,6 +223,9 @@ namespace Krab.ShapeSynth.Core.Presets
         public double StrokeRed = 1, StrokeGreen = 1, StrokeBlue = 1, StrokeAlpha = 1;
         public List<PresetPoint> Vertices = new();
 
+        // Only used by Shapes; Groups keep the default None.
+        public PresetLayout Layout = new();
+
         public static PresetNode Create(PresetNodeKind kind)
         {
             if (!Enum.IsDefined(typeof(PresetNodeKind), kind)) throw new ArgumentException("Unknown node kind.");
@@ -250,6 +253,9 @@ namespace Krab.ShapeSynth.Core.Presets
             yield return Width;
             yield return Height;
             yield return Opacity;
+            yield return Layout.SpacingX;
+            yield return Layout.SpacingY;
+            yield return Layout.Radius;
         }
     }
 

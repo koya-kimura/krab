@@ -13,6 +13,7 @@ namespace Krab.ShapeSynth.PresetEditor
     public sealed partial class ShapeSynthPresetEditor
     {
         private static readonly string[] ReferenceNames = Enum.GetNames(typeof(ReferenceSource));
+        private static readonly string[] LayoutNames = Enum.GetNames(typeof(PresetLayoutKind));
 
         private Element BuildInspectorPane()
         {
@@ -46,6 +47,7 @@ namespace Krab.ShapeSynth.PresetEditor
             if (node.Kind == PresetNodeKind.Group) return UI.Column(elements);
 
             elements.Add(UI.Fold("Shape", ShapeParameters(node)).Open());
+            elements.Add(UI.Fold("Layout", LayoutFields(node.Layout)).Open());
             elements.Add(UI.Fold("Style", StyleFields(node)).Open());
             return UI.Column(elements);
         }
@@ -61,6 +63,54 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             yield return ParameterFold("Opacity", node.Opacity);
+        }
+
+        /// <summary>None draws the Shape once; other kinds draw Count copies. Only the fields in use are shown.</summary>
+        private IEnumerable<Element> LayoutFields(PresetLayout layout)
+        {
+            yield return Choice("Kind", () => (int)layout.Kind, value =>
+            {
+                layout.Kind = (PresetLayoutKind)value;
+                Changed();
+            }, LayoutNames);
+            yield return UI.DynamicElementOnStatusChanged(() => layout.Kind, kind =>
+            {
+                var fields = new List<Element>();
+                if (kind != PresetLayoutKind.None)
+                {
+                    fields.Add(UI.Field("Count", () => layout.Count, value =>
+                    {
+                        layout.Count = Mathf.Clamp(value, 1, PresetLayout.MaxCount);
+                        Changed();
+                    }));
+                }
+
+                if (kind == PresetLayoutKind.Grid)
+                {
+                    fields.Add(UI.Field("Columns", () => layout.Columns, value =>
+                    {
+                        layout.Columns = Mathf.Clamp(value, 1, PresetLayout.MaxColumns);
+                        Changed();
+                    }));
+                }
+
+                if (kind == PresetLayoutKind.Row || kind == PresetLayoutKind.Grid)
+                    fields.Add(ParameterFold("Spacing X", layout.SpacingX));
+                if (kind == PresetLayoutKind.Column || kind == PresetLayoutKind.Grid)
+                    fields.Add(ParameterFold("Spacing Y", layout.SpacingY));
+                if (kind == PresetLayoutKind.Circle)
+                {
+                    fields.Add(ParameterFold("Radius", layout.Radius));
+                    fields.Add(NumberField("Start Angle", () => layout.StartAngle, value => layout.StartAngle = value));
+                    fields.Add(UI.Field("Face Outward", () => layout.FaceOutward, value =>
+                    {
+                        layout.FaceOutward = value;
+                        Changed();
+                    }));
+                }
+
+                return UI.Column(fields);
+            });
         }
 
         private IEnumerable<Element> StyleFields(PresetNode node)

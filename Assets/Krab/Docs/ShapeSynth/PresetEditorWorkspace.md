@@ -205,3 +205,16 @@ DiameterはDepthがReferenceに対する割合になる。例: Ref=MinDimension�
   - 旧UIの「接続済み一覧 + Add Value + New Depth + + Bind」の2段構成と、未適用の保留状態を廃止した。
 - Value LibraryのRemove不可時の案内は「すべてのParameterからUnbindする」に変更した。
 - 検証: コンパイル成功、EditMode 206成功（`ParameterBindsAtMostOneValue` を追加）。Play中にPosition Xで未接続表示、Default ADSRの接続（同じValueの再選択でもBinding 1件、Depth 100、Output range 0→100）を確認。スクリーンショット: `Reports/BindingUI/unbound.png`、`bound.png`。Dropdown・ボタンの実クリックは自動送信していない。
+
+## 追補: ShapeのLayout（2026-11-16）
+
+各ShapeのInspectorに **Layout** Foldを追加。1つのShapeを **Count** 個複製して並べる。同じGroupに「円形に並べたCircle」と「横並びのRectangle」を置ける。Hierarchyの行には `x個数` を表示する。
+
+- Kind: `None`（1個、従来どおり）/ `Row` / `Column` / `Grid` / `Circle`。None以外でCountを指定（1〜2000）。
+- Row: 左から右へ Spacing X 間隔。Column: 上から下へ Spacing Y 間隔。Grid: Columns列で左→右、上→下に折り返し、全体をブロックとして中央揃え。
+- Circle: Radiusの円周上に等間隔。最初の1個を Start Angle（度、+Xから反時計回り。既定90=真上）に置き、残りは時計回り。Face Outward をONにすると各個のローカル+Yが外向きになる。
+- Spacing X / Y、Radius は通常のParameter（Reference・Base・Bind可）。既定は MinDimension × 0.25（Spacing）/ 0.3（Radius）。ADSR/LFOをBindすれば間隔・半径をアニメーションできる。
+- ShapeのTransform: Position X/Y は並び全体の中心を動かす。Rotation / Scale は各個に、それぞれの位置を中心として適用する。Size・Opacity・Style・Bindingは全個共通。
+- データ: `PresetNode.Layout`（`PresetLayout`: Kind, Count, Columns, SpacingX, SpacingY, Radius, StartAngle, FaceOutward）。旧JSONはLayoutなし→Noneとして読める。SchemaVersionは2のまま。GroupにNone以外を設定すると検証エラー。1 Presetで描画するShapeの総数は20000まで。
+- Compile: Layout付きShapeを「Positionだけを持つscopeなしGroup」→「各スロットへ平行移動するscopeなしGroup × Count」→「Position 0の同じShapeDefinition（共有）」に展開する。スロット座標 k は `Reference × (k·Base + Σ k·Depth × signal)` としてParameterに畳み込む。各個は別の出現として評価されるので、将来Variationを付ければ個ごとの差が出せる（Preset EditorはVariation未使用）。
+- 検証: EditMode 218件成功（`PresetLayoutTests` 10件）。Preset Editor SceneのPlayで、1つのGroup内にCircle×12（Circle配置）とRectangle×5（Row）を描画できることを画像で確認（`Reports/PresetLayout-shapes.png`）。InspectorのLayout UIの実クリック操作は未確認。

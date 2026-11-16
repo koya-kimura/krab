@@ -83,6 +83,8 @@ namespace Krab.ShapeSynth.Core.Presets
                 throw new ArgumentException("Root Group is required.");
 
             ValidateNode(document.RootGroup, ids, new HashSet<string>(StringComparer.Ordinal), 0);
+            if (document.Nodes().Sum(node => (long)node.Layout.Copies) > PresetLayout.MaxTotalCopies)
+                throw new ArgumentException($"A preset can draw at most {PresetLayout.MaxTotalCopies} Shapes.");
         }
 
         private static void ValidateNode(PresetNode node, HashSet<string> modulators, HashSet<string> nodes, int depth)
@@ -98,6 +100,15 @@ namespace Krab.ShapeSynth.Core.Presets
             if (node.Children == null || (node.Kind != PresetNodeKind.Group && node.Children.Count != 0))
                 throw new ArgumentException("Only Groups can contain children.");
 
+            if (node.Layout == null) throw new ArgumentException("Null Layout.");
+            if (!Enum.IsDefined(typeof(PresetLayoutKind), node.Layout.Kind))
+                throw new ArgumentException("Unknown Layout kind.");
+            if (node.Kind == PresetNodeKind.Group && node.Layout.Kind != PresetLayoutKind.None)
+                throw new ArgumentException("Layout is set on Shapes, not Groups.");
+
+            PresetLayout.RequireCount(node.Layout.Count);
+            PresetLayout.RequireColumns(node.Layout.Columns);
+            VoiceTime.RequireFinite(node.Layout.StartAngle, "Layout Start Angle");
             foreach (var parameter in node.Parameters())
             {
                 if (parameter == null || parameter.Bindings == null)
@@ -154,17 +165,18 @@ namespace Krab.ShapeSynth.Core.Presets
         }
 
         // A bound Value becomes one Binding per component, so the runtime sum equals Depth × Σ Weight × signal.
-        private static ParameterDefinition Parameter(PresetParameter model, ValueIndices indices)
+        // scale multiplies the whole result: Reference × (scale·Base + Σ scale·Depth × signal).
+        private static ParameterDefinition Parameter(PresetParameter model, ValueIndices indices, double scale = 1)
         {
             var bindings = model.Bindings.SelectMany(binding =>
             {
                 var (first, value) = indices[binding.ValueId];
                 return value.Components.Select((component, index) =>
-                    new BindingDefinition(first + index, binding.Depth * component.Weight));
+                    new BindingDefinition(first + index, scale * binding.Depth * component.Weight));
             });
             return new ParameterDefinition(
                 new ReferenceDefinition(model.Reference, model.Multiplier, model.AbsoluteValue),
-                model.Base,
+                scale * model.Base,
                 bindings.ToArray());
         }
 
@@ -186,6 +198,20 @@ namespace Krab.ShapeSynth.Core.Presets
                     node.Children.Select(child => CompileNode(child, indices)).ToArray());
             }
 
+            if (node.Layout.Kind == PresetLayoutKind.None) return CompileShape(node, transform, indices);
+
+            // Position moves the whole arrangement; Rotation/Scale apply to each copy around its own slot.
+            var copyTransform = new TransformDefinition(null, null, Parameter(node.Rotation, indices),
+                Parameter(node.ScaleX, indices), Parameter(node.ScaleY, indices));
+            var arrangement = new TransformDefinition(Parameter(node.PositionX, indices),
+                Parameter(node.PositionY, indices));
+            return new GroupDefinition(arrangement,
+                Arrange(node.Layout, CompileShape(node, copyTransform, indices), indices));
+        }
+
+        private static INodeDefinition CompileShape(PresetNode node, TransformDefinition transform,
+            ValueIndices indices)
+        {
             var opacity = Parameter(node.Opacity, indices);
             switch (node.Kind)
             {
@@ -202,6 +228,28 @@ namespace Krab.ShapeSynth.Core.Presets
                 default:
                     throw new ArgumentException("Unknown Node kind.");
             }
+        }
+
+        /// <summary>
+        /// Count copies of one immutable Shape, each in a scope-less wrapper Group translated to its slot.
+        /// Copies share the Definition; each occurrence still evaluates independently.
+        /// </summary>
+        private static INodeDefinition[] Arrange(PresetLayout layout, INodeDefinition shape, ValueIndices indices)
+        {
+            var copies = new INodeDefinition[layout.Count];
+            for (var i = 0; i < copies.Length; i++)
+            {
+                var (x, y) = layout.Slot(i, copies.Length);
+                // Facing outward: the copy's local +Y points away from the center.
+                var rotation = layout.Kind == PresetLayoutKind.Circle && layout.FaceOutward
+                    ? ParameterDefinition.Constant(layout.Angle(i, copies.Length) - 90)
+                    : null;
+                var slot = new TransformDefinition(Parameter(layout.AxisX, indices, x),
+                    Parameter(layout.AxisY, indices, y), rotation);
+                copies[i] = new GroupDefinition(slot, shape);
+            }
+
+            return copies;
         }
 
         private sealed class ValueIndices : Dictionary<string, (int First, PresetValue Value)>

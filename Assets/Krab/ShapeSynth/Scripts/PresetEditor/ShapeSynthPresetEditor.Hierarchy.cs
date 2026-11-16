@@ -36,7 +36,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element NodeRow(PresetNode node, int depth)
         {
             var isGroup = node.Kind == PresetNodeKind.Group;
-            var title = UI.Button(UI.Label(() => Icon(node.Kind) + "  " + node.Name), () => SelectNode(node.Id));
+            var title = UI.Button(
+                UI.Label(() => Icon(node.Kind) + "  " + node.Name + CopiesSuffix(node)),
+                () => SelectNode(node.Id));
             _hierarchyDrag ??= new PresetHierarchyDrag(id => id != Document.RootGroup.Id, CanDropNode, DropNode);
             title.RegisterUpdateCallback(element =>
             {
@@ -78,6 +80,11 @@ namespace Krab.ShapeSynth.PresetEditor
             return CanDropNode(source, target, PresetDropPosition.Inside)
                    || CanDropNode(source, target, PresetDropPosition.Before)
                    || CanDropNode(source, target, PresetDropPosition.After);
+        }
+
+        private static string CopiesSuffix(PresetNode node)
+        {
+            return node.Layout.Kind == PresetLayoutKind.None ? "" : $"  x{node.Layout.Count}";
         }
 
         private static string Icon(PresetNodeKind kind)
