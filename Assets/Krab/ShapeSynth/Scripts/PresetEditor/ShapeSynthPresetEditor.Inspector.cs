@@ -36,9 +36,9 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Fold(
                     "Transform",
                     ParameterHeader(),
-                    ParameterRow("Position X", node.PositionX, PresetQuantity.Length, copies),
-                    ParameterRow("Position Y", node.PositionY, PresetQuantity.Length, copies),
-                    ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle, copies),
+                    ParameterRow("Position X", node.PositionX, PresetQuantity.Length, copies, InitialDepth.Pixels100),
+                    ParameterRow("Position Y", node.PositionY, PresetQuantity.Length, copies, InitialDepth.Pixels100),
+                    ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle, copies, InitialDepth.Degrees90),
                     ParameterRow("Scale X", node.ScaleX, PresetQuantity.Scale, copies),
                     ParameterRow("Scale Y", node.ScaleY, PresetQuantity.Scale, copies)).Open()
             };
@@ -62,7 +62,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 yield return ParameterRow("Height", node.Height, PresetQuantity.Length, node.Layout);
             }
 
-            yield return ParameterRow("Opacity", node.Opacity, PresetQuantity.Ratio, node.Layout);
+            yield return ParameterRow("Opacity", node.Opacity, PresetQuantity.Ratio, node.Layout, InitialDepth.One);
         }
 
         /// <summary>None draws the Shape once; other kinds draw Count copies. Only the fields in use are shown.</summary>
@@ -144,7 +144,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 () => ColorField("To Color",
                     () => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha),
                     value => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha) = value));
-            yield return ParameterRow("Hue Shift", node.HueShift, PresetQuantity.Angle, node.Layout);
+            yield return ParameterRow("Hue Shift", node.HueShift, PresetQuantity.Angle, node.Layout,
+                InitialDepth.Degrees360);
         }
 
         private Element Toggle(string label, Func<bool> read, Action<bool> write)

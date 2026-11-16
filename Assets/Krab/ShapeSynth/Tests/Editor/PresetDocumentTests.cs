@@ -394,6 +394,51 @@ namespace Krab.ShapeSynth.Tests.Editor
                 document, () => document.MoveNode(movingSubtree.Id, deepestGroup.Id, 0));
         }
 
+        [Test]
+        public void CanMoveNodeMatchesMoveNodeWithoutChangingTree()
+        {
+            var document = PresetDocument.CreateNew();
+            var root = document.RootGroup;
+            var moving = document.AddNode(root.Id, PresetNodeKind.Group);
+            var descendant = document.AddNode(moving.Id, PresetNodeKind.Group);
+            var leaf = root.Children[0];
+            var deepestGroup = root;
+            var belowDeepest = root;
+            for (var depth = 1; depth <= PresetDocument.MaxDepth; depth++)
+            {
+                belowDeepest = deepestGroup;
+                deepestGroup = document.AddNode(deepestGroup.Id, PresetNodeKind.Group);
+            }
+
+            var before = DescribeTree(document);
+            var cases = new (string Node, string Parent, int Index)[]
+            {
+                (root.Id, root.Id, 0),
+                (moving.Id, moving.Id, 0),
+                (moving.Id, descendant.Id, 0),
+                (moving.Id, leaf.Id, 0),
+                (moving.Id, root.Id, -1),
+                (moving.Id, root.Id, root.Children.Count + 1),
+                (moving.Id, belowDeepest.Id, 0),
+                (descendant.Id, deepestGroup.Id, 0),
+                ("missing", root.Id, 0),
+                (moving.Id, "missing", 0)
+            };
+            foreach (var (node, parent, index) in cases)
+            {
+                Assert.That(document.CanMoveNode(node, parent, index), Is.False, $"{node} -> {parent}[{index}]");
+            }
+
+            Assert.That(DescribeTree(document), Is.EqualTo(before));
+            Assert.That(document.CanMoveNode(leaf.Id, moving.Id, 0), Is.True);
+            Assert.That(document.CanMoveNode(leaf.Id, root.Id, root.Children.Count), Is.True);
+            Assert.That(document.CanMoveNode(descendant.Id, belowDeepest.Id, 0), Is.True);
+            Assert.That(DescribeTree(document), Is.EqualTo(before));
+
+            document.MoveNode(descendant.Id, belowDeepest.Id, 0);
+            Assert.That(belowDeepest.Children[0], Is.SameAs(descendant));
+        }
+
         private static void AssertMoveRejectedWithoutMutation(PresetDocument document, TestDelegate move)
         {
             var before = DescribeTree(document);

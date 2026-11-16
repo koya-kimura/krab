@@ -113,7 +113,6 @@ namespace Krab.ShapeSynth.PresetEditor
                 _dirty = false;
             });
 
-            // Outside Guard: its success would clear the list's read errors.
             if (!_dirty) RefreshSavedPresets();
         }
 

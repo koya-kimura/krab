@@ -16,6 +16,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private static readonly Vector2 WorkspacePosition = new(390, 10);
 
         private IReadOnlyList<PresetDocument> _savedPresets = Array.Empty<PresetDocument>();
+
+        // Kept apart from _error so that a later successful edit does not hide it; replaced on each list refresh.
+        private string _listWarning;
         private int _savedRevision;
         private int _openIndex;
 
@@ -31,6 +34,9 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Label(() => "Preset Editor" + (_dirty ? " *" : "")),
                 BuildFileBar(),
                 UI.DynamicElementIf(() => _error != null, () => UI.Label(() => _error).SetColor(PresetEditorPalette.Error)),
+                UI.DynamicElementIf(
+                    () => _listWarning != null,
+                    () => UI.Label(() => _listWarning).SetColor(PresetEditorPalette.Error)),
                 UI.Tabs(
                     ("Visual", UI.Row(
                         BuildHierarchyPane().SetWidth(260),
@@ -52,7 +58,6 @@ namespace Krab.ShapeSynth.PresetEditor
 
             _workspace.Open();
             Preview();
-            // After Preview: a successful compile clears the error line, which would hide list read errors.
             RefreshSavedPresets();
         }
 
@@ -90,7 +95,7 @@ namespace Krab.ShapeSynth.PresetEditor
             return UI.Label(title).SetColor(PresetEditorPalette.Title);
         }
 
-        /// <summary>Reloads the Open list; unreadable files stay out of it and their reasons go to the error line.</summary>
+        /// <summary>Reloads the Open list; unreadable files stay out of it and their reasons go to the warning line.</summary>
         private void RefreshSavedPresets()
         {
             IReadOnlyList<string> errors = Array.Empty<string>();
@@ -99,7 +104,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 _savedPresets = Repository.List(out errors);
                 _savedRevision++;
             });
-            if (errors.Count > 0) _error = "Some presets could not be read: " + string.Join("; ", errors);
+            _listWarning = errors.Count > 0 ? "Some presets could not be read: " + string.Join("; ", errors) : null;
         }
 
         // RosettaUI's custom dropdown menu uses a Unity internal interface removed in this Unity version.

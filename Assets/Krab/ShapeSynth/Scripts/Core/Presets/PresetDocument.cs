@@ -21,6 +21,9 @@ namespace Krab.ShapeSynth.Core.Presets
     {
         public const int CurrentSchemaVersion = 2;
 
+        /// <summary>Deepest allowed Node, counting the Root Group as 0.</summary>
+        public const int MaxDepth = 64;
+
         public int SchemaVersion = CurrentSchemaVersion;
         public string Id;
         public string Name = "New Preset";
@@ -80,45 +83,74 @@ namespace Krab.ShapeSynth.Core.Presets
         public void MoveNode(string nodeId, string parentId, int insertionIndex)
         {
             Validate();
-            var nodes = Nodes().ToArray();
-            var node = nodes.SingleOrDefault(candidate => candidate.Id == nodeId);
-            if (node == null) throw new ArgumentException("Node was not found.", nameof(nodeId));
-            if (ReferenceEquals(node, RootGroup)) throw new ArgumentException("Root Group cannot be moved.", nameof(nodeId));
+            var error = MoveError(nodeId, parentId, insertionIndex, out var node, out var sourceParent,
+                out var targetParent);
+            if (error != null) throw new ArgumentException(error);
 
-            var targetParent = nodes.SingleOrDefault(candidate => candidate.Id == parentId);
-            if (targetParent == null || targetParent.Kind != PresetNodeKind.Group)
-                throw new ArgumentException("Destination must be a Group.", nameof(parentId));
-
-            if (ContainsNode(node, targetParent))
-                throw new ArgumentException("A Node cannot be moved into itself or one of its descendants.", nameof(parentId));
-
-            if (insertionIndex < 0 || insertionIndex > targetParent.Children.Count)
-                throw new ArgumentOutOfRangeException(nameof(insertionIndex));
-
-            var destinationDepth = FindDepth(RootGroup, targetParent, 0);
-            var movedSubtreeHeight = MaximumDepth(node, 0);
-            if (destinationDepth + 1 + movedSubtreeHeight > 64)
-                throw new ArgumentException("Move would exceed the maximum hierarchy depth of 64.", nameof(parentId));
-
-            PresetNode sourceParent = null;
-            var sourceIndex = -1;
-            foreach (var candidate in nodes)
-            {
-                if (candidate.Kind != PresetNodeKind.Group) continue;
-                var index = candidate.Children.FindIndex(child => ReferenceEquals(child, node));
-                if (index < 0) continue;
-                sourceParent = candidate;
-                sourceIndex = index;
-                break;
-            }
-            if (sourceParent == null) throw new ArgumentException("Node has no parent in this document.", nameof(nodeId));
-
+            var sourceIndex = sourceParent.Children.IndexOf(node);
             var finalIndex = insertionIndex;
             if (ReferenceEquals(sourceParent, targetParent) && sourceIndex < insertionIndex)
                 finalIndex--;
 
             sourceParent.Children.RemoveAt(sourceIndex);
             targetParent.Children.Insert(finalIndex, node);
+        }
+
+        /// <summary>
+        /// Whether MoveNode would accept these arguments, without changing the document or validating the rest.
+        /// Editors use it to show drop targets with the same rules as the move itself.
+        /// </summary>
+        public bool CanMoveNode(string nodeId, string parentId, int insertionIndex)
+        {
+            return MoveError(nodeId, parentId, insertionIndex, out _, out _, out _) == null;
+        }
+
+        /// <summary>Why the move is not allowed, or null when it is.</summary>
+        private string MoveError(
+            string nodeId,
+            string parentId,
+            int insertionIndex,
+            out PresetNode node,
+            out PresetNode sourceParent,
+            out PresetNode targetParent)
+        {
+            targetParent = null;
+            if (!Locate(nodeId, out node, out sourceParent, out _)) return "Node was not found.";
+            if (sourceParent == null) return "Root Group cannot be moved.";
+            if (!Locate(parentId, out targetParent, out _, out var destinationDepth)
+                || targetParent.Kind != PresetNodeKind.Group)
+                return "Destination must be a Group.";
+            if (ContainsNode(node, targetParent)) return "A Node cannot be moved into itself or one of its descendants.";
+            if (insertionIndex < 0 || insertionIndex > targetParent.Children.Count)
+                return "Insertion index is out of range.";
+            if (destinationDepth + 1 + MaximumDepth(node, 0) > MaxDepth)
+                return $"Move would exceed the maximum hierarchy depth of {MaxDepth}.";
+
+            return null;
+        }
+
+        /// <summary>Finds a node, its parent (null for the Root Group) and its depth in one walk.</summary>
+        private bool Locate(string id, out PresetNode node, out PresetNode parent, out int depth)
+        {
+            var pending = new Stack<(PresetNode Node, PresetNode Parent, int Depth)>();
+            pending.Push((RootGroup, null, 0));
+            while (pending.Count > 0)
+            {
+                var current = pending.Pop();
+                if (current.Node.Id == id)
+                {
+                    (node, parent, depth) = current;
+                    return true;
+                }
+
+                foreach (var child in current.Node.Children)
+                {
+                    pending.Push((child, current.Node, current.Depth + 1));
+                }
+            }
+
+            (node, parent, depth) = (null, null, -1);
+            return false;
         }
 
         private static IEnumerable<PresetNode> Walk(PresetNode node)
@@ -144,19 +176,6 @@ namespace Krab.ShapeSynth.Core.Presets
             }
 
             return false;
-        }
-
-        private static int FindDepth(PresetNode root, PresetNode target, int depth)
-        {
-            if (ReferenceEquals(root, target)) return depth;
-
-            foreach (var child in root.Children)
-            {
-                var childDepth = FindDepth(child, target, depth + 1);
-                if (childDepth >= 0) return childDepth;
-            }
-
-            return -1;
         }
 
         private static int MaximumDepth(PresetNode node, int depth)

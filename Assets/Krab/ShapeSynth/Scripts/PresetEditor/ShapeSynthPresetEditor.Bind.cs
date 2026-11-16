@@ -11,10 +11,21 @@ namespace Krab.ShapeSynth.PresetEditor
     {
         private const string NoValueName = "None";
 
+        /// <summary>How a new Binding picks its first Depth, so the motion is visible without overshooting.</summary>
+        private enum InitialDepth
+        {
+            /// <summary>The Parameter's Base, or 1 when Base is 0.</summary>
+            FromBase,
+            One,
+            Pixels100,
+            Degrees90,
+            Degrees360
+        }
+
         /// <summary>
         /// The row's Bind column: a dropdown of None and every Value. Rebuilt when Values or their names change.
         /// </summary>
-        private Element BindChoice(string name, PresetParameter parameter)
+        private Element BindChoice(PresetParameter parameter, InitialDepth initialDepth)
         {
             return UI.DynamicElementOnStatusChanged(
                 () => (_valuesRevision, _valueNamesRevision),
@@ -24,7 +35,8 @@ namespace Krab.ShapeSynth.PresetEditor
                     var choice = Choice(
                         null,
                         () => Array.FindIndex(values, value => value.Id == parameter.GetBinding()?.ValueId) + 1,
-                        index => BindValue(name, parameter, index == 0 ? null : values.ElementAtOrDefault(index - 1)),
+                        index => BindValue(parameter, initialDepth,
+                            index == 0 ? null : values.ElementAtOrDefault(index - 1)),
                         new[] { NoValueName }.Concat(values.Select(value => value.Name)));
                     choice.RegisterUpdateCallback(element =>
                         element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
@@ -32,7 +44,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 });
         }
 
-        private void BindValue(string name, PresetParameter parameter, PresetValue value)
+        private void BindValue(PresetParameter parameter, InitialDepth initialDepth, PresetValue value)
         {
             if (value == null)
             {
@@ -46,22 +58,24 @@ namespace Krab.ShapeSynth.PresetEditor
             var current = parameter.GetBinding();
             if (current?.ValueId == value.Id) return;
 
-            parameter.Bind(value.Id, current?.Depth ?? DefaultDepth(name, parameter, OutputContext()));
+            parameter.Bind(value.Id, current?.Depth ?? DefaultDepth(initialDepth, parameter, OutputContext()));
             Changed();
         }
 
         /// <summary>
-        /// A visible first Depth. Position, Rotation and Hue aim at a fixed output (100px, 90deg, 360deg)
-        /// converted into the Parameter's unit, so screen units and turns do not overshoot.
+        /// A visible first Depth. Pixel and degree policies aim at a fixed output converted into the Parameter's
+        /// unit, so screen units and turns do not overshoot.
         /// </summary>
-        private static double DefaultDepth(string name, PresetParameter parameter, ReferenceContext context)
+        private static double DefaultDepth(InitialDepth initialDepth, PresetParameter parameter, ReferenceContext context)
         {
-            if (name == "Opacity") return 1;
-            if (name.StartsWith("Position")) return InUnit(parameter, 100, context);
-            if (name == "Rotation") return InUnit(parameter, 90, context);
-            if (name == "Hue Shift") return InUnit(parameter, 360, context);
-
-            return parameter.Base == 0 ? 1 : parameter.Base;
+            return initialDepth switch
+            {
+                InitialDepth.One => 1,
+                InitialDepth.Pixels100 => InUnit(parameter, 100, context),
+                InitialDepth.Degrees90 => InUnit(parameter, 90, context),
+                InitialDepth.Degrees360 => InUnit(parameter, 360, context),
+                _ => parameter.Base == 0 ? 1 : parameter.Base
+            };
         }
 
         /// <summary>The stored value whose output is the given pixels/degrees; the output itself if invalid.</summary>

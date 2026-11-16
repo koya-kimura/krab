@@ -41,8 +41,9 @@ namespace Krab.ShapeSynth.PresetEditor
         }
 
         /// <param name="copies">The owning Shape's Layout; Flip is offered only while it has copies.</param>
+        /// <param name="initialDepth">The first Depth when a Value is bound; independent of the label.</param>
         private Element ParameterRow(string name, PresetParameter parameter, PresetQuantity quantity,
-            PresetLayout copies = null)
+            PresetLayout copies = null, InitialDepth initialDepth = InitialDepth.FromBase)
         {
             var label = UI.Label(name).SetWidth(NameColumnWidth);
             label.RegisterUpdateCallback(element =>
@@ -70,7 +71,7 @@ namespace Krab.ShapeSynth.PresetEditor
                             Changed();
                         }, FlipNames).SetWidth(FlipColumnWidth)
                         : UI.Label("-").SetWidth(FlipColumnWidth).SetColor(PresetEditorPalette.DragSource)),
-                BindChoice(name, parameter));
+                BindChoice(parameter, initialDepth));
         }
 
         private Element DepthField(PresetParameter parameter)

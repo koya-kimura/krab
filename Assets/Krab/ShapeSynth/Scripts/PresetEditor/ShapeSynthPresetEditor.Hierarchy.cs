@@ -105,29 +105,27 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             parent = null;
             index = 0;
-            var nodes = Document.Nodes().ToArray();
-            var source = nodes.FirstOrDefault(node => node.Id == sourceId);
-            var target = nodes.FirstOrDefault(node => node.Id == targetId);
-            if (source == null || target == null || source == Document.RootGroup || source == target) return false;
+            // Dropping a Node beside itself would be a no-op move that still marks the document dirty.
+            if (sourceId == targetId) return false;
 
             if (position == PresetDropPosition.Inside)
             {
-                if (target.Kind != PresetNodeKind.Group) return false;
+                parent = Document.Nodes().FirstOrDefault(node => node.Id == targetId);
+                if (parent == null) return false;
 
-                parent = target;
-                index = target.Children.Count;
+                index = parent.Children.Count;
             }
             else
             {
-                parent = nodes.FirstOrDefault(node => node.Children.Contains(target));
+                parent = ParentOf(targetId);
                 if (parent == null) return false;
 
-                index = parent.Children.IndexOf(target) + (position == PresetDropPosition.After ? 1 : 0);
+                index = parent.Children.FindIndex(child => child.Id == targetId)
+                        + (position == PresetDropPosition.After ? 1 : 0);
             }
 
-            var destination = parent;
-            bool Contains(PresetNode node) => node == destination || node.Children.Any(Contains);
-            return !Contains(source);
+            // Core owns the rules (Group only, no cycles, index range, depth limit) shared with the move itself.
+            return Document.CanMoveNode(sourceId, parent.Id, index);
         }
 
         private bool CanDropNode(string source, string target, PresetDropPosition position)

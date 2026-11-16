@@ -89,8 +89,8 @@ namespace Krab.ShapeSynth.Core.Presets
 
         private static void ValidateNode(PresetNode node, HashSet<string> modulators, HashSet<string> nodes, int depth)
         {
-            if (node == null || depth > 64 || nodes.Count >= 2000)
-                throw new ArgumentException("Invalid hierarchy (maximum 64 levels / 2000 Nodes).");
+            if (node == null || depth > PresetDocument.MaxDepth || nodes.Count >= 2000)
+                throw new ArgumentException($"Invalid hierarchy (maximum {PresetDocument.MaxDepth} levels / 2000 Nodes).");
 
             PresetDocument.RequireId(node.Id);
             if (!nodes.Add(node.Id))
