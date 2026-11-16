@@ -1,0 +1,8 @@
+{
+  "name": "Krab.TypeLayout.Core.Tests",
+  "rootNamespace": "Krab.TypeLayout.Tests.Editor",
+  "references": ["Krab.TypeLayout.Core"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": true
+}
