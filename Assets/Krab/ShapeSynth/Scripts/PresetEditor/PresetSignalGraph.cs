@@ -62,7 +62,10 @@ namespace Krab.ShapeSynth.PresetEditor
         }
     }
 
-    /// <summary>Weighted components (thin) and their sum (thick) for one Value, repainted only when inputs change.</summary>
+    /// <summary>
+    /// Weighted components (thin) and their sum (thick) for one Value. Curves are sampled only when the Value's
+    /// settings change; the Beat cursor is a separate element moved without repainting the curves.
+    /// </summary>
     public sealed class PresetSignalGraph
     {
         private const int Samples = 180;
@@ -78,7 +81,11 @@ namespace Krab.ShapeSynth.PresetEditor
         private readonly Func<float> _cursorBeat;
 
         private VisualElement _view;
+        private VisualElement _cursor;
         private string _signature;
+        private (Color Color, double[] Points)[] _curves = Array.Empty<(Color, double[])>();
+        private double[] _sum;
+        private double _scale = 1;
 
         public PresetSignalGraph(Func<PresetValue> value, Func<float> cursorBeat)
         {
@@ -93,6 +100,7 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 Attach(UIToolkitBuilder.Instance.GetUIObj(element));
                 RepaintIfChanged();
+                MoveCursor();
             });
             return box;
         }
@@ -102,10 +110,18 @@ namespace Krab.ShapeSynth.PresetEditor
             if (view == null || view == _view) return;
 
             if (_view != null) _view.generateVisualContent -= Draw;
+            _cursor?.RemoveFromHierarchy();
 
             _view = view;
             _view.style.backgroundColor = Background;
             _view.generateVisualContent += Draw;
+            _cursor = new VisualElement { pickingMode = PickingMode.Ignore };
+            _cursor.style.position = Position.Absolute;
+            _cursor.style.top = 0;
+            _cursor.style.bottom = 0;
+            _cursor.style.width = 1;
+            _cursor.style.backgroundColor = Cursor;
+            _view.Add(_cursor);
             _signature = null;
         }
 
@@ -117,13 +133,22 @@ namespace Krab.ShapeSynth.PresetEditor
             if (signature == _signature) return;
 
             _signature = signature;
+            Resample();
             _view.MarkDirtyRepaint();
+        }
+
+        private void MoveCursor()
+        {
+            if (_cursor == null) return;
+
+            var beat = Mathf.Clamp(_cursorBeat(), 0, PresetSignalSampler.GraphBeats);
+            _cursor.style.left = beat / PresetSignalSampler.GraphBeats * _view.contentRect.width;
         }
 
         private string Signature()
         {
             var value = _value();
-            var builder = new StringBuilder(value?.Id).Append('|').Append(_cursorBeat().ToString("F3"));
+            var builder = new StringBuilder(value?.Id);
             if (value == null) return builder.ToString();
 
             foreach (var c in value.Components)
@@ -135,6 +160,39 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>Samples each weighted component once; the sum adds those points instead of resampling.</summary>
+        private void Resample()
+        {
+            var value = _value();
+            if (value == null)
+            {
+                _curves = Array.Empty<(Color, double[])>();
+                _sum = null;
+                _scale = 1;
+                return;
+            }
+
+            _curves = value.Components.Select(component =>
+            {
+                var color = component.Kind == ModulatorKind.Adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
+                var points = PresetSignalSampler.TryCreate(component, out var modulator)
+                    ? SampleCurve(beat => component.Weight * modulator.Evaluate(beat))
+                    : new double[Samples + 1];
+                return (new Color(color.r, color.g, color.b, 0.6f), points);
+            }).ToArray();
+
+            _sum = new double[Samples + 1];
+            foreach (var (_, points) in _curves)
+            {
+                for (var i = 0; i < _sum.Length; i++)
+                {
+                    _sum[i] += points[i];
+                }
+            }
+
+            _scale = Scale(_curves.Select(curve => curve.Points).Append(_sum));
         }
 
         private void Draw(MeshGenerationContext context)
@@ -151,32 +209,16 @@ namespace Krab.ShapeSynth.PresetEditor
                 Line(painter, new Vector2(rect.width * i / 6, 0), new Vector2(rect.width * i / 6, rect.height));
             }
 
-            var value = _value();
-            if (value != null)
+            if (_sum == null) return;
+
+            painter.strokeColor = Zero;
+            Line(painter, new Vector2(0, Y(0, _scale, rect)), new Vector2(rect.width, Y(0, _scale, rect)));
+            foreach (var (color, points) in _curves)
             {
-                var curves = value.Components
-                    .Select(component => (component, points: SampleCurve(beat =>
-                        component.Weight * PresetSignalSampler.SampleOrZero(component, beat))))
-                    .ToArray();
-                var sum = SampleCurve(beat => PresetSignalSampler.SampleOrZero(value, beat));
-                var scale = Scale(curves.Select(curve => curve.points).Append(sum));
-
-                painter.strokeColor = Zero;
-                Line(painter, new Vector2(0, Y(0, scale, rect)), new Vector2(rect.width, Y(0, scale, rect)));
-                foreach (var (component, points) in curves)
-                {
-                    var color = component.Kind == ModulatorKind.Adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
-                    Curve(painter, points, scale, rect, new Color(color.r, color.g, color.b, 0.6f), 1.5f);
-                }
-
-                Curve(painter, sum, scale, rect, Sum, 2.5f);
+                Curve(painter, points, _scale, rect, color, 1.5f);
             }
 
-            var cursor = Mathf.Clamp(_cursorBeat(), 0, PresetSignalSampler.GraphBeats) / PresetSignalSampler.GraphBeats
-                         * rect.width;
-            painter.strokeColor = Cursor;
-            painter.lineWidth = 1;
-            Line(painter, new Vector2(cursor, 0), new Vector2(cursor, rect.height));
+            Curve(painter, _sum, _scale, rect, Sum, 2.5f);
         }
 
         private static double[] SampleCurve(Func<double, double> sample)

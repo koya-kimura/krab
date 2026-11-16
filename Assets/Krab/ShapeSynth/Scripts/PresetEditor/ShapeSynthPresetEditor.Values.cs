@@ -12,12 +12,11 @@ namespace Krab.ShapeSynth.PresetEditor
     {
         private static readonly string[] WaveformNames = Enum.GetNames(typeof(LfoWaveform));
 
-        private PresetSignalGraph _signalGraph;
         private int _valueNamesRevision;
 
         private Element BuildValuesView()
         {
-            _signalGraph = new PresetSignalGraph(() => SelectedValue, () => _beat);
+            var signalGraph = new PresetSignalGraph(() => SelectedValue, () => _beat);
             return UI.Row(
                 UI.Column(
                     PaneTitle("Values"),
@@ -30,7 +29,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 ).SetWidth(220),
                 UI.Column(
                     PaneTitle("Output"),
-                    _signalGraph.CreateElement(),
+                    signalGraph.CreateElement(),
                     UI.DynamicElementOnStatusChanged(
                         () => (_documentRevision, _selectedValueId, _valuesRevision),
                         _ => BuildValueFields(SelectedValue)))
