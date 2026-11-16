@@ -17,7 +17,7 @@ namespace Krab.ShapeSynth.PresetEditor
     /// <summary>Samples authoring settings through the Core ADSR/LFO instances. Seconds equal beats at 60 BPM.</summary>
     public static class PresetSignalSampler
     {
-        public const float GraphBeats = 6;
+        public const float GraphBeats = 8;
 
         private static readonly VoiceTime OneBeatPerSecond = new(0, 60);
 

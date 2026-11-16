@@ -17,6 +17,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private bool _refreshPreview;
         private double _previewDue;
         private bool _playing;
+        private bool _loop = true;
         private float _beat;
         private float _bpm = 120;
         private int _seed = 1234;
@@ -94,14 +95,24 @@ namespace Krab.ShapeSynth.PresetEditor
                         if (_playing) Stop();
                         else Play();
                     }),
-                    UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats)
-                ),
+                    LoopButton()),
+                // Own row: sharing one with labeled fields pushed the slider past the pane edge.
+                UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats),
                 UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value)),
                 UI.Field("Seed", () => _seed, value =>
                 {
                     _seed = value;
                     QueuePreview();
                 }));
+        }
+
+        /// <summary>A compact toggle button; highlighted while Loop is on.</summary>
+        private Element LoopButton()
+        {
+            var button = UI.Button("Loop", () => _loop = !_loop);
+            button.RegisterUpdateCallback(element =>
+                element.Style.BackgroundColor = _loop ? PresetEditorPalette.Selected : null);
+            return button;
         }
 
         private void QueuePreview()
@@ -115,8 +126,17 @@ namespace Krab.ShapeSynth.PresetEditor
             if (!_playing || _bpm <= 0) return;
 
             _beat += deltaSeconds * _bpm / 60f;
-            var loop = LoopBeats;
-            if (_beat >= loop) _beat %= loop;
+            var end = LoopBeats;
+            if (_beat >= end)
+            {
+                // Without Loop, playback holds the last frame of one trigger and stops.
+                if (_loop) _beat %= end;
+                else
+                {
+                    _beat = end;
+                    _playing = false;
+                }
+            }
 
             UpdatePreviewSignals();
         }
