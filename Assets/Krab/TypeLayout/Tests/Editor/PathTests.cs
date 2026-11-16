@@ -107,6 +107,30 @@ namespace Krab.TypeLayout.Tests.Editor
                 cornerGap: 50));
         }
 
+        [Test]
+        public void PolylineSamplesAcrossVerticesAndExtendsPastOpenEnds()
+        {
+            var points = new[] { new Point2(0, 0), new Point2(100, 0), new Point2(100, 0), new Point2(100, 50) };
+            var polyline = new PolylinePath(points);
+            Assert.That(polyline.Length, Is.EqualTo(150));
+            AssertSlot(polyline.Sample(50), 50, 0, 0);
+            AssertSlot(polyline.Sample(100), 100, 0, 90);
+            AssertSlot(polyline.Sample(150), 100, 50, 90);
+            AssertSlot(polyline.Sample(160), 100, 60, 90);
+            AssertSlot(polyline.Sample(-10), -10, 0, 0);
+        }
+
+        [Test]
+        public void ClosedPolylineWrapsThroughTheClosingSegment()
+        {
+            var square = new PolylinePath(new[] { new Point2(0, 0), new Point2(10, 0), new Point2(10, 10),
+                new Point2(0, 10) }, closed: true);
+            Assert.That(square.Length, Is.EqualTo(40));
+            AssertSlot(square.Sample(35), 0, 5, -90);
+            AssertSlot(square.Sample(45), 5, 0, 0);
+            Assert.Throws<ArgumentException>(() => new PolylinePath(new[] { new Point2(1, 1), new Point2(1, 1) }));
+        }
+
         private static void AssertEdge(LinePath edge, double x0, double y0, double x1, double y1, double degrees)
         {
             Assert.That(edge.Sample(0).Position, Is.EqualTo(new Point2(x0, y0)));
