@@ -10,7 +10,7 @@
 - Visualタブ
   - Hierarchy: Nodeをボタンで選択する（選択中は青）。種類は記号で示す（■ Group、○ Circle、◻ Rectangle、▲ Polygon）。`▼` / `►` でGroupを開閉する。Drag & Dropで並べ替え・入れ子を変更する（端は前後、Groupの中央は子）。ドラッグ中はドロップできる行を暗い緑、今ドロップする行を明るい緑、ドラッグ中のNodeを灰色で示す。ShapeのDropdownと `+ Shape` / `+ Group` / `Delete`。
   - Preview: 出力RTを枠に収まるように表示する（Zoomなし）。`Play` / `Stop`、Beatスライダー、BPM、Seed。ModeはBeat（BPMクロック）だけ。各Valueを現在のBeatで評価して静止Hierarchyを描画し、Playでは最長ADSRの寿命（上限6拍）でループする。編集は0.3秒後に自動でCompileする。
-  - Inspector（幅490）: Name、Transform / Shape / Layout / StyleのFold（GroupはName/Transformのみ）。Parameterは表形式の1行「名前 | Base | Depth | Unit | Now | Bind」で、列見出しは各ブロックの先頭に1回。名前とBindプルダウンはValue接続中に緑。Depthは未接続なら灰色の「-」。Nowは接続中か画面基準の単位のときだけ、プレビューBeat時点の出力（px / deg）を出す。アイコンはRosettaUI既定のopen-in-new画像。
+  - Inspector（幅620）: Name、Transform / Shape / Layout / StyleのFold（GroupはName/Transformのみ）。Parameterは表形式の1行「名前 | Base | Rand | Depth | Unit | Now | Flip | Bind」（Rand/Flipは `Variation.md`）で、列見出しは各ブロックの先頭に1回。名前とBindプルダウンはValue接続中に緑。Depthは未接続なら灰色の「-」。Nowは接続中か画面基準の単位のときだけ、プレビューBeat時点の出力（px / deg）を出す。アイコンはRosettaUI既定のopen-in-new画像。
   - 単位: Position / Size / Spacing / Radius は `px / xW / xH / xMin / xMax`（画面基準は倍率。0.1 xW = 画面幅 × 0.1。保存値をそのまま表示・入力）、Rotation / Hue Shift は `deg / turn`、Scaleは `x`、Opacity / Color Mixは `0-1` 固定。単位を変えるとBaseとDepthを換算し、出力を変えない。保存形式は変更せず、`PresetUnits` が既存のReference / Multiplier / AbsoluteValueへ対応付ける（画面基準→Canvas系Reference、turn→Absolute×Multiplier 360、AbsoluteValueは常に1）。Reference / Multiplier / Absolute ValueはUIに出さない。
   - Bind列: `None` と全Valueのプルダウン（RosettaUI Dropdown）。Noneで解除、Valueを選ぶとDepthは種類ごとの既定値（Position 100、Rotation 90deg/0.25turn、Hue 360deg/1turnなど）で接続。別のValueへ切り替えたときはDepthを維持する。Value追加・削除・名前変更で選択肢を作り直す。Bind用の別ウインドウは廃止。
   - 必要な項目だけを出す: Fill ON時のみColor / Color Mix / Hue Shift、Color MixのBaseが0以外かValue接続中のみTo Color、Stroke ON時のみStroke Width / Stroke Color、LayoutはKindに応じた項目のみ。
@@ -216,9 +216,9 @@ DiameterはDepthがReferenceに対する割合になる。例: Ref=MinDimension�
 - Row: 左から右へ Spacing X 間隔。Column: 上から下へ Spacing Y 間隔。Grid: Columns列で左→右、上→下に折り返し、全体をブロックとして中央揃え。
 - Circle: Radiusの円周上に等間隔。最初の1個を Start Angle（度、+Xから反時計回り。既定90=真上）に置き、残りは時計回り。Face Outward をONにすると各個のローカル+Yが外向きになる。
 - Spacing X / Y、Radius は通常のParameter（Reference・Base・Bind可）。既定は MinDimension × 0.25（Spacing）/ 0.3（Radius）。ADSR/LFOをBindすれば間隔・半径をアニメーションできる。
-- ShapeのTransform: Position X/Y は並び全体の中心を動かす。Rotation / Scale は各個に、それぞれの位置を中心として適用する。Size・Opacity・Style・Bindingは全個共通。
+- ShapeのTransform: Position X/Y は並びをずらす（各複製に同じだけ足す）。Rotation / Scale は各個に、それぞれの位置を中心として適用する。複製ごとの差はDelay / Rand / Flipで付ける（`Variation.md`）。
 - データ: `PresetNode.Layout`（`PresetLayout`: Kind, Count, Columns, SpacingX, SpacingY, Radius, StartAngle, FaceOutward）。旧JSONはLayoutなし→Noneとして読める。SchemaVersionは2のまま。GroupにNone以外を設定すると検証エラー。1 Presetで描画するShapeの総数は20000まで。
-- Compile: Layout付きShapeを「Positionだけを持つscopeなしGroup」→「各スロットへ平行移動するscopeなしGroup × Count」→「Position 0の同じShapeDefinition（共有）」に展開する。スロット座標 k は `Reference × (k·Base + Σ k·Depth × signal)` としてParameterに畳み込む。各個は別の出現として評価されるので、将来Variationを付ければ個ごとの差が出せる（Preset EditorはVariation未使用）。
+- Compile: Layout付きShapeを「scopeなしGroup」→「各スロットへ平行移動するscopeなしGroup × Count」→「複製ごとにFlip/Delayを反映したShapeDefinition（Transform込み）」に展開する。スロット座標 k は `Reference × (k·Base + Σ k·Depth × signal)` としてParameterに畳み込む。
 - 検証: EditMode 218件成功（`PresetLayoutTests` 10件）。Preset Editor SceneのPlayで、1つのGroup内にCircle×12（Circle配置）とRectangle×5（Row）を描画できることを画像で確認（`Reports/PresetLayout-shapes.png`）。InspectorのLayout UIの実クリック操作は未確認。
 
 ## 追補: 色のBinding（2026-11-16）

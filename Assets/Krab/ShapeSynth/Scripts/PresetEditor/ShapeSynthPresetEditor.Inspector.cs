@@ -9,6 +9,7 @@ namespace Krab.ShapeSynth.PresetEditor
     public sealed partial class ShapeSynthPresetEditor
     {
         private static readonly string[] LayoutNames = Enum.GetNames(typeof(PresetLayoutKind));
+        private static readonly string[] DelayOrderNames = Enum.GetNames(typeof(PresetDelayOrder));
 
         private Element BuildInspectorPane()
         {
@@ -24,6 +25,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BuildInspector()
         {
             var node = Selected;
+            var copies = node.Kind == PresetNodeKind.Group ? null : node.Layout;
             var elements = new List<Element>
             {
                 UI.Field("Name", () => node.Name, value =>
@@ -34,11 +36,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Fold(
                     "Transform",
                     ParameterHeader(),
-                    ParameterRow("Position X", node.PositionX, PresetQuantity.Length),
-                    ParameterRow("Position Y", node.PositionY, PresetQuantity.Length),
-                    ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle),
-                    ParameterRow("Scale X", node.ScaleX, PresetQuantity.Scale),
-                    ParameterRow("Scale Y", node.ScaleY, PresetQuantity.Scale)).Open()
+                    ParameterRow("Position X", node.PositionX, PresetQuantity.Length, copies),
+                    ParameterRow("Position Y", node.PositionY, PresetQuantity.Length, copies),
+                    ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle, copies),
+                    ParameterRow("Scale X", node.ScaleX, PresetQuantity.Scale, copies),
+                    ParameterRow("Scale Y", node.ScaleY, PresetQuantity.Scale, copies)).Open()
             };
             if (node.Kind == PresetNodeKind.Group) return UI.Column(elements);
 
@@ -52,15 +54,15 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             yield return ParameterHeader();
             if (node.Kind == PresetNodeKind.Circle)
-                yield return ParameterRow("Diameter", node.Width, PresetQuantity.Length);
+                yield return ParameterRow("Diameter", node.Width, PresetQuantity.Length, node.Layout);
 
             if (node.Kind == PresetNodeKind.Rectangle)
             {
-                yield return ParameterRow("Width", node.Width, PresetQuantity.Length);
-                yield return ParameterRow("Height", node.Height, PresetQuantity.Length);
+                yield return ParameterRow("Width", node.Width, PresetQuantity.Length, node.Layout);
+                yield return ParameterRow("Height", node.Height, PresetQuantity.Length, node.Layout);
             }
 
-            yield return ParameterRow("Opacity", node.Opacity, PresetQuantity.Ratio);
+            yield return ParameterRow("Opacity", node.Opacity, PresetQuantity.Ratio, node.Layout);
         }
 
         /// <summary>None draws the Shape once; other kinds draw Count copies. Only the fields in use are shown.</summary>
@@ -92,6 +94,12 @@ namespace Krab.ShapeSynth.PresetEditor
                     }));
                 }
 
+                fields.Add(NumberField("Delay (beats)", () => layout.Delay, value => layout.Delay = Math.Max(0, value)));
+                fields.Add(Choice("Delay Order", () => (int)layout.DelayOrder, value =>
+                {
+                    layout.DelayOrder = (PresetDelayOrder)value;
+                    Changed();
+                }, DelayOrderNames));
                 if (kind != PresetLayoutKind.None) fields.Add(ParameterHeader());
                 if (kind == PresetLayoutKind.Row || kind == PresetLayoutKind.Grid)
                     fields.Add(ParameterRow("Spacing X", layout.SpacingX, PresetQuantity.Length));
@@ -128,13 +136,13 @@ namespace Krab.ShapeSynth.PresetEditor
                 () => (node.Red, node.Green, node.Blue, node.Alpha),
                 value => (node.Red, node.Green, node.Blue, node.Alpha) = value);
             yield return ParameterHeader();
-            yield return ParameterRow("Color Mix", node.ColorMix, PresetQuantity.Ratio);
+            yield return ParameterRow("Color Mix", node.ColorMix, PresetQuantity.Ratio, node.Layout);
             yield return UI.DynamicElementIf(
                 () => node.ColorMix.Base != 0 || node.ColorMix.GetBinding() != null,
                 () => ColorField("To Color",
                     () => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha),
                     value => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha) = value));
-            yield return ParameterRow("Hue Shift", node.HueShift, PresetQuantity.Angle);
+            yield return ParameterRow("Hue Shift", node.HueShift, PresetQuantity.Angle, node.Layout);
         }
 
         private Element Toggle(string label, Func<bool> read, Action<bool> write)

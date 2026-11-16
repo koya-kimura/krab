@@ -9,16 +9,19 @@ namespace Krab.ShapeSynth.Core.Evaluation
     /// <summary>Resolves binding slots once to existing instances. Never creates or clones modulators.</summary>
     public sealed class ParameterEvaluator
     {
-        private const string UnresolvedVariationMessage =
-            "Resolve Variation with a placement context before evaluating.";
+        private const string UnresolvedRandomMessage =
+            "Resolve random offsets with a placement context before evaluating.";
 
         private readonly IModulator[] _signals;
 
         public ParameterDefinition Definition { get; }
 
+        /// <summary>Longest Binding delay in beats; 0 when nothing is delayed.</summary>
+        public double MaxDelayBeats { get; }
+
         public ParameterEvaluator(ParameterDefinition definition, IReadOnlyList<IModulator> modulators,
-            VariationContext context, ulong parameterKey)
-            : this(VariationResolver.Resolve(definition, context, parameterKey), modulators)
+            RandomContext context, ulong parameterKey)
+            : this(RandomResolver.Resolve(definition, context, parameterKey), modulators)
         {
         }
 
@@ -26,22 +29,21 @@ namespace Krab.ShapeSynth.Core.Evaluation
         {
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             if (modulators == null) throw new ArgumentNullException(nameof(modulators));
-            if (definition.BaseVariation != null)
-                throw new ArgumentException(UnresolvedVariationMessage, nameof(definition));
-
-            foreach (var binding in definition.Bindings)
-            {
-                if (binding.DepthVariation != null)
-                    throw new ArgumentException(UnresolvedVariationMessage, nameof(definition));
-            }
+            if (definition.HasRandom) throw new ArgumentException(UnresolvedRandomMessage, nameof(definition));
 
             _signals = new IModulator[definition.Bindings.Count];
             for (var i = 0; i < _signals.Length; i++)
             {
-                var slot = definition.Bindings[i].ModulatorIndex;
+                var binding = definition.Bindings[i];
+                var slot = binding.ModulatorIndex;
                 if (slot >= modulators.Count || modulators[slot] == null)
                     throw new ArgumentException("A binding refers to a missing modulator slot: " + slot, nameof(modulators));
+                if (binding.DelayBeats > 0 && !(modulators[slot] is IDelayableModulator))
+                    throw new ArgumentException("A delayed binding needs a delayable signal in slot " + slot,
+                        nameof(modulators));
+
                 _signals[i] = modulators[slot];
+                MaxDelayBeats = Math.Max(MaxDelayBeats, binding.DelayBeats);
             }
         }
 
@@ -51,9 +53,12 @@ namespace Krab.ShapeSynth.Core.Evaluation
             var value = Definition.BaseValue;
             for (var i = 0; i < _signals.Length; i++)
             {
-                var signal = _signals[i].Evaluate(nowSeconds);
+                var binding = Definition.Bindings[i];
+                var signal = binding.DelayBeats > 0
+                    ? ((IDelayableModulator)_signals[i]).EvaluateDelayed(nowSeconds, binding.DelayBeats)
+                    : _signals[i].Evaluate(nowSeconds);
                 VoiceTime.RequireFinite(signal, "signal");
-                var contribution = Definition.Bindings[i].Depth * signal;
+                var contribution = binding.Depth * signal;
                 VoiceTime.RequireFinite(contribution, "contribution");
                 value += contribution;
                 VoiceTime.RequireFinite(value, "parameterSum");

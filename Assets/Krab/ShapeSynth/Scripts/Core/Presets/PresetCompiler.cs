@@ -109,6 +109,10 @@ namespace Krab.ShapeSynth.Core.Presets
             PresetLayout.RequireCount(node.Layout.Count);
             PresetLayout.RequireColumns(node.Layout.Columns);
             VoiceTime.RequireFinite(node.Layout.StartAngle, "Layout Start Angle");
+            VoiceTime.RequireFinite(node.Layout.Delay, "Layout Delay");
+            if (node.Layout.Delay < 0) throw new ArgumentOutOfRangeException("Layout Delay", "Delay cannot be negative.");
+            if (!Enum.IsDefined(typeof(PresetDelayOrder), node.Layout.DelayOrder))
+                throw new ArgumentException("Unknown Delay order.");
             foreach (var parameter in node.Parameters())
             {
                 if (parameter == null || parameter.Bindings == null)
@@ -118,6 +122,8 @@ namespace Krab.ShapeSynth.Core.Presets
 
                 new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue);
                 VoiceTime.RequireFinite(parameter.Base, "Parameter Base");
+                VoiceTime.RequireFinite(parameter.Random, "Parameter Random");
+                if (!Enum.IsDefined(typeof(PresetFlip), parameter.Flip)) throw new ArgumentException("Unknown Flip.");
                 foreach (var binding in parameter.Bindings)
                 {
                     if (binding == null || !modulators.Contains(binding.ValueId ?? ""))
@@ -167,18 +173,23 @@ namespace Krab.ShapeSynth.Core.Presets
 
         // A bound Value becomes one Binding per component, so the runtime sum equals Depth × Σ Weight × signal.
         // scale multiplies the whole result: Reference × (scale·Base + Σ scale·Depth × signal).
-        private static ParameterDefinition Parameter(PresetParameter model, ValueIndices indices, double scale = 1)
+        // copy adds a Shape copy's Flip sign and Delay; Random adds a ±spread to Base per occurrence.
+        private static ParameterDefinition Parameter(PresetParameter model, ValueIndices indices, double scale = 1,
+            CopyModifier copy = null)
         {
+            var sign = copy?.Sign(model) ?? 1;
             var bindings = model.Bindings.SelectMany(binding =>
             {
                 var (first, value) = indices[binding.ValueId];
                 return value.Components.Select((component, index) =>
-                    new BindingDefinition(first + index, scale * binding.Depth * component.Weight));
+                    new BindingDefinition(first + index, scale * sign * binding.Depth * component.Weight,
+                        delayBeats: copy?.DelayBeats ?? 0, delayRandom: copy?.DelayRandom));
             });
-            return new ParameterDefinition(
+            var parameter = new ParameterDefinition(
                 new ReferenceDefinition(model.Reference, model.Multiplier, model.AbsoluteValue),
                 scale * model.Base,
                 bindings.ToArray());
+            return model.Random == 0 ? parameter : parameter.WithBaseRandom(RandomRange.Spread(scale * model.Random));
         }
 
         private static RgbaColor Color(PresetNode node) =>
@@ -202,36 +213,43 @@ namespace Krab.ShapeSynth.Core.Presets
                     node.Children.Select(child => CompileNode(child, indices)).ToArray());
             }
 
-            if (node.Layout.Kind == PresetLayoutKind.None) return CompileShape(node, transform, indices);
+            var layout = node.Layout;
+            if (layout.Kind == PresetLayoutKind.None)
+                return CompileShape(node, indices, new CopyModifier(layout, 0, 1));
 
-            // Position moves the whole arrangement; Rotation/Scale apply to each copy around its own slot.
-            var copyTransform = new TransformDefinition(null, null, Parameter(node.Rotation, indices),
-                Parameter(node.ScaleX, indices), Parameter(node.ScaleY, indices));
-            var arrangement = new TransformDefinition(Parameter(node.PositionX, indices),
-                Parameter(node.PositionY, indices));
-            return new GroupDefinition(arrangement,
-                Arrange(node.Layout, CompileShape(node, copyTransform, indices), indices));
+            // Each copy is compiled with its own Flip sign and Delay, then translated to its Layout slot.
+            var copies = new INodeDefinition[layout.Count];
+            for (var i = 0; i < copies.Length; i++)
+            {
+                copies[i] = Slot(layout, i, copies.Length,
+                    CompileShape(node, indices, new CopyModifier(layout, i, copies.Length)), indices);
+            }
+
+            return new GroupDefinition(null, copies);
         }
 
-        private static INodeDefinition CompileShape(PresetNode node, TransformDefinition transform,
-            ValueIndices indices)
+        /// <summary>The Shape with its full Transform; copies apply it around their own slot.</summary>
+        private static INodeDefinition CompileShape(PresetNode node, ValueIndices indices, CopyModifier copy)
         {
-            var fill = new ColorDefinition(Color(node), ToColor(node), Parameter(node.ColorMix, indices),
-                Parameter(node.HueShift, indices));
-            return CompileGeometry(node, transform, indices).WithFillColor(fill);
+            ParameterDefinition P(PresetParameter model) => Parameter(model, indices, copy: copy);
+
+            var transform = new TransformDefinition(P(node.PositionX), P(node.PositionY), P(node.Rotation),
+                P(node.ScaleX), P(node.ScaleY));
+            var fill = new ColorDefinition(Color(node), ToColor(node), P(node.ColorMix), P(node.HueShift));
+            return CompileGeometry(node, transform, P).WithFillColor(fill);
         }
 
         private static ShapeDefinition CompileGeometry(PresetNode node, TransformDefinition transform,
-            ValueIndices indices)
+            Func<PresetParameter, ParameterDefinition> parameter)
         {
-            var opacity = Parameter(node.Opacity, indices);
+            var opacity = parameter(node.Opacity);
             switch (node.Kind)
             {
                 case PresetNodeKind.Circle:
-                    return ShapeDefinition.Circle(Parameter(node.Width, indices), transform, opacity, Color(node),
+                    return ShapeDefinition.Circle(parameter(node.Width), transform, opacity, Color(node),
                         Style(node));
                 case PresetNodeKind.Rectangle:
-                    return ShapeDefinition.Rectangle(Parameter(node.Width, indices), Parameter(node.Height, indices),
+                    return ShapeDefinition.Rectangle(parameter(node.Width), parameter(node.Height),
                         transform, opacity, Color(node), Style(node));
                 case PresetNodeKind.Polygon:
                     return ShapeDefinition.Polygon(
@@ -242,26 +260,40 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        /// <summary>
-        /// Count copies of one immutable Shape, each in a scope-less wrapper Group translated to its slot.
-        /// Copies share the Definition; each occurrence still evaluates independently.
-        /// </summary>
-        private static INodeDefinition[] Arrange(PresetLayout layout, INodeDefinition shape, ValueIndices indices)
+        /// <summary>A scope-less wrapper Group that translates one copy to its Layout slot.</summary>
+        private static INodeDefinition Slot(PresetLayout layout, int index, int count, INodeDefinition shape,
+            ValueIndices indices)
         {
-            var copies = new INodeDefinition[layout.Count];
-            for (var i = 0; i < copies.Length; i++)
+            var (x, y) = layout.Slot(index, count);
+            // Facing outward: the copy's local +Y points away from the center.
+            var rotation = layout.Kind == PresetLayoutKind.Circle && layout.FaceOutward
+                ? ParameterDefinition.Constant(layout.Angle(index, count) - 90)
+                : null;
+            var slot = new TransformDefinition(Parameter(layout.AxisX, indices, x),
+                Parameter(layout.AxisY, indices, y), rotation);
+            return new GroupDefinition(slot, shape);
+        }
+
+        /// <summary>A copy's Flip sign per Parameter and its Delay (fixed by order, or a random 0–Delay).</summary>
+        private sealed class CopyModifier
+        {
+            private readonly PresetLayout _layout;
+            private readonly int _index;
+
+            public CopyModifier(PresetLayout layout, int index, int count)
             {
-                var (x, y) = layout.Slot(i, copies.Length);
-                // Facing outward: the copy's local +Y points away from the center.
-                var rotation = layout.Kind == PresetLayoutKind.Circle && layout.FaceOutward
-                    ? ParameterDefinition.Constant(layout.Angle(i, copies.Length) - 90)
-                    : null;
-                var slot = new TransformDefinition(Parameter(layout.AxisX, indices, x),
-                    Parameter(layout.AxisY, indices, y), rotation);
-                copies[i] = new GroupDefinition(slot, shape);
+                _layout = layout;
+                _index = index;
+                DelayBeats = PresetCopyPattern.DelayBeats(layout, index, count);
+                if (layout.DelayOrder == PresetDelayOrder.Random && layout.Delay > 0)
+                    DelayRandom = new RandomRange(0, layout.Delay);
             }
 
-            return copies;
+            public double DelayBeats { get; }
+            public RandomRange DelayRandom { get; }
+
+            public double Sign(PresetParameter parameter) =>
+                PresetCopyPattern.FlipSign(parameter.Flip, _layout, _index);
         }
 
         private sealed class ValueIndices : Dictionary<string, (int First, PresetValue Value)>

@@ -9,15 +9,33 @@ namespace Krab.ShapeSynth.Core.Definitions
     {
         public ReferenceDefinition Reference { get; }
         public double BaseValue { get; }
-        public VariationDefinition BaseVariation { get; }
+
+        /// <summary>Added to BaseValue once per occurrence; null for none.</summary>
+        public RandomRange BaseRandom { get; }
+
         public IReadOnlyList<BindingDefinition> Bindings { get; }
 
-        private ParameterDefinition(ParameterDefinition source, VariationDefinition variation)
+        public bool HasRandom
+        {
+            get
+            {
+                if (BaseRandom != null) return true;
+
+                foreach (var binding in Bindings)
+                {
+                    if (binding.HasRandom) return true;
+                }
+
+                return false;
+            }
+        }
+
+        private ParameterDefinition(ParameterDefinition source, RandomRange baseRandom)
         {
             Reference = source.Reference;
             BaseValue = source.BaseValue;
             Bindings = source.Bindings; // The source already owns an immutable snapshot.
-            BaseVariation = variation ?? throw new ArgumentNullException(nameof(variation));
+            BaseRandom = baseRandom ?? throw new ArgumentNullException(nameof(baseRandom));
         }
 
         public ParameterDefinition(ReferenceDefinition reference, double baseValue,
@@ -41,7 +59,8 @@ namespace Krab.ShapeSynth.Core.Definitions
         public static ParameterDefinition Constant(double value) =>
             new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), value);
 
-        public ParameterDefinition WithBaseVariation(VariationDefinition variation) =>
-            new ParameterDefinition(this, variation);
+        /// <summary>Returns a copy whose Base gets a per-occurrence random offset; this one is unchanged.</summary>
+        public ParameterDefinition WithBaseRandom(RandomRange baseRandom) =>
+            new ParameterDefinition(this, baseRandom);
     }
 }

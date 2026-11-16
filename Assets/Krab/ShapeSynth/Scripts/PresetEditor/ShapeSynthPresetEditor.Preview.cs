@@ -26,7 +26,10 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public float Beat => _beat;
 
-        /// <summary>Longest ADSR lifetime, capped to the graph range, so one loop matches one trigger.</summary>
+        /// <summary>
+        /// Longest ADSR lifetime plus the longest copy Delay, capped to the graph range, so one loop matches
+        /// one trigger including its last delayed copy.
+        /// </summary>
         public float LoopBeats
         {
             get
@@ -37,7 +40,12 @@ namespace Krab.ShapeSynth.PresetEditor
                     .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
                     .DefaultIfEmpty(PresetSignalSampler.GraphBeats)
                     .Max();
-                return Mathf.Clamp((float)lifetime, 0.25f, PresetSignalSampler.GraphBeats);
+                var delay = Document.Nodes()
+                    .Where(node => node.Layout != null && node.Layout.Delay > 0)
+                    .Select(node => PresetCopyPattern.MaxDelayBeats(node.Layout))
+                    .DefaultIfEmpty(0)
+                    .Max();
+                return Mathf.Clamp((float)(lifetime + delay), 0.25f, PresetSignalSampler.GraphBeats);
             }
         }
 
@@ -50,7 +58,9 @@ namespace Krab.ShapeSynth.PresetEditor
             Guard(() =>
             {
                 var target = PresetCompiler.Compile(Document);
-                _previewSignals = PresetCompiler.Components(Document).Select(model => new PreviewSignal(model)).ToArray();
+                _previewSignals = PresetCompiler.Components(Document)
+                    .Select(model => new PreviewSignal(model, () => _beat))
+                    .ToArray();
                 UpdatePreviewSignals();
                 _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, _seed);
             });
@@ -155,12 +165,20 @@ namespace Krab.ShapeSynth.PresetEditor
             return PresetSignalSampler.SampleOrZero(FindValue(valueId), _beat);
         }
 
-        /// <summary>A still component signal whose value can change without recompiling the hierarchy.</summary>
-        private sealed class PreviewSignal : IModulator
+        /// <summary>
+        /// A still component signal whose value can change without recompiling the hierarchy.
+        /// Delayed Bindings sample the component at (Beat − delay) instead.
+        /// </summary>
+        private sealed class PreviewSignal : IDelayableModulator
         {
-            public PreviewSignal(PresetComponent model)
+            private readonly Func<float> _beat;
+            private readonly IModulator _source;
+
+            public PreviewSignal(PresetComponent model, Func<float> beat)
             {
                 Model = model;
+                _beat = beat;
+                PresetSignalSampler.TryCreate(model, out _source);
             }
 
             public PresetComponent Model { get; }
@@ -170,6 +188,12 @@ namespace Krab.ShapeSynth.PresetEditor
             public double Evaluate(double nowSeconds)
             {
                 return Value;
+            }
+
+            // The sampler's modulators run one beat per second, so beats are passed as seconds.
+            public double EvaluateDelayed(double nowSeconds, double delayBeats)
+            {
+                return _source?.Evaluate(_beat() - delayBeats) ?? 0;
             }
         }
     }

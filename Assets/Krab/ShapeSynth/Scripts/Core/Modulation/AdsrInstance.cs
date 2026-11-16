@@ -5,7 +5,7 @@ using Krab.ShapeSynth.Core.Runtime;
 namespace Krab.ShapeSynth.Core.Modulation
 {
     /// <summary>One trigger's state. Sampling is side-effect free; release events use absolute seconds.</summary>
-    public sealed class AdsrInstance : IModulator, ILifetime
+    public sealed class AdsrInstance : IDelayableModulator, ILifetime
     {
         private readonly bool _autoRelease;
         private double _externalReleaseBeat = double.PositiveInfinity;
@@ -45,6 +45,10 @@ namespace Krab.ShapeSynth.Core.Modulation
             if (Definition.Release == 0 || beat - releaseBeat >= Definition.Release) return 0;
             return BeforeRelease(releaseBeat) * (1 - (beat - releaseBeat) / Definition.Release);
         }
+
+        /// <summary>Reads the envelope delayBeats earlier, at the Voice's start BPM.</summary>
+        public double EvaluateDelayed(double nowSeconds, double delayBeats) =>
+            Evaluate(nowSeconds - delayBeats * 60.0 / Time.StartBpm);
 
         public bool IsFinished(double nowSeconds)
         {

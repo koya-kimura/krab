@@ -5,7 +5,7 @@ using Krab.ShapeSynth.Core.Runtime;
 namespace Krab.ShapeSynth.Core.Modulation
 {
     /// <summary>One trigger's LFO. Sampling has no side effects and uses the captured BPM.</summary>
-    public sealed class LfoInstance : IModulator
+    public sealed class LfoInstance : IDelayableModulator
     {
         public LfoDefinition Definition { get; }
         public VoiceTime Time { get; }
@@ -16,6 +16,9 @@ namespace Krab.ShapeSynth.Core.Modulation
             time.ElapsedBeats(time.StartSeconds); // Reject default(VoiceTime), as ADSR does.
             Time = time;
         }
+
+        public double EvaluateDelayed(double nowSeconds, double delayBeats) =>
+            Evaluate(nowSeconds - delayBeats * 60.0 / Time.StartBpm);
 
         public double Evaluate(double nowSeconds)
         {

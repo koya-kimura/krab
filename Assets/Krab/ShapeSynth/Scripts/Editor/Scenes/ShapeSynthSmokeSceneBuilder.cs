@@ -168,7 +168,6 @@ namespace Krab.ShapeSynth.Editor.Scenes
             rendererSettings.ApplyModifiedPropertiesWithoutUndo();
 
             VoiceSmokeSceneSetup.Configure(synth, camera);
-            VariationSmokeSceneSetup.Configure(synth, camera);
 
             // Resolving Single above also validates the copied reference's BPM/output cardinality.
             if (!bpm)

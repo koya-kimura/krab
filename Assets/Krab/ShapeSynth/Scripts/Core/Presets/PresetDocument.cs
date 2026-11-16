@@ -272,6 +272,10 @@ namespace Krab.ShapeSynth.Core.Presets
         public ReferenceSource Reference;
         public double Multiplier = 1, AbsoluteValue = 1, Base;
 
+        // ±Random is added to Base once per copy and trigger (Voice seed). Flip reverses Depth on some copies.
+        public double Random;
+        public PresetFlip Flip;
+
         // Kept as a list for the JSON schema; a Document allows at most one Binding per Parameter.
         public List<PresetBinding> Bindings = new();
 

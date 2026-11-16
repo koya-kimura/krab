@@ -14,6 +14,9 @@ namespace Krab.ShapeSynth.Core.Evaluation
 
         public GroupDefinition Definition { get; }
 
+        /// <summary>Longest Binding delay in beats across every occurrence; a Voice lives this much longer.</summary>
+        public double MaxDelayBeats { get; }
+
         public HierarchyEvaluator(GroupDefinition definition, IReadOnlyList<IModulator> modulators)
             : this(definition, modulators, null, 0)
         {
@@ -31,7 +34,8 @@ namespace Krab.ShapeSynth.Core.Evaluation
             if (modulators == null) throw new ArgumentNullException(nameof(modulators));
 
             _root = Compile(definition, modulators, new HashSet<INodeDefinition>(), resolveScope,
-                new VariationContext(voiceSeed));
+                new RandomContext(voiceSeed));
+            MaxDelayBeats = _root.MaxDelayBeats;
         }
 
         public IReadOnlyList<DrawItem> Evaluate(double nowSeconds, ReferenceContext context)
@@ -46,7 +50,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
         private static EvaluatedNode Compile(INodeDefinition definition, IReadOnlyList<IModulator> modulators,
             HashSet<INodeDefinition> activePath,
             Func<GroupDefinition, IReadOnlyList<IModulator>, IReadOnlyList<IModulator>> resolveScope,
-            VariationContext context)
+            RandomContext context)
         {
             if (definition == null) throw new ArgumentException("Null node.", nameof(definition));
             if (!activePath.Add(definition))
@@ -87,8 +91,10 @@ namespace Krab.ShapeSynth.Core.Evaluation
             private readonly ParameterEvaluator _hueShift;
             private readonly EvaluatedNode[] _children;
 
+            public double MaxDelayBeats { get; }
+
             public EvaluatedNode(INodeDefinition definition, IReadOnlyList<IModulator> modulators,
-                EvaluatedNode[] children, VariationContext context)
+                EvaluatedNode[] children, RandomContext context)
             {
                 var transform = definition.Transform;
                 _transform = new[]
@@ -100,6 +106,12 @@ namespace Krab.ShapeSynth.Core.Evaluation
                     new ParameterEvaluator(transform.ScaleY, modulators, context, 5)
                 };
                 _children = children;
+                MaxDelayBeats = MaxDelay(_transform);
+                foreach (var child in children)
+                {
+                    MaxDelayBeats = Math.Max(MaxDelayBeats, child.MaxDelayBeats);
+                }
+
                 _shape = definition as ShapeDefinition;
                 if (_shape == null) return;
 
@@ -109,6 +121,18 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 _opacity = new ParameterEvaluator(_shape.Opacity, modulators, context, 8);
                 _colorMix = new ParameterEvaluator(_shape.FillColor.Mix, modulators, context, 9);
                 _hueShift = new ParameterEvaluator(_shape.FillColor.HueShiftDegrees, modulators, context, 10);
+                MaxDelayBeats = Math.Max(MaxDelayBeats, MaxDelay(_width, _height, _opacity, _colorMix, _hueShift));
+            }
+
+            private static double MaxDelay(params ParameterEvaluator[] evaluators)
+            {
+                var max = 0.0;
+                foreach (var evaluator in evaluators)
+                {
+                    max = Math.Max(max, evaluator.MaxDelayBeats);
+                }
+
+                return max;
             }
 
             public void Append(double now, ReferenceContext context, Affine2D parent, List<DrawItem> output)

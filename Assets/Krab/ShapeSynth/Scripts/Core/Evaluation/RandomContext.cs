@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Krab.ShapeSynth.Core.Evaluation
 {
-    /// <summary>Immutable identity and nested local index used to resolve a variation.</summary>
-    public sealed class VariationContext
+    /// <summary>Voice seed and nested occurrence path; random offsets are hashed from both.</summary>
+    public sealed class RandomContext
     {
         private readonly int[] _path;
         private readonly IReadOnlyList<int> _readOnlyPath;
@@ -13,7 +13,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
         public int LocalIndex => _path.Length == 0 ? 0 : _path[_path.Length - 1];
         public IReadOnlyList<int> Path => _readOnlyPath;
 
-        public VariationContext(int voiceSeed = 0, params int[] path)
+        public RandomContext(int voiceSeed = 0, params int[] path)
         {
             VoiceSeed = voiceSeed;
             if (path == null) throw new ArgumentNullException(nameof(path));
@@ -28,7 +28,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
             _readOnlyPath = Array.AsReadOnly(_path);
         }
 
-        public VariationContext Child(int index)
+        public RandomContext Child(int index)
         {
             if (index < 0)
                 throw new ArgumentOutOfRangeException(nameof(index), "Path indices must be nonnegative.");
@@ -36,7 +36,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
             var childPath = new int[_path.Length + 1];
             Array.Copy(_path, childPath, _path.Length);
             childPath[_path.Length] = index;
-            return new VariationContext(VoiceSeed, childPath);
+            return new RandomContext(VoiceSeed, childPath);
         }
     }
 }

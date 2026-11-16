@@ -80,16 +80,9 @@ Inspectorの「Parameter / Binding comparison」でBase・ADSR Depth・LFO Depth
 
 Game View左上にVoice数・現在BPM・最後のTrigger BPMと操作キーを表示する。これはサンプルのOnGUIであり、SyphonのRTには描かない。従来のSpace/R/Lは従来デモだけに作用する。検証用のBPM変更は保存せず、確認後に元へ戻す。Voice Pooling・自動反復・Voice数制限は実装していない。詳しいAPIとscopeは `Assets/Krab/Docs/ShapeSynth/VoiceAndLifetime.md` を参照。
 
-## Phase 6のVariation
+## Phase 6のVariation（削除済み）
 
-`ShapeSynth/Variation` を追加。Play開始時にSeed1234で生成し、128拍で終了する。左端の列を上から確認する。青は共有Circleの左右交互配置（手動の2行）、ピンクはDepthの符号が反対のLFO回転、オレンジ6個はSeed付きRandom位置/直径、緑は親と子それぞれのLocalIndexを使うネスト。既存デモは維持する。
-
-- **N**：現在SeedでSpawn。同じRandom配置に重なる。
-- **M**：Seedを1増やしてSpawn。別配置が加わる。
-- **J**：現在SeedでRestart。Random配置を再現する。
-- **K**：Seedを1増やしてRestart。新しいRandom配置へ置換する。
-
-同じSeedでもLFOの位相は各Trigger時刻が基準。InspectorでSeedを変えても既存Voiceの係数は変わらず、次のTriggerから適用する。詳しくは `Assets/Krab/Docs/ShapeSynth/Variation.md`。
+旧 `ShapeSynth/Variation` は2026-11-17に削除した。後継のRandom / Delay / Flipは Preset Editor で確認する（`Assets/Krab/Docs/ShapeSynth/Variation.md`）。
 
 ## Phase 7：独立したPerformance Scene
 

@@ -62,17 +62,17 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             var positionX = new ParameterDefinition(
                 new ReferenceDefinition(ReferenceSource.CanvasWidth), 0,
-                new BindingDefinition(0, 1, VariationDefinition.Random(-0.04, 0.04, PositionXEnvelopeSalt)),
-                new BindingDefinition(1, 1, VariationDefinition.Random(-0.015, 0.015, PositionXOscillatorSalt)))
-                .WithBaseVariation(VariationDefinition.Random(-0.48, 0.48, PositionXBaseSalt));
+                new BindingDefinition(0, 0, new RandomRange(-0.04, 0.04, PositionXEnvelopeSalt)),
+                new BindingDefinition(1, 0, new RandomRange(-0.015, 0.015, PositionXOscillatorSalt)))
+                .WithBaseRandom(new RandomRange(-0.48, 0.48, PositionXBaseSalt));
             var positionY = new ParameterDefinition(
                 new ReferenceDefinition(ReferenceSource.CanvasHeight), 0,
-                new BindingDefinition(0, 1, VariationDefinition.Random(-0.04, 0.04, PositionYEnvelopeSalt)),
-                new BindingDefinition(1, 1, VariationDefinition.Random(-0.015, 0.015, PositionYOscillatorSalt)))
-                .WithBaseVariation(VariationDefinition.Random(-0.48, 0.48, PositionYBaseSalt));
+                new BindingDefinition(0, 0, new RandomRange(-0.04, 0.04, PositionYEnvelopeSalt)),
+                new BindingDefinition(1, 0, new RandomRange(-0.015, 0.015, PositionYOscillatorSalt)))
+                .WithBaseRandom(new RandomRange(-0.48, 0.48, PositionYBaseSalt));
             var diameter = new ParameterDefinition(
                 new ReferenceDefinition(ReferenceSource.MinDimension), 0)
-                .WithBaseVariation(VariationDefinition.Random(0.005, 0.02, DiameterSalt + (uint)channel));
+                .WithBaseRandom(new RandomRange(0.005, 0.02, DiameterSalt + (uint)channel));
             var opacity = new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), 0,
                 new BindingDefinition(0, 1));
 

@@ -81,9 +81,11 @@ namespace Krab.ShapeSynth.Core.Runtime
             VoiceTime.RequireFinite(nowSeconds, nameof(nowSeconds));
             if (_stopped) return true;
 
+            // Delayed Bindings read signals in the past, so lifetimes are judged that much later.
+            var delayedNow = nowSeconds - _evaluator.MaxDelayBeats * 60.0 / Time.StartBpm;
             foreach (var lifetime in Lifetimes)
             {
-                if (!lifetime.IsFinished(nowSeconds)) return false;
+                if (!lifetime.IsFinished(delayedNow)) return false;
             }
 
             return true;

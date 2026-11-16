@@ -4,7 +4,7 @@
 
 - [演奏サンプルとModulator UI](PerformanceAndModulators.md)：Phase 7のFX01、ID管理、編集と専用JSON保存。
 
-- [Variation](Variation.md)：Phase 6の配置Index、Seed付きRandom、Base/Depthの生成時解決。
+- [Random / Delay / Flip](Variation.md)：旧Phase 6 Variationを置き換え。Seed付きRandom（Base/Depth/Delayへ加算）、Bindingの遅れ、複製ごとのFlip。
 
 - [p5.Unite描画Adapter](RenderingAdapter.md)：Phase 4のAPI、Camera限定、座標と描画制約。
 - [Voiceと寿命](VoiceAndLifetime.md)：Phase 5のTrigger、Groupごとのsignal scope、Lifetimeと検証Scene。

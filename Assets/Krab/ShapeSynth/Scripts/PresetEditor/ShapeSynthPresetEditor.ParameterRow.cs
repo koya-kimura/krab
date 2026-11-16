@@ -8,7 +8,8 @@ using RosettaUI;
 namespace Krab.ShapeSynth.PresetEditor
 {
     /// <summary>
-    /// Parameters as table rows: Name | Base | Depth | Unit | Now | Bind.
+    /// Parameters as table rows: Name | Base | Rand | Depth | Unit | Now | Flip | Bind.
+    /// Rand is a ±random offset to Base per copy and trigger; Flip reverses the bound motion on some copies.
     /// Base and Depth are shown in the chosen unit; Now is the output at the preview Beat.
     /// </summary>
     public sealed partial class ShapeSynthPresetEditor
@@ -18,6 +19,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float UnitColumnWidth = 66;
         private const float NowColumnWidth = 74;
         private const float BindColumnWidth = 96;
+        private const float FlipColumnWidth = 76;
+
+        private static readonly string[] FlipNames = Enum.GetNames(typeof(PresetFlip));
 
         /// <summary>Column headings, shown once above a block of Parameter rows.</summary>
         private static Element ParameterHeader()
@@ -28,13 +32,17 @@ namespace Krab.ShapeSynth.PresetEditor
             return UI.Row(
                 UI.Space().SetWidth(NameColumnWidth),
                 Heading("Base", NumberColumnWidth),
+                Heading("Rand", NumberColumnWidth),
                 Heading("Depth", NumberColumnWidth),
                 Heading("Unit", UnitColumnWidth),
                 Heading("Now", NowColumnWidth),
+                Heading("Flip", FlipColumnWidth),
                 Heading("Bind", BindColumnWidth));
         }
 
-        private Element ParameterRow(string name, PresetParameter parameter, PresetQuantity quantity)
+        /// <param name="copies">The owning Shape's Layout; Flip is offered only while it has copies.</param>
+        private Element ParameterRow(string name, PresetParameter parameter, PresetQuantity quantity,
+            PresetLayout copies = null)
         {
             var label = UI.Label(name).SetWidth(NameColumnWidth);
             label.RegisterUpdateCallback(element =>
@@ -44,6 +52,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 label,
                 NumberCell(() => parameter.Base, value => parameter.Base = value)
                     .SetWidth(NumberColumnWidth),
+                NumberCell(() => parameter.Random, value => parameter.Random = Math.Abs(value))
+                    .SetWidth(NumberColumnWidth),
                 UI.DynamicElementOnStatusChanged(
                     () => parameter.GetBinding() != null,
                     bound => bound
@@ -51,6 +61,15 @@ namespace Krab.ShapeSynth.PresetEditor
                         : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource)),
                 UnitColumn(parameter, quantity).SetWidth(UnitColumnWidth),
                 UI.Label(() => NowText(parameter, quantity)).SetWidth(NowColumnWidth),
+                UI.DynamicElementOnStatusChanged(
+                    () => copies != null && copies.Kind != PresetLayoutKind.None && parameter.GetBinding() != null,
+                    flippable => flippable
+                        ? Choice(null, () => (int)parameter.Flip, value =>
+                        {
+                            parameter.Flip = (PresetFlip)value;
+                            Changed();
+                        }, FlipNames).SetWidth(FlipColumnWidth)
+                        : UI.Label("-").SetWidth(FlipColumnWidth).SetColor(PresetEditorPalette.DragSource)),
                 BindChoice(name, parameter));
         }
 

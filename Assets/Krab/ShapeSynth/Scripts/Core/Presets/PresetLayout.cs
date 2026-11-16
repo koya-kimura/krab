@@ -33,6 +33,10 @@ namespace Krab.ShapeSynth.Core.Presets
         public double StartAngle = 90;
         public bool FaceOutward;
 
+        // Staggers every copy's bound motion: copy delay = Delay (beats) × its order value; Random is 0–Delay.
+        public double Delay;
+        public PresetDelayOrder DelayOrder;
+
         /// <summary>How many Shapes this node draws.</summary>
         public int Copies => Kind == PresetLayoutKind.None ? 1 : Count;
 

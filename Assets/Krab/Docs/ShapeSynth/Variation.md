@@ -1,63 +1,44 @@
-# Phase 6：Index / Random Variation
+# Random / Delay / Flip（旧Phase 6 Variationを置き換え、2026-11-17）
 
-Variationは個体の係数を決める設定であり、時間信号ではない。共有Definitionを変更せず、HierarchyEvaluator構築時（VoiceではTrigger時）にBase/Depthを解決し、通常のParameterEvaluatorに渡す。評価式 `Reference × (Base + Σ Depth × Signal)` は変更しない。ADSR/LFO/Timerの設定・寿命・scopeには作用しない。
+Phase 6のVariation（`VariationDefinition` のAlternating/Randomによる **置き換え**、`WithBaseVariation`、Binding の `DepthVariation`）は廃止した。複製ごと・Triggerごとの差は、次の3つで表す。旧Variationの検証用 `ShapeSynth/Variation`（VariationSmokeTest）と `VariationTests` も削除した。
 
-## API
+| 機能 | どこで決まるか | 単位・範囲 |
+| --- | --- | --- |
+| Random（Base / Depth / Delay への加算） | 評価器の構築時（Voice生成時）に、Voice Seedと出現パスから1回だけ | 各値と同じ単位。毎フレームは変わらない |
+| Delay（Bindingの遅れ） | 固定値はCompile時、Random分は構築時 | 拍。0以上 |
+| Flip（Depthの符号反転） | Preset Compile時（複製の番号から） | +1 / −1 |
+
+## Core API
 
 ```csharp
-var baseValue = ParameterDefinition.Constant(0)
-    .WithBaseVariation(VariationDefinition.Alternating(-1, 1));
-var binding = new BindingDefinition(0, 0,
-    VariationDefinition.Random(-1, 1, salt: 2));
-var context = new VariationContext(voiceSeed: 1234).Child(2).Child(1);
-var resolved = VariationResolver.Resolve(parameter, context, parameterKey: 1);
-var voice = collection.Spawn(target, nowSeconds, bpm, voiceSeed: 1234);
-collection.Restart(target, nowSeconds, bpm, voiceSeed: 1234);
+var rotation = new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), 90)
+    .WithBaseRandom(RandomRange.Spread(45));             // 45〜135度（出現ごと・Seedごと）
+var binding = new BindingDefinition(slot, depth: 0,
+    depthRandom: new RandomRange(-0.04, 0.04, salt: 1), // Depthへ加算
+    delayBeats: 0.25,                                     // 0.25拍前の信号を読む
+    delayRandom: new RandomRange(0, 1));                  // さらに0〜1拍
+var value = SeededRandom.Range(0, 360, new RandomContext(seed, i), salt: 81); // 単発の決定的乱数
 ```
 
-- `VariationContext(int voiceSeed = 0, params int[] path)`：不変の配置パスとSeed。RootのPathは空、LocalIndexは0。それ以外はパスの最後のIndex。Childで新しいContextを作る。負Index/nullのpathを拒否し、呼出側の配列を保持しない。
-- `VariationDefinition.Alternating(even, odd)`：所有NodeのLocalIndexで選択。
-- `VariationDefinition.Random(min, max, salt = 0)`：有限範囲、min<=max。min=maxは定数。`Resolve(context, channel)` は同じ入力なら同じ値。
-- `ParameterDefinition.WithBaseVariation`：元のDefinitionを変更せず設定を付けた新しいDefinitionを返す。
-- `BindingDefinition(index, depth, depthVariation = null)`：参照slotは変更せずDepthだけ解決。
-- `VariationResolver.Resolve`：Variationは元の値への加算・乗算ではなく**置き換え**。未設定なら元の値。解決済みDefinitionにVariation設定は残さない。共有元の設定は変更しない。
-- `ParameterEvaluator(definition, modulators, context, parameterKey)`：単独Parameterの構築時解決。従来の2引数版へ未解決Variationを渡すと例外となり、黙って無視しない。
-- `HierarchyEvaluator(definition, modulators, voiceSeed)`：従来の外部signal配列でも利用可能。省略Seedは0。
-- VoiceInstance / VoiceCollection.Spawn / Restart / ShapeSynthController.Spawn / Restartに省略可能な `int voiceSeed = 0` を追加。VoiceInstance.VoiceSeedで取得できる。暗黙の乱数やSeedの自動採番はしない。
+- `RandomRange(min, max, salt)` / `RandomRange.Spread(±)`：有限・min<=max。**加算**。旧Variationの置き換えとは異なる（Fx01はBase/Depth=0に変更して同じ範囲を維持）。
+- `RandomContext(voiceSeed, path...)`：旧VariationContext（ファイル・GUIDを引き継いで改名）。
+- `SeededRandom.Range`：旧VariationDefinition.Randomと同じMix64ハッシュ。AdditionalPresetsは同じ値を再現する。
+- `RandomResolver.Resolve(definition, context, parameterKey)`：Random分を足した通常のDefinitionを返す。channel = `(parameterKey << 32) | component`（0=Base、i+1=Binding iのDepth）。**DelayのRandomは全Bindingで共通のchannel** を使い、1つの出現（1つの複製）は1つの遅れで動く。parameterKeyは 1=X 2=Y 3=Rotation 4=ScaleX 5=ScaleY 6=Width/Diameter 7=Height 8=Opacity 9=Color Mix 10=Hue Shift。
+- `ParameterEvaluator`：Random未解決のDefinitionは拒否。Delay>0のBindingは `IDelayableModulator.EvaluateDelayed(now, delayBeats)` を呼ぶ（ADSR/LFOが実装。Voice開始時のBPMで拍→秒）。Delayに対応しない信号は構築時に拒否。`MaxDelayBeats` を公開。
+- `HierarchyEvaluator.MaxDelayBeats`：全出現の最大Delay。`VoiceInstance.IsFinished` はLifetimeを `now − MaxDelay` で判定し、遅れた最後の複製が終わるまでVoiceを残す。
+- 遅れたADSRは開始前0、遅れたLFOは開始前は位相0の値を保つ。外部Releaseも同じだけ遅れて効く（残響のように後ろの複製が遅れて消える）。
 
-## 配置とscope
+## Preset Editor
 
-Indexは親Groupの子配列内の順番で、Shape/Groupを区別しない。ネストで数え直し、同じDefinitionを再利用しても各出現のパスを使う。GroupのTransformはそのGroup自身のLocalIndex、ShapeのGeometry/Transform/OpacityとBinding DepthはそのShape自身のLocalIndexを使う。
+- **Layout欄**：`Delay (beats)` と `Delay Order`。複製の遅れ = Delay × 順番の値。
+  - Index（0,1,2…）/ Reverse / CenterOut（中央からの距離）/ Column / Row / Random（各複製が0〜Delayのランダム。Trigger＝Seedごとに変わる）。
+  - Layout=Noneでも、Randomを選べばTriggerごとにランダムに遅れる。
+- **表のRand列**：Baseに加える±の幅（Baseと同じ単位）。複製ごと・Triggerごとに別の値。例：Rotation Base 0 / Rand 180 で、全方向を向く。
+- **表のFlip列**：Bind中かつLayoutに複製があるときだけ選べる。None / Alternate（番号の偶奇）/ Column / Row / Checker（市松）で、該当する複製のDepthを反転する。
+- 複製は1つずつ別のShapeDefinitionにCompileする（Flip/Delayが複製ごとに違うため）。ShapeのPositionも各複製のTransformに入れる（結果は従来の「並び全体を動かす」と同じで、Delay/Flip/Randも複製ごとに効く）。
+- Previewは、遅れたBindingだけ `Beat − Delay` の時点で信号を計算する。Loopの長さはADSRの長さ＋最大Delay（8拍まで）。
+- データ: `PresetParameter.Random` / `Flip`、`PresetLayout.Delay` / `DelayOrder`。既定値は0 / None / 0 / Indexで、既存Presetの見た目は変わらない。SchemaVersionは2のまま。
 
-信号は既存の最寄りscopeのModulatorIndexで解決する。係数が違ってもModulatorは複製しない。Voice間・明示scopeの別出現間の状態独立性はPhase 5のまま。Runtimeに解決したParameterだけが出現ごとの個体差を保持する。
+## 検証（2026-11-17）
 
-## Randomの決定性と範囲
-
-UnityEngine.Randomや順番に取り出すRandomは使用しない。固定64bit整数のMix64（明示的unchecked）へ、VoiceSeed、パス長と各Index、channel、salt、範囲両端のdoubleビット列を混合する。上位53bitを[0,1)の値にし、両端の重み付き和で範囲へ写す。max-minを作らないため、±double.MaxValueの範囲にも対応する。丸めで上端と等しくなる場合は許容する。結果は範囲内に制限し、min=maxはその値そのもの。
-
-HierarchyのparameterKeyは固定：1=X、2=Y、3=RotationDegrees、4=ScaleX、5=ScaleY、6=Width/Diameter、7=Rectangle Height、8=Opacity、9=Color Mix、10=Hue Shift（2026-11-16追加）。CircleのHeightはDiameterと同じ6。内部channelは `(parameterKey << 32) | component`、component0=Base、1+i=Binding iのDepth。単独ResolverのparameterKeyはuint範囲とする。
-
-既存位置より後へ子を追加しても既存パスの値は変化しない。他のParameterや別の配置を評価しても影響しない。子の挿入/削除/並べ替えやBinding順の変更でパス/channelが変わればRandom結果も変わる。異なるSeedは一般に異なる値だが、定数範囲・有限精度やhash衝突で必ず異なる保証はしない。これは暗号乱数ではない。
-
-## Scene
-
-`Assets/Krab/ShapeSynth/Samples/ShapeSynthSmokeTest.unity` の `ShapeSynth/Variation` にTargetCameraCanvas、ShapeSynthController、VariationSmokeTestを配置する。Main Camera/既存RT/Preview/Syphonを共用する。Play開始時にSeed1234、128拍TimerのVoiceを1つ生成。
-
-左端の列（上から）：
-
-1. 青Circleの左右交互配置。手動配置の2行は同じpair/Shape Definitionを再利用し、各行のLocalIndexは0/1。
-2. ピンクRectangle：同じLFOのBinding Depthを+60/-60にして逆回転。
-3. オレンジCircle：同じDefinitionを6回配置し、Position X/YとDiameterをRandomで決定。
-4. 緑のネストGroup：親GroupのIndex0/1で位置・回転を変え、子ShapeのIndexを各Group内0/1へリセットして位置・サイズを変える。
-
-N=現在SeedでSpawn、M=Seedを1増やしてSpawn、J=現在SeedでRestart、K=Seedを1増やしてRestart。同SeedのRandom配置は一致し、違うSeedでは配置が変わる。Indexの値はSeedに依存しない。動くデモのLFO位相は各Voiceの開始時刻が基準なので、異なるTrigger時刻では同じSeedでも動きの位相は異なる。
-
-InspectorのSeedは次のTriggerから適用する。生成済みVoiceの係数は変わらない。左上のOnGUIは操作補助で、RT/Syphonには描かない。図形のためのGameObjectや新しいRenderer/OutputManagerは追加しない。
-
-## 後続へ残すこと
-
-自動Layout、位置由来のVariation、ADSR/LFO DefinitionへのVariation、保存UI、任意合成グラフは未実装。Runtimeパスは永続IDではない。編集時に並べ替え前のRandom結果をどこまで維持するか、配置ID/Bindingの識別・参照リマップをどう保存するかは後続で決める。今回の固定channel/hashを変更すると再現される値も変わるため、保存形式導入時にバージョニングを検討する。
-
-## 検証結果（2026-11-11）
-
-Unityコンパイル成功。既存115件を含むEditMode134件すべて成功。実EditorのPlayで同Seed一致、異Seedで6図形のRandom結果変化、生存中の固定、3→1 VoiceのRestartを確認。16 DrawItemを既存RTへ送信し、Preview/Syphon参照一致を確認した。SceneはEditor経由で保存済み。最終描画の目視・実キー入力・外部Syphon受信はユーザー確認対象。実行記録は `Reports/Phase6Validation-2026-11-11.md`。
+EditMode 220件成功（Variation関連19件を削除、`RandomAndDelayTests` 9件を追加）。Smoke Sceneから `ShapeSynth/Variation` をEditor経由で削除して保存。Preset EditorでのDelay/Rand/Flipの見た目と操作はユーザー確認。

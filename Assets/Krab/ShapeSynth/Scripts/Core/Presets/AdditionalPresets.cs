@@ -31,7 +31,7 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             var slots = Slots(library, settings, false);
             var children = new INodeDefinition[5];
-            var offset = VariationDefinition.Random(0, Math.PI * 2, 80).Resolve(new VariationContext(seed));
+            var offset = SeededRandom.Range(0, Math.PI * 2, new RandomContext(seed), salt: 80);
             var triangle = new[]
             {
                 new Point2(1, 0),
@@ -43,7 +43,7 @@ namespace Krab.ShapeSynth.Core.Presets
                 var angle = offset + i * Math.PI * 2 / children.Length;
                 var x = Math.Cos(angle);
                 var y = Math.Sin(angle);
-                var rotation = VariationDefinition.Random(0, 360, 81).Resolve(new VariationContext(seed, i));
+                var rotation = SeededRandom.Range(0, 360, new RandomContext(seed, i), salt: 81);
                 var scale = Dimension(0.025, 0.015);
                 children[i] = ShapeDefinition.Polygon(triangle, new TransformDefinition(
                     Dimension(x * 0.14, x * 0.22), Dimension(y * 0.14, y * 0.22),
@@ -61,12 +61,12 @@ namespace Krab.ShapeSynth.Core.Presets
             var step = Math.PI * 2 / count;
             for (var i = 0; i < count; i++)
             {
-                var context = new VariationContext(seed, i);
+                var context = new RandomContext(seed, i);
                 var angle = -Math.PI / 2 + step * i
-                    + VariationDefinition.Random(-step * 0.25, step * 0.25, 82).Resolve(context);
+                    + SeededRandom.Range(-step * 0.25, step * 0.25, context, salt: 82);
                 var radius = (i & 1) == 0
-                    ? VariationDefinition.Random(82, 100, 83).Resolve(context)
-                    : VariationDefinition.Random(36, 48, 84).Resolve(context);
+                    ? SeededRandom.Range(82, 100, context, salt: 83)
+                    : SeededRandom.Range(36, 48, context, salt: 84);
                 vertices[i] = new Point2(Math.Cos(angle) * radius, Math.Sin(angle) * radius);
             }
 
@@ -90,7 +90,7 @@ namespace Krab.ShapeSynth.Core.Presets
                     var transform = new TransformDefinition(Dimension((col - 2) * 0.14), Dimension((2 - row) * 0.14));
                     children.Add(ShapeDefinition.Rectangle(Dimension(0.07, 0.03), Dimension(0.07, 0.03), transform,
                         Opacity(), Hex(0xB46600), new ShapeStyle(fill: false, stroke: true, strokeWidth: 3)));
-                    if (VariationDefinition.Random(0, 1, 85).Resolve(new VariationContext(seed, row, col)) < 0.35)
+                    if (SeededRandom.Range(0, 1, new RandomContext(seed, row, col), salt: 85) < 0.35)
                     {
                         children.Add(ShapeDefinition.Circle(Dimension(0.012, 0.025), transform, Opacity(),
                             Hex(0xC7190C)));
