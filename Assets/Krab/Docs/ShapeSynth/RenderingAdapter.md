@@ -12,7 +12,7 @@ Coreは階層・Parameter・行列合成を評価する。DrawItemはKind、ロ�
 
 - `UniteShapeAdapter.Draw(UCanvas canvas, IReadOnlyList<DrawItem> items, float width, float height, bool invertTargetY = false)`：リスト順で描画命令を発行する。毎フレーム呼び出す。
 - `CreateTargetMatrix(Affine2D transform, float width, float height, bool invertTargetY = false)`：中心への平行移動と出力Y反転を含む行列。親子合成済み行列を再分解せず適用する。
-- `TargetCameraCanvas.Initialize(Camera camera)`：ScreenOverlay/Indirectのコンテキストを作成する。指定CameraのSRP beginCameraRenderingだけでDrawする。OnDisableで購読解除と保留命令の破棄、OnDestroyでコンテキストを解放する。
+- `TargetCameraCanvas.Initialize(Camera camera)`：`CreateCanvas(ScreenOverlay, targetCamera: camera)` でコンテキストを作成し、Scene Viewへの描画切り替えを無効にする。ライフサイクルはUCanvas本体に任せる。
 
 Coreの原点はCanvas中央、X右/Y上、角度は度。Adapterはラジアンへの変換やTRS再分解を行わない。非等方Scale、反転、親子合成で生じるshearを行列のまま維持する。Circle/Rectangleは中心基準、Polygonの頂点は呼出側が指定したローカル原点からの座標で、自動的にbounds中央へ寄せない。
 
@@ -26,7 +26,7 @@ Push/Popをtry/finallyで対にし、外部の描画スタイルと行列を復�
 
 ## Cameraの限定と依存条件
 
-導入済みp5.Unite 0.1.0（81559d3daad3）の通常UCanvasはSRPの全Cameraへ送信する。TargetCameraCanvasはUCanvasのprivate Unityライフサイクルメッセージを派生クラスで置き換え、公開DrawingContext APIによってcaptureと対象Cameraへの送信を行う。PackageCacheの編集・reflectionによる内部アクセスは行わない。パッケージ更新時はこのライフサイクルと複数Camera検証を再実行する。Text等のoptional package向け内部FrameCapturingイベントは発行しないため、このクラスは図形描画専用とする。
+2026-11-17にp5.Unite 0.2.1（tag `0.2.1`、PackageCache `net.sbm.unite@9304386ff376`）へ更新した。0.2.0以降のUCanvasは `SetCamera` / `CreateCanvas(targetCamera)` で1つのCameraだけに描画する。TargetCameraCanvasはこの公開APIを使う薄い派生クラスに変更し、UCanvasのライフサイクル（Text拡張の `FrameCapturing` を含む）をそのまま使う。0.2系のUCanvasはEditorでScene Viewにフォーカスすると描画先をScene View Cameraへ切り替えるため、出力RTが変わらないようシリアライズ専用の `_drawInSceneView` を `JsonUtility.FromJsonOverwrite` でfalseにする。reflectionやPackageCacheの編集は行わない。パッケージ更新時はこのフィールド名と複数Camera検証を再確認する。
 
 OutputTextureProviderがRT生成・再生成・解放を所有する。PreviewとSyphonは従来のTextureChanged経由で同じTextureを参照する。新しい出力Managerは作らない。Syphon受信側で映像が届くことの確認は別途必要。
 
