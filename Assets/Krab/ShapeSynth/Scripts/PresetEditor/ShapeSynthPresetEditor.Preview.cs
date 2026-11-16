@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Modulation;
@@ -14,6 +15,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private const double PreviewDelaySeconds = 0.3;
 
         private PreviewSignal[] _previewSignals = Array.Empty<PreviewSignal>();
+        private Dictionary<PresetComponent, PreviewSignal> _signalByComponent = new();
+        private float _loopBeats = PresetSignalSampler.GraphBeats;
         private bool _refreshPreview;
         private double _previewDue;
         private bool _playing;
@@ -26,33 +29,34 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public float Beat => _beat;
 
+        /// <summary>One loop of playback; recomputed on each compile (every edit queues one), not per frame.</summary>
+        public float LoopBeats => _loopBeats;
+
         /// <summary>
         /// Longest ADSR lifetime plus the longest copy Delay, capped to the graph range, so one loop matches
         /// one trigger including its last delayed copy.
         /// </summary>
-        public float LoopBeats
+        private float ComputeLoopBeats()
         {
-            get
-            {
-                var lifetime = PresetCompiler.Components(Document)
-                    .Where(model => model.Kind == ModulatorKind.Adsr)
-                    .Select(model => model.Attack + model.Decay + model.SustainTime + model.Release)
-                    .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
-                    .DefaultIfEmpty(PresetSignalSampler.GraphBeats)
-                    .Max();
-                var delay = Document.Nodes()
-                    .Where(node => node.Layout != null && node.Layout.Delay > 0)
-                    .Select(node => PresetCopyPattern.MaxDelayBeats(node.Layout))
-                    .DefaultIfEmpty(0)
-                    .Max();
-                return Mathf.Clamp((float)(lifetime + delay), 0.25f, PresetSignalSampler.GraphBeats);
-            }
+            var lifetime = PresetCompiler.Components(Document)
+                .Where(model => model.Kind == ModulatorKind.Adsr)
+                .Select(model => model.Attack + model.Decay + model.SustainTime + model.Release)
+                .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
+                .DefaultIfEmpty(PresetSignalSampler.GraphBeats)
+                .Max();
+            var delay = Document.Nodes()
+                .Where(node => node.Layout != null && node.Layout.Delay > 0)
+                .Select(node => PresetCopyPattern.MaxDelayBeats(node.Layout))
+                .DefaultIfEmpty(0)
+                .Max();
+            return Mathf.Clamp((float)(lifetime + delay), 0.25f, PresetSignalSampler.GraphBeats);
         }
 
         /// <summary>Compiles the document and shows it with every Value sampled at the current Beat.</summary>
         public void Preview()
         {
             _refreshPreview = false;
+            _loopBeats = ComputeLoopBeats();
             if (!_controller) return;
 
             Guard(() =>
@@ -61,6 +65,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 _previewSignals = PresetCompiler.Components(Document)
                     .Select(model => new PreviewSignal(model, () => _beat))
                     .ToArray();
+                _signalByComponent = _previewSignals.ToDictionary(signal => signal.Model);
                 UpdatePreviewSignals();
                 _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, _seed);
             });
@@ -155,14 +160,26 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             foreach (var signal in _previewSignals)
             {
-                signal.Value = PresetSignalSampler.SampleOrZero(signal.Model, _beat);
+                signal.Value = signal.Sample(_beat);
             }
         }
 
         /// <summary>The current value of a Value at the preview Beat.</summary>
+        /// <summary>Σ Weight × the compiled preview signals; samples afresh only for components added since.</summary>
         private double SignalAtBeat(string valueId)
         {
-            return PresetSignalSampler.SampleOrZero(FindValue(valueId), _beat);
+            var value = FindValue(valueId);
+            if (value == null) return 0;
+
+            var sum = 0.0;
+            foreach (var component in value.Components)
+            {
+                sum += component.Weight * (_signalByComponent.TryGetValue(component, out var signal)
+                    ? signal.Value
+                    : PresetSignalSampler.SampleOrZero(component, _beat));
+            }
+
+            return sum;
         }
 
         /// <summary>
@@ -190,11 +207,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 return Value;
             }
 
+            /// <summary>The component at a beat, from the modulator built once at compile (0 if it was invalid).</summary>
             // The sampler's modulators run one beat per second, so beats are passed as seconds.
-            public double EvaluateDelayed(double nowSeconds, double delayBeats)
-            {
-                return _source?.Evaluate(_beat() - delayBeats) ?? 0;
-            }
+            public double Sample(double beat) => _source?.Evaluate(beat) ?? 0;
+
+            public double EvaluateDelayed(double nowSeconds, double delayBeats) => Sample(_beat() - delayBeats);
         }
     }
 }
