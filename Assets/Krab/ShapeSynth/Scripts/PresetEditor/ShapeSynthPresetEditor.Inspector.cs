@@ -95,11 +95,13 @@ namespace Krab.ShapeSynth.PresetEditor
                 }
 
                 fields.Add(NumberField("Delay (beats)", () => layout.Delay, value => layout.Delay = Math.Max(0, value)));
-                fields.Add(Choice("Delay Order", () => (int)layout.DelayOrder, value =>
-                {
-                    layout.DelayOrder = (PresetDelayOrder)value;
-                    Changed();
-                }, DelayOrderNames));
+                // The order only matters once there is a delay to stagger.
+                fields.Add(UI.DynamicElementIf(() => layout.Delay > 0, () => Choice("Delay Order",
+                    () => (int)layout.DelayOrder, value =>
+                    {
+                        layout.DelayOrder = (PresetDelayOrder)value;
+                        Changed();
+                    }, DelayOrderNames)));
                 if (kind != PresetLayoutKind.None) fields.Add(ParameterHeader());
                 if (kind == PresetLayoutKind.Row || kind == PresetLayoutKind.Grid)
                     fields.Add(ParameterRow("Spacing X", layout.SpacingX, PresetQuantity.Length));
