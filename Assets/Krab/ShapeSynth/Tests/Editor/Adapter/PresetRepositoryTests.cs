@@ -30,6 +30,24 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         }
 
         [Test]
+        public void LayoutRoundTripKeepsOneSpacingBindingAndWritesNoDerivedValues()
+        {
+            var repository = new PresetRepository(_directory);
+            var document = PresetDocument.CreateNew();
+            var shape = document.RootGroup.Children[0];
+            shape.Layout.Kind = PresetLayoutKind.Grid;
+            shape.Layout.SpacingX.Bind(document.Values[0].Id, 0.25);
+
+            repository.Save(document);
+            var json = File.ReadAllText(Path.Combine(_directory, document.Id + ".json"));
+            var loaded = repository.Load(document.Id).RootGroup.Children[0].Layout;
+
+            Assert.That(json, Does.Not.Contain("AxisX").And.Not.Contain("\"Copies\""));
+            Assert.That(loaded.SpacingX.Bindings, Has.Count.EqualTo(1));
+            Assert.That(loaded.SpacingY.Bindings, Is.Empty);
+        }
+
+        [Test]
         public void SaveLoadRoundTripPreservesNestedNodesBindingsAndModulatorSettings()
         {
             var repository = new PresetRepository(_directory);

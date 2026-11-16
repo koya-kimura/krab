@@ -98,7 +98,7 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             if (layout.DelayOrder == PresetDelayOrder.Random) return layout.Delay;
 
-            var count = layout.Copies;
+            var count = layout.GetCopyCount();
             var max = 0.0;
             for (var i = 0; i < count; i++)
             {

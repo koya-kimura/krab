@@ -83,7 +83,7 @@ namespace Krab.ShapeSynth.Core.Presets
                 throw new ArgumentException("Root Group is required.");
 
             ValidateNode(document.RootGroup, ids, new HashSet<string>(StringComparer.Ordinal), 0);
-            if (document.Nodes().Sum(node => (long)node.Layout.Copies) > PresetLayout.MaxTotalCopies)
+            if (document.Nodes().Sum(node => (long)node.Layout.GetCopyCount()) > PresetLayout.MaxTotalCopies)
                 throw new ArgumentException($"A preset can draw at most {PresetLayout.MaxTotalCopies} Shapes.");
         }
 
@@ -274,8 +274,8 @@ namespace Krab.ShapeSynth.Core.Presets
             var rotation = layout.Kind == PresetLayoutKind.Circle && layout.FaceOutward
                 ? ParameterDefinition.Constant(layout.Angle(index, count) - 90)
                 : null;
-            var slot = new TransformDefinition(Parameter(layout.AxisX, indices, x),
-                Parameter(layout.AxisY, indices, y), rotation);
+            var slot = new TransformDefinition(Parameter(layout.GetAxisX(), indices, x),
+                Parameter(layout.GetAxisY(), indices, y), rotation);
             return new GroupDefinition(slot, shape);
         }
 

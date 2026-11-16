@@ -37,13 +37,16 @@ namespace Krab.ShapeSynth.Core.Presets
         public double Delay;
         public PresetDelayOrder DelayOrder;
 
+        // Derived values are methods, not properties: JSON serializers write public properties, and reading a
+        // property that returns SpacingX back would append its Bindings onto SpacingX.
+
         /// <summary>How many Shapes this node draws.</summary>
-        public int Copies => Kind == PresetLayoutKind.None ? 1 : Count;
+        public int GetCopyCount() => Kind == PresetLayoutKind.None ? 1 : Count;
 
         /// <summary>Parameters the Slot units multiply on each axis.</summary>
-        public PresetParameter AxisX => Kind == PresetLayoutKind.Circle ? Radius : SpacingX;
+        public PresetParameter GetAxisX() => Kind == PresetLayoutKind.Circle ? Radius : SpacingX;
 
-        public PresetParameter AxisY => Kind == PresetLayoutKind.Circle ? Radius : SpacingY;
+        public PresetParameter GetAxisY() => Kind == PresetLayoutKind.Circle ? Radius : SpacingY;
 
         /// <summary>Circle angle of a copy in degrees; copies are spread evenly over 360°.</summary>
         public double Angle(int index, int count) => StartAngle - index * 360.0 / count;
