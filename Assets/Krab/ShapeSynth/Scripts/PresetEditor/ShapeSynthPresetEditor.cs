@@ -96,7 +96,10 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             Guard(() =>
             {
-                Document = Repository.Load(id);
+                var document = Repository.Load(id);
+                // Older files may carry Multiplier / Absolute Value; fold them so the table shows real numbers.
+                PresetUnits.Normalize(document);
+                Document = document;
                 ResetDocumentView();
                 _dirty = false;
             });

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 
@@ -148,8 +149,41 @@ namespace Krab.ShapeSynth.Core.Presets
             var after = Reference(parameter).Evaluate(context);
             if (after == 0) return;
 
-            var factor = before / after;
+            Scale(parameter, before / after);
+        }
+
+        /// <summary>
+        /// Folds legacy factors into Base, Rand and Depth so the shown numbers are the real ones:
+        /// Absolute Value always, and Multiplier unless it is the Turn marker (360 on Absolute).
+        /// The evaluated output is unchanged.
+        /// </summary>
+        public static void Normalize(PresetParameter parameter)
+        {
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+
+            var turn = parameter.Reference == ReferenceSource.Absolute && parameter.Multiplier == DegreesPerTurn;
+            var factor = parameter.Reference == ReferenceSource.Absolute ? parameter.AbsoluteValue : 1;
+            if (!turn) factor *= parameter.Multiplier;
+
+            parameter.AbsoluteValue = 1;
+            if (!turn) parameter.Multiplier = 1;
+            if (factor != 1) Scale(parameter, factor);
+        }
+
+        public static void Normalize(PresetDocument document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            foreach (var parameter in document.Nodes().SelectMany(node => node.Parameters()))
+            {
+                Normalize(parameter);
+            }
+        }
+
+        private static void Scale(PresetParameter parameter, double factor)
+        {
             parameter.Base *= factor;
+            parameter.Random = Math.Abs(parameter.Random * factor);
             foreach (var binding in parameter.Bindings)
             {
                 binding.Depth *= factor;

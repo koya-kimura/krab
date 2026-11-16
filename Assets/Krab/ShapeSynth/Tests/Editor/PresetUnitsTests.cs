@@ -75,6 +75,49 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
+        public void NormalizeFoldsLegacyFactorsWithoutChangingOutput()
+        {
+            var absolute = new PresetParameter { AbsoluteValue = 100, Multiplier = 2, Base = 1, Random = 0.5 };
+            absolute.Bind("value", -0.25);
+            var before = Output(absolute, 1);
+
+            PresetUnits.Normalize(absolute);
+
+            Assert.That(absolute.AbsoluteValue, Is.EqualTo(1));
+            Assert.That(absolute.Multiplier, Is.EqualTo(1));
+            Assert.That(absolute.Base, Is.EqualTo(200));
+            Assert.That(absolute.Random, Is.EqualTo(100));
+            Assert.That(absolute.GetBinding().Depth, Is.EqualTo(-50));
+            Assert.That(Output(absolute, 1), Is.EqualTo(before).Within(1e-9));
+
+            var screen = new PresetParameter
+                { Reference = ReferenceSource.CanvasWidth, Multiplier = 0.5, AbsoluteValue = 7, Base = 0.2 };
+            PresetUnits.Normalize(screen);
+
+            Assert.That((screen.Multiplier, screen.AbsoluteValue), Is.EqualTo((1.0, 1.0)));
+            Assert.That(screen.Base, Is.EqualTo(0.1).Within(1e-12));
+        }
+
+        [Test]
+        public void NormalizeKeepsTheTurnMarker()
+        {
+            var turn = new PresetParameter { Multiplier = PresetUnits.DegreesPerTurn, AbsoluteValue = 2, Base = 0.25 };
+
+            PresetUnits.Normalize(turn);
+
+            Assert.That(PresetUnits.UnitOf(turn, PresetQuantity.Angle), Is.EqualTo(PresetUnit.Turn));
+            Assert.That(turn.AbsoluteValue, Is.EqualTo(1));
+            Assert.That(turn.Base, Is.EqualTo(0.5));
+        }
+
+        private static double Output(PresetParameter parameter, double signal)
+        {
+            var size = new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue)
+                .Evaluate(Canvas);
+            return size * (parameter.Base + parameter.GetBinding().Depth * signal);
+        }
+
+        [Test]
         public void SetUnitRejectsUnitOfAnotherQuantity()
         {
             var parameter = new PresetParameter();

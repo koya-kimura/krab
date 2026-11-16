@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 
@@ -44,20 +46,37 @@ namespace Krab.ShapeSynth.PresetEditor
             var current = parameter.GetBinding();
             if (current?.ValueId == value.Id) return;
 
-            parameter.Bind(value.Id, current?.Depth ?? DefaultDepth(name, parameter));
+            parameter.Bind(value.Id, current?.Depth ?? DefaultDepth(name, parameter, OutputContext()));
             Changed();
         }
 
-        /// <summary>A visible first Depth in stored units: Turn counts in turns, other angles in degrees.</summary>
-        private static double DefaultDepth(string name, PresetParameter parameter)
+        /// <summary>
+        /// A visible first Depth. Position, Rotation and Hue aim at a fixed output (100px, 90deg, 360deg)
+        /// converted into the Parameter's unit, so screen units and turns do not overshoot.
+        /// </summary>
+        private static double DefaultDepth(string name, PresetParameter parameter, ReferenceContext context)
         {
-            var turn = PresetUnits.UnitOf(parameter, PresetQuantity.Angle) == PresetUnit.Turn;
             if (name == "Opacity") return 1;
-            if (name.StartsWith("Position")) return 100;
-            if (name == "Rotation") return turn ? 0.25 : 90;
-            if (name == "Hue Shift") return turn ? 1 : 360;
+            if (name.StartsWith("Position")) return InUnit(parameter, 100, context);
+            if (name == "Rotation") return InUnit(parameter, 90, context);
+            if (name == "Hue Shift") return InUnit(parameter, 360, context);
 
             return parameter.Base == 0 ? 1 : parameter.Base;
+        }
+
+        /// <summary>The stored value whose output is the given pixels/degrees; the output itself if invalid.</summary>
+        private static double InUnit(PresetParameter parameter, double output, ReferenceContext context)
+        {
+            try
+            {
+                var size = new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue)
+                    .Evaluate(context);
+                return size == 0 ? output : output / size;
+            }
+            catch (ArgumentException)
+            {
+                return output;
+            }
         }
     }
 }
