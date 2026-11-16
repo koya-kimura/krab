@@ -26,7 +26,7 @@ namespace Krab.TypeLayout.Samples
         [SerializeField] private bool _showGuides;
 
         private TypeLayoutCanvas _canvas;
-        private TypeLayoutSketch _sketch;
+        private TypeLayoutDrawer _drawer;
 
         private void Start()
         {
@@ -41,13 +41,13 @@ namespace Krab.TypeLayout.Samples
 
             _canvas = GetComponent<TypeLayoutCanvas>();
             _canvas.Initialize(_outputCamera);
-            _sketch = new TypeLayoutSketch(_canvas, font.Face);
+            _drawer = new TypeLayoutDrawer(_canvas, font.Face);
         }
 
         private void Update()
         {
             ReadKeys();
-            _sketch.ShowGuides = _showGuides;
+            _drawer.ShowGuides = _showGuides;
 
             var frame = new LayoutFrame(_outputCamera.pixelWidth, _outputCamera.pixelHeight);
             if (_showGuides) UniteGuideRenderer.DrawRect(_canvas, frame.SafeArea(Margin), SafeAreaColor);
@@ -102,7 +102,7 @@ namespace Krab.TypeLayout.Samples
             var slots = GridDistributor.Distribute(area, columns, rows);
             var placement = new PlacementOptions(frame.ToPixels(110), HorizontalAnchor.InkCenter,
                 VerticalAnchor.CapCenter, RotationMode.Upright);
-            _sketch.DrawSlots(slots, "MiddleModeloridle", placement, Color.white);
+            _drawer.DrawSequence(slots, "MiddleModeloridle", 0, placement, Color.white);
         }
 
         // Text running around the safe area plus straight runs inside it.
@@ -112,17 +112,17 @@ namespace Krab.TypeLayout.Samples
             var size = frame.ToPixels(52);
             var hanging = new PlacementOptions(size, vertical: VerticalAnchor.CapTop);
             var perimeter = new RectPerimeterPath(safe, cornerGap: size);
-            _sketch.DrawFlow(perimeter, "Gigandect",
+            _drawer.DrawFlow(perimeter, "Gigandect",
                 new FlowOptions(frame.ToPixels(12), FlowAlignment.Justify, FlowFill.WholeText), hanging, Color.white);
 
             var inner = safe.Inset(frame.ToPixels(160));
             var column = new LinePath(new Point2(inner.Left + inner.Width * 0.75, inner.Top),
                 new Point2(inner.Left + inner.Width * 0.75, inner.Bottom));
-            _sketch.DrawFlow(column, "Gigandect", new FlowOptions(frame.ToPixels(12), fill: FlowFill.Glyphs),
+            _drawer.DrawFlow(column, "Gigandect", new FlowOptions(frame.ToPixels(12), fill: FlowFill.Glyphs),
                 new PlacementOptions(size), Color.white);
 
             var row = LinePath.AlongEdge(inner, RectEdge.Top);
-            _sketch.DrawFlow(row, "ectGigande", new FlowOptions(alignment: FlowAlignment.Justify, inkFlush: true),
+            _drawer.DrawFlow(row, "ectGigande", new FlowOptions(alignment: FlowAlignment.Justify, inkFlush: true),
                 new PlacementOptions(size, vertical: VerticalAnchor.Baseline), Color.white);
         }
 
@@ -132,15 +132,15 @@ namespace Krab.TypeLayout.Samples
             var center = frame.Bounds.Center;
             var size = frame.ToPixels(48);
             var ring = new FlowOptions(frame.ToPixels(8), FlowAlignment.Justify, FlowFill.WholeText);
-            _sketch.DrawFlow(ArcPath.Circle(center, frame.ToPixels(440)), "Middle Model ", ring,
+            _drawer.DrawFlow(ArcPath.Circle(center, frame.ToPixels(440)), "Middle Model ", ring,
                 new PlacementOptions(size), Color.white);
-            _sketch.DrawFlow(ArcPath.Circle(center, frame.ToPixels(350), clockwise: false), "Gigandect ", ring,
+            _drawer.DrawFlow(ArcPath.Circle(center, frame.ToPixels(350), clockwise: false), "Gigandect ", ring,
                 new PlacementOptions(size), Color.white);
 
             var clock = ArcPath.Circle(center, frame.ToPixels(230));
-            _sketch.DrawPathGuide(clock);
+            _drawer.DrawPathGuide(clock);
             var slots = SlotDistributor.Distribute(clock, ClockLabels.Length, SlotSpacing.Ends);
-            _sketch.DrawSlots(slots, ClockLabels, new PlacementOptions(size, HorizontalAnchor.InkCenter,
+            _drawer.DrawTexts(slots, ClockLabels, new PlacementOptions(size, HorizontalAnchor.InkCenter,
                 VerticalAnchor.InkCenter, RotationMode.Upright), Color.white);
         }
 
@@ -154,30 +154,30 @@ namespace Krab.TypeLayout.Samples
             var hang = new PlacementOptions(size, vertical: VerticalAnchor.CapTop);
             var rest = new PlacementOptions(size, vertical: VerticalAnchor.Baseline);
 
-            _sketch.DrawFlow(top, "TOP LEFT", new FlowOptions(inkFlush: true), hang, Color.white);
-            _sketch.DrawFlow(top, "TOP CENTER", new FlowOptions(alignment: FlowAlignment.Center), hang, Color.white);
-            _sketch.DrawFlow(top, "TOP RIGHT", new FlowOptions(alignment: FlowAlignment.End, inkFlush: true), hang,
+            _drawer.DrawFlow(top, "TOP LEFT", new FlowOptions(inkFlush: true), hang, Color.white);
+            _drawer.DrawFlow(top, "TOP CENTER", new FlowOptions(alignment: FlowAlignment.Center), hang, Color.white);
+            _drawer.DrawFlow(top, "TOP RIGHT", new FlowOptions(alignment: FlowAlignment.End, inkFlush: true), hang,
                 Color.white);
-            _sketch.DrawFlow(bottom, "BOTTOM LEFT", new FlowOptions(inkFlush: true), rest, Color.white);
-            _sketch.DrawFlow(bottom, "BOTTOM RIGHT", new FlowOptions(alignment: FlowAlignment.End, inkFlush: true),
+            _drawer.DrawFlow(bottom, "BOTTOM LEFT", new FlowOptions(inkFlush: true), rest, Color.white);
+            _drawer.DrawFlow(bottom, "BOTTOM RIGHT", new FlowOptions(alignment: FlowAlignment.End, inkFlush: true),
                 rest, Color.white);
-            _sketch.DrawFlow(LinePath.AlongEdge(safe, RectEdge.Left), "LEFT EDGE",
+            _drawer.DrawFlow(LinePath.AlongEdge(safe, RectEdge.Left), "LEFT EDGE",
                 new FlowOptions(alignment: FlowAlignment.Center), hang, Color.white);
-            _sketch.DrawFlow(LinePath.AlongEdge(safe, RectEdge.Right), "RIGHT EDGE",
+            _drawer.DrawFlow(LinePath.AlongEdge(safe, RectEdge.Right), "RIGHT EDGE",
                 new FlowOptions(alignment: FlowAlignment.Center), hang, Color.white);
-            _sketch.DrawFlow(new LinePath(safe.PointAt(Anchor.Left), safe.PointAt(Anchor.Right)), "CENTER",
+            _drawer.DrawFlow(new LinePath(safe.PointAt(Anchor.Left), safe.PointAt(Anchor.Right)), "CENTER",
                 new FlowOptions(alignment: FlowAlignment.Center), new PlacementOptions(frame.ToPixels(120)),
                 Color.white);
 
             var guide = safe.Inset(frame.ToPixels(200), frame.ToPixels(620), frame.ToPixels(200), 0);
             var line = LinePath.AlongEdge(guide, RectEdge.Top);
-            _sketch.DrawPathGuide(line);
+            _drawer.DrawPathGuide(line);
             VerticalAnchor[] anchors =
                 { VerticalAnchor.Baseline, VerticalAnchor.CapCenter, VerticalAnchor.EmCenter, VerticalAnchor.InkCenter };
             var slots = SlotDistributor.Distribute(line, anchors.Length, SlotSpacing.Cells);
             for (var i = 0; i < anchors.Length; i++)
             {
-                _sketch.DrawSlots(new[] { slots[i] }, new[] { "Hxg" },
+                _drawer.DrawTexts(new[] { slots[i] }, new[] { "Hxg" },
                     new PlacementOptions(frame.ToPixels(96), vertical: anchors[i]), Color.white);
             }
         }

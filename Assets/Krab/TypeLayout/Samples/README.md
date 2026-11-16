@@ -13,3 +13,7 @@
 | G | ガイド線の表示切替 | 水色＝セーフエリア、黄＝パス、マゼンタ＝文字の基準点 |
 
 長さは高さ1080の基準ピクセルで書き、出力の高さに合わせて拡大縮小する。Sceneは `Krab/Type Layout/Create Smoke Test Scene` で再生成できる（既存ファイルがある場合は失敗する）。
+
+## TypeLayoutPerformance
+
+`Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブで、各レイヤー（Frame / Line A / Line B / Circle / Grid）のON/OFF、文字列、サイズ、動きを変える。既定ではFrameのみ表示する。スクロールと文字の入れ替えはBPM（Common/Timing）に同期する。Sceneは `Krab/Type Layout/Create Performance Scene` で再生成できる。

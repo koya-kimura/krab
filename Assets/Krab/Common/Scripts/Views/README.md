@@ -24,6 +24,7 @@ public class BPMManager : MonoBehaviour, IBPMManager, IUiTarget
 | Common | Output | Output Texture, Syphon |
 | MIDI | Devices | APC mini mk2 Simulator |
 | ShapeSynth | Performance | Performance |
+| TypeLayout | Performance | Type Layout |
 | Samples | MIDI | Parameters |
 
 ## 確認Scene

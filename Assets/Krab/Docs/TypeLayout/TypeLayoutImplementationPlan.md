@@ -8,12 +8,13 @@
 Assets/Krab/TypeLayout/
   Scripts/Core/    Krab.TypeLayout.Core（noEngineReferences）配置計算のみ
   Scripts/Unity/   Krab.TypeLayout.Unity：Core + Unite.Runtime + Unite.Text
-  Samples/         検証Sceneとデモ（Assembly-CSharp。Krab Commonとの接続はここだけ）
+  Scripts/Performance/  演奏用コンポーネントとレイヤー（Assembly-CSharp。Krab CommonのBPM・DI・UI・Prefsと接続）
+  Samples/         検証Sceneとデモ（Assembly-CSharp）
   Tests/Editor/    CoreのEditModeテスト
 Assets/StreamingAssets/Krab/TypeLayout/Fonts/  Jost（SIL OFL 1.1、ライセンス同梱）
 ```
 
-CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI・RosettaUI・Prefsとの接続はSamplesまたはAssembly-CSharp側に置く。
+CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI・RosettaUI・Prefsとの接続は `Scripts/Performance` とSamples（Assembly-CSharp）に置く。
 
 ## 座標と単位
 
@@ -31,8 +32,9 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 | 1 | Frame/Rect/Anchor、Line/Edge/Arc/RectPerimeter、等間隔スロット、グリッド | 完了 |
 | 2 | 文字幅を考慮した流し込み、閉じたパスの継ぎ目合わせ、基準点（Baseline/Em/Cap/Ink）、回転モード | 完了 |
 | 3 | p5.Unite Textでの描画Adapter、フォント読み込み、検証Scene、ガイド線表示 | 完了 |
-| 4 | 文字列の繰り返し・Seed付きランダム、拍単位のスクロールと入れ替え | 未着手 |
-| 5–6 | UI・保存、MIDI、性能計測 | 未着手 |
+| 4 | 文字列の繰り返し・Seed付きランダム、拍単位のスクロールと入れ替え | 完了 |
+| 5 | 演奏用コンポーネント、RosettaUIでの操作、Prefsへの保存 | 完了 |
+| 6 | MIDI、性能計測 | 未着手 |
 
 ## Phase 0の記録
 
@@ -68,3 +70,30 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 - `TypeLayoutSmokeTest.unity` をPlayし、4ケースの出力RT（1920×1080）を保存して目視確認。Console Errorなし。
 - ガイド線なしのAlignmentで字形の外接矩形を画素から計測した。左上ラベルの左端は40、右上ラベルの右端は1880で、セーフエリア（40〜1880）と一致した。"CENTER" の縦方向の中心は540。上下の1px未満のずれは "O" などのオーバーシュート。
 - 未確認：出力解像度やアスペクト比の変更時の見た目、Syphonでの受信、最終的な見た目の評価。
+
+## 動き（Phase 4）
+
+- `TextPicker.Random(clusters, count, seed, step, results)`：(seed, スロット, ステップ) のハッシュ（SplitMix64）で各スロットの文字を選ぶ。同じ入力なら環境によらず同じ結果になり、スロットの結果は後続のスロット数に依存しない。ステップを変えると全スロットを選び直す。
+- `BeatSteps.Step(beats, beatsPerStep)`：拍の境界ちょうどで切り替わるステップ番号。`BeatSteps.Scroll(beats, pixelsPerBeat)`：拍あたりの速さによるスクロール量。
+- `FlowOptions.Offset`：閉じたパスでは周回する。開いたパスで繰り返し（`FlowFill.Glyphs` / `WholeText`）を使う場合は、1回分の周期で折り返す。前後に1回分ずつ足して両端に隙間が出ないようにし、パスからはみ出した文字はクリップで除く。
+- 時計は `IBPMManager.Beat`（累積の拍数）。拍ごとのステップは見た目の切り替えだけに使い、Voiceの寿命のような予約タイミングは扱わない。
+
+## 演奏用コンポーネント（Phase 5）
+
+`Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブ → Performance → Type Layout から操作する。Saveボタン（⌘S）でPrefsに保存する。
+
+| 設定 | 内容 |
+|---|---|
+| 全体 | Visible、Guides（セーフエリア・パス・基準点）、Color、Margin（基準px） |
+| Frame | セーフエリアの外周を繰り返し文字で囲む。Inset、Tracking、Corner Gap、Scroll（px/拍） |
+| Line A / Line B | セーフエリアを横切る直線。Vertical、Position（0〜1）、Alignment（Start/Center/End/Justify）、Tracking、Repeat、Scroll |
+| Circle | 出力中央のリング。Radius、Clockwise（外向き/内向き）、Tracking、Scroll |
+| Grid | セルごとに1文字。Columns、Rows、Use Safe Area、Random、Seed、Beats Per Change（0で固定） |
+
+各レイヤーに共通の設定：Enabled、Text、Size（基準px）。範囲外の値でレイアウトが作れない場合は、そのレイヤーだけ描画を省き、UIに理由を表示する。`TypeLayoutDrawer`（Unity層）は、文字の分割と送り幅をテキスト×サイズごとにキャッシュし、描画用のバッファを使い回す。
+
+### 検証（2026-11-17）
+
+- EditModeテスト：TypeLayout 42件成功。
+- Performance SceneをPlayし、既定の状態（Frameのみ）・全レイヤーON・スクロール中の出力RTを保存して確認した。Console Errorなし、各レイヤーのErrorなし。Gridの文字が拍ごとに入れ替わり、FrameとLine（Repeat）が拍に合わせて流れることを、時間をずらした2枚の画像で確認した。
+- 設定UIに「TypeLayout」タブが出ることを画面キャプチャで確認した。UIの実操作（各項目の編集・Save）は未確認。

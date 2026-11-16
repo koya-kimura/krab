@@ -2,7 +2,9 @@ using Krab.TypeLayout.Core.Text;
 
 namespace Krab.TypeLayout.Core.Distribution
 {
-    /// <summary>Width of one glyph along the path in output pixels, with the blank margins inside its advance box.</summary>
+    /// <summary>
+    /// Width of one glyph along the path in output pixels, with the blank margins inside its advance box.
+    /// </summary>
     public readonly struct FlowGlyph
     {
         public FlowGlyph(double advance, double leadingBearing = 0, double trailingBearing = 0)

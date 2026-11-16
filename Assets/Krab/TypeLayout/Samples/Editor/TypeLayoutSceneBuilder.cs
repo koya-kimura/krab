@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Krab.Common.Output;
+using Krab.TypeLayout.Performance;
 using Krab.TypeLayout.Unity.Fonts;
 using Krab.TypeLayout.Unity.Rendering;
 using UnityEditor;
@@ -13,9 +14,10 @@ using UnityEngine.SceneManagement;
 
 namespace Krab.TypeLayout.Samples.Editor
 {
-    public static class TypeLayoutSmokeSceneBuilder
+    public static class TypeLayoutSceneBuilder
     {
-        public const string ScenePath = "Assets/Krab/TypeLayout/Samples/TypeLayoutSmokeTest.unity";
+        public const string SmokeTestScenePath = "Assets/Krab/TypeLayout/Samples/TypeLayoutSmokeTest.unity";
+        public const string PerformanceScenePath = "Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity";
 
         private static readonly string[] CommonPrefabs =
         {
@@ -28,10 +30,21 @@ namespace Krab.TypeLayout.Samples.Editor
         };
 
         [MenuItem("Krab/Type Layout/Create Smoke Test Scene")]
-        public static void Create()
+        public static void CreateSmokeTest()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || File.Exists(ScenePath))
-                throw new InvalidOperationException("Smoke Test Scene must not exist; create in Edit Mode.");
+            Create(SmokeTestScenePath, typeof(TypeLayoutSmokeTest));
+        }
+
+        [MenuItem("Krab/Type Layout/Create Performance Scene")]
+        public static void CreatePerformance()
+        {
+            Create(PerformanceScenePath, typeof(TypeLayoutPerformance));
+        }
+
+        private static void Create(string scenePath, Type controllerType)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || File.Exists(scenePath))
+                throw new InvalidOperationException($"{scenePath} must not exist; create in Edit Mode.");
 
             var previous = SceneManager.GetActiveScene();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
@@ -41,9 +54,9 @@ namespace Krab.TypeLayout.Samples.Editor
                 var camera = CreateOutputCamera();
                 CreateCommon();
                 CreateEventSystem();
-                CreateTypeLayout(camera);
+                CreateTypeLayout(camera, controllerType);
 
-                if (!EditorSceneManager.SaveScene(scene, ScenePath)) throw new IOException("Could not save Scene.");
+                if (!EditorSceneManager.SaveScene(scene, scenePath)) throw new IOException("Could not save Scene.");
             }
             finally
             {
@@ -83,14 +96,14 @@ namespace Krab.TypeLayout.Samples.Editor
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
         }
 
-        private static void CreateTypeLayout(Camera camera)
+        private static void CreateTypeLayout(Camera camera, Type controllerType)
         {
             var typeLayout = new GameObject("Type Layout", typeof(TypeLayoutCanvas), typeof(TypeLayoutFont),
-                typeof(TypeLayoutSmokeTest));
+                controllerType);
             typeLayout.GetComponent<TypeLayoutCanvas>().TargetCamera = camera;
-            var smokeTest = new SerializedObject(typeLayout.GetComponent<TypeLayoutSmokeTest>());
-            smokeTest.FindProperty("_outputCamera").objectReferenceValue = camera;
-            smokeTest.ApplyModifiedPropertiesWithoutUndo();
+            var controller = new SerializedObject(typeLayout.GetComponent(controllerType));
+            controller.FindProperty("_outputCamera").objectReferenceValue = camera;
+            controller.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
