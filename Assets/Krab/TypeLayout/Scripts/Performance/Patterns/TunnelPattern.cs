@@ -20,7 +20,7 @@ namespace Krab.TypeLayout.Performance.Patterns
         public TunnelPattern() : base("Tunnel",
             "Nested rectangles of text inside the safe area, each ring running opposite to its neighbours.")
         {
-            _text = new PrefsString(Key("Text"), "Gigandect");
+            _text = new PrefsString(Key("Text"), "{main}");
             _size = new PrefsFloat(Key("Size"), 36);
             _rings = new PrefsInt(Key("Rings"), 6);
             _gap = new PrefsFloat(Key("Gap"), 70);
@@ -53,7 +53,7 @@ namespace Krab.TypeLayout.Performance.Patterns
                 var path = new RectPerimeterPath(context.SafeArea.Inset(inset), cornerGap: size);
                 var flow = new FlowOptions(size * 0.25, FlowAlignment.Justify, FlowFill.WholeText,
                     ring % 2 == 0 ? scroll : -scroll);
-                context.Drawer.DrawFlow(path, _text.Get(), flow, placement, context.Color);
+                context.Drawer.DrawFlow(path, context.Text(_text.Get()), flow, placement, context.Color);
             }
         }
     }

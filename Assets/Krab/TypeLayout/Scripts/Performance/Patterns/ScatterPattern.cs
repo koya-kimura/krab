@@ -31,9 +31,10 @@ namespace Krab.TypeLayout.Performance.Patterns
         private string[] _wordList = Array.Empty<string>();
 
         public ScatterPattern() : base("Scatter",
-            "Words from the text dropped into seeded random cells (upright or upside down), re-rolled on the beat.")
+            "Entries of the text (split by |) dropped into seeded random cells, upright or upside down, " +
+            "re-rolled on the beat.")
         {
-            _text = new PrefsString(Key("Text"), "MIDDLE MODEL GIGANDECT KRAB");
+            _text = new PrefsString(Key("Text"), "{list:upper}");
             _size = new PrefsFloat(Key("Size"), 56);
             _count = new PrefsInt(Key("Count"), 14);
             _beatsPerChange = new PrefsFloat(Key("Beats Per Change"), 2);
@@ -43,7 +44,7 @@ namespace Krab.TypeLayout.Performance.Patterns
         protected override Element CreateParameters()
         {
             return UI.Column(
-                _text.CreateElement("Text (words)"),
+                _text.CreateElement("Text (entries split by |)"),
                 _size.CreateSlider("Size", 8f, 300f),
                 _count.CreateSlider("Count", 1, CellCount),
                 _beatsPerChange.CreateSlider("Beats Per Change", 0.25f, 16f),
@@ -52,7 +53,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         protected override void DrawPattern(in PatternContext context)
         {
-            var words = Words(_text.Get());
+            var words = Words(context.Text(_text.Get()));
             if (words.Length == 0) return;
 
             var size = context.Px(_size.Get());
@@ -86,7 +87,14 @@ namespace Krab.TypeLayout.Performance.Patterns
             if (text == _wordsSource) return _wordList;
 
             _wordsSource = text;
-            _wordList = (text ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var entries = new List<string>();
+            foreach (var entry in (text ?? string.Empty).Split('|'))
+            {
+                var trimmed = entry.Trim();
+                if (trimmed.Length > 0) entries.Add(trimmed);
+            }
+
+            _wordList = entries.ToArray();
             return _wordList;
         }
     }

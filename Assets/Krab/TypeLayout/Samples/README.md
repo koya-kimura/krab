@@ -16,4 +16,4 @@
 
 ## TypeLayoutPerformance
 
-`Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブで、コードで書いた16のパターンをON/OFFし、各行のEditボタンで開く小ウインドウで、文字列・サイズ・速さなどのパラメータを変える。既定ではFrame Loopのみ表示する。スクロールと文字の入れ替えはBPM（Common/Timing）に同期する。Sceneは `Krab/Type Layout/Create Performance Scene` で再生成できる。
+`Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブで、コードで書いた16のパターンをON/OFFし、各行のEditボタンで開く小ウインドウで、文字列・サイズ・速さなどのパラメータを変える。表示する文字列（単語リスト、Main/Sub、イベント名、時刻・日付の書式）はWordsタブで一括して変え、各パターンは `{main}` などの記号でそれを参照する。既定ではFrame Loopのみ表示する。スクロールと文字の入れ替えはBPM（Common/Timing）に同期する。Sceneは `Krab/Type Layout/Create Performance Scene` で再生成できる。

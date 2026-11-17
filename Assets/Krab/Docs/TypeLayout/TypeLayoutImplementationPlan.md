@@ -103,11 +103,38 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 | Scatter | 単語を4×8のセルへ重複なくランダムに置く（正立か逆さ）。拍で選び直す | Text (words), Size, Count, Beats Per Change, Seed |
 | Tunnel | セーフエリア内の入れ子の矩形。隣の輪と逆向きに回る | Text, Size, Rings, Gap, Speed |
 
-UIは「Patterns」と「Display」の2タブに分けた。Patternsタブには、全OFFボタン・ON数の表示と、パターンごとに1行（ON/OFFのトグルとEditボタン）を並べる。Editを押すと、そのパターン専用の小ウインドウ（説明、Enabled、パラメータ、警告）が開く。値が範囲外で描画できないときは、Editボタンが「Edit !」になる。Displayタブには、表示、色、セーフエリアの余白、ガイド線を置く。範囲外の値でレイアウトが作れない場合は、そのパターンだけ描画を省き、ウインドウ内に警告を出す。速さはすべて拍基準で、BPM（Common/Timing）に同期する。
+UIは「Patterns」「Words」「Display」の3タブに分けた。Patternsタブには、全OFFボタン・ON数の表示と、パターンごとに1行（ON/OFFのトグルとEditボタン）を並べる。Editを押すと、そのパターン専用の小ウインドウ（説明、Enabled、パラメータ、警告）が開く。値が範囲外で描画できないときは、Editボタンが「Edit !」になる。Displayタブには、表示、色、セーフエリアの余白、ガイド線を置く。範囲外の値でレイアウトが作れない場合は、そのパターンだけ描画を省き、ウインドウ内に警告を出す。速さはすべて拍基準で、BPM（Common/Timing）に同期する。
+
+### Words（表示する文字列の一括編集）
+
+各パターンの文字列はテンプレートで、`{main}` などの記号をWordsタブの値に置き換えて表示する。パターン側の文字列を直接書き換えれば、そのパターンだけ固定の文字にもできる。
+
+| 記号 | 値 |
+|---|---|
+| `{main}` / `{sub}` | 単語リストからMain・Subに選んだ単語（既定：KIMURA / Middle Model） |
+| `{word1}` `{word2}` … | リストの番号の単語 |
+| `{words}` / `{list}` | 全単語を空白区切り / `|` 区切り（Scatterは `|` で項目に分ける） |
+| `{event}` | イベント名 |
+| `{time}` / `{date}` | 現在時刻と日付。書式は .NET の日時書式（既定 `HH:mm:ss` / `yyyy.MM.dd`）。不正な書式は既定の書式で表示し、警告を出す |
+| `{bpm}` `{bar}` `{beat}` `{position}` | テンポ、4/4での小節・拍、`小節.拍` |
+
+`:upper` / `:lower` を付けると大文字・小文字にする（例 `{main:upper}`）。知らない記号は書いたまま表示する。展開処理はCoreの `TextTemplate`（テストあり）、値の管理は `TypeWords`。値が変わったフレームだけ結果を作り直し、変わらない文字列は同じインスタンスを返して描画側の計測キャッシュを保つ。
+
+| パターン | 既定のテンプレート |
+|---|---|
+| Frame Loop, Columns, Letter Grid, Tunnel | `{main}` |
+| Cross, Diagonal, Big Letter, Radial | `{main:upper}` |
+| Orbit | 外 `{sub} ` / 内 `{main} ` |
+| Ticker | `{sub:upper} ` |
+| Wave, Spiral, Zigzag | `{sub} ` |
+| Corners | `{event}` / `{time}` / `{date}` / `{bpm} BPM  {position}` |
+| Scatter | `{list:upper}` |
+| Dial | `0123456789AB` |
 
 ### 検証（2026-11-17）
 
-- EditModeテスト：TypeLayout 44件成功（全体269件）。
+- EditModeテスト：TypeLayout 44件成功（全体269件）。Words追加時の `TextTemplateTests`（3件）は、ユーザーがPlay Mode中だったため未実行。
+- Words：Play中に `{main}` `{sub:upper}` `{event}` `{time}` `{date}` `{bpm} BPM {position}` `{list}` `{word3:lower}` の解決結果を確認し、Frame Loop・Ticker・Cornersの出力RTで表示を目視確認した。WordsタブのUI操作は未確認。
 - 16パターンを1つずつ単独で表示した出力RTと、全パターンONの出力を保存して目視確認した。Console Errorなし、各パターンのErrorなし。
 - Play中にスクリプトを再コンパイルしても、`TypeLayoutPerformance` と `TypeLayoutFont` が次のフレームで初期化し直すことを確認した（以前はNullReferenceExceptionになった）。
 - Performance SceneをPlayし、8パターンを1つずつ単独で表示した出力RTを保存して目視確認した。全パターンON時もConsole Errorなし、各パターンのErrorなし。スクロールとLetter Gridの入れ替えが拍に合わせて動くことを、時間をずらした画像で確認した（パターン化前の版で確認し、同じCoreの動きを使う）。

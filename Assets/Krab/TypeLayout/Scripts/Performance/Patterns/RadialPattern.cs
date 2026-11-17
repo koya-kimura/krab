@@ -19,7 +19,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         public RadialPattern() : base("Radial", "Spokes of text reading outward from the center, slowly turning.")
         {
-            _text = new PrefsString(Key("Text"), "GIGANDECT");
+            _text = new PrefsString(Key("Text"), "{main:upper}");
             _size = new PrefsFloat(Key("Size"), 40);
             _spokes = new PrefsInt(Key("Spokes"), 12);
             _innerRadius = new PrefsFloat(Key("Inner Radius"), 120);
@@ -52,7 +52,7 @@ namespace Krab.TypeLayout.Performance.Patterns
             {
                 var direction = Point2.FromAngle(turn + 360.0 * spoke / spokes);
                 var path = new LinePath(center + direction * inner, center + direction * outer);
-                context.Drawer.DrawFlow(path, _text.Get(), flow, new PlacementOptions(size), context.Color);
+                context.Drawer.DrawFlow(path, context.Text(_text.Get()), flow, new PlacementOptions(size), context.Color);
             }
         }
     }

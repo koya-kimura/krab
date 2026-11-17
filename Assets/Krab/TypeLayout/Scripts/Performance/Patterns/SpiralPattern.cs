@@ -23,7 +23,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         public SpiralPattern() : base("Spiral", "Text unwinding from the center along a spiral, flowing outward.")
         {
-            _text = new PrefsString(Key("Text"), "Middle Model ");
+            _text = new PrefsString(Key("Text"), "{sub} ");
             _size = new PrefsFloat(Key("Size"), 40);
             _turns = new PrefsFloat(Key("Turns"), 4);
             _speed = new PrefsFloat(Key("Speed"), 60);
@@ -57,8 +57,8 @@ namespace Krab.TypeLayout.Performance.Patterns
 
             var flow = new FlowOptions(size * 0.12, fill: FlowFill.Glyphs,
                 offset: BeatSteps.Scroll(context.Beats, context.Px(_speed.Get())));
-            context.Drawer.DrawFlow(new PolylinePath(_points), _text.Get(), flow, new PlacementOptions(size),
-                context.Color);
+            context.Drawer.DrawFlow(new PolylinePath(_points), context.Text(_text.Get()), flow,
+                new PlacementOptions(size), context.Color);
         }
     }
 }

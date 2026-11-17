@@ -21,7 +21,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         public ColumnsPattern() : base("Columns", "Vertical runs of text falling at different speeds.")
         {
-            _text = new PrefsString(Key("Text"), "Gigandect");
+            _text = new PrefsString(Key("Text"), "{main}");
             _size = new PrefsFloat(Key("Size"), 48);
             _columns = new PrefsInt(Key("Columns"), 6);
             _speed = new PrefsFloat(Key("Speed"), 40);
@@ -51,7 +51,7 @@ namespace Krab.TypeLayout.Performance.Patterns
                 var speed = context.Px(_speed.Get()) * SpeedRatios[column % SpeedRatios.Length];
                 var flow = new FlowOptions(size * 0.15, fill: FlowFill.Glyphs,
                     offset: BeatSteps.Scroll(context.Beats, speed));
-                context.Drawer.DrawFlow(line, _text.Get(), flow, placement, context.Color);
+                context.Drawer.DrawFlow(line, context.Text(_text.Get()), flow, placement, context.Color);
             }
         }
     }

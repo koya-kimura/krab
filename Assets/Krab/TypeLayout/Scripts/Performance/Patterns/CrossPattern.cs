@@ -19,7 +19,7 @@ namespace Krab.TypeLayout.Performance.Patterns
             "A word spread edge to edge across and down through the center, sharing its middle letter; " +
             "the letters shift one cell per step.")
         {
-            _text = new PrefsString(Key("Text"), "GIGANDECT");
+            _text = new PrefsString(Key("Text"), "{main:upper}");
             _size = new PrefsFloat(Key("Size"), 120);
             _beatsPerStep = new PrefsFloat(Key("Beats Per Step"), 1);
         }
@@ -34,7 +34,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         protected override void DrawPattern(in PatternContext context)
         {
-            var text = _text.Get();
+            var text = context.Text(_text.Get());
             var count = context.Drawer.Clusters(text).Count;
             if (count == 0) return;
 

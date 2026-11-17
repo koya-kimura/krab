@@ -22,7 +22,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         public WavePattern() : base("Wave", "A line of text across the center riding a travelling sine wave.")
         {
-            _text = new PrefsString(Key("Text"), "Middle Model ");
+            _text = new PrefsString(Key("Text"), "{sub} ");
             _size = new PrefsFloat(Key("Size"), 56);
             _amplitude = new PrefsFloat(Key("Amplitude"), 80);
             _wavelength = new PrefsFloat(Key("Wavelength"), 640);
@@ -55,8 +55,8 @@ namespace Krab.TypeLayout.Performance.Patterns
 
             var size = context.Px(_size.Get());
             var flow = new FlowOptions(size * 0.15, fill: FlowFill.Glyphs);
-            context.Drawer.DrawFlow(new PolylinePath(_points), _text.Get(), flow, new PlacementOptions(size),
-                context.Color);
+            context.Drawer.DrawFlow(new PolylinePath(_points), context.Text(_text.Get()), flow,
+                new PlacementOptions(size), context.Color);
         }
     }
 }

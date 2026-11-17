@@ -8,8 +8,9 @@ namespace Krab.TypeLayout.Performance
     public readonly struct PatternContext
     {
         public PatternContext(LayoutFrame frame, Rect2 safeArea, double beats, float bpm, TypeLayoutDrawer drawer,
-            Color color)
+            Color color, TypeWords words)
         {
+            Words = words;
             Frame = frame;
             SafeArea = safeArea;
             Beats = beats;
@@ -31,6 +32,11 @@ namespace Krab.TypeLayout.Performance
         public TypeLayoutDrawer Drawer { get; }
 
         public Color Color { get; }
+
+        public TypeWords Words { get; }
+
+        /// <summary>A pattern's text with tokens such as {main} or {time} replaced.</summary>
+        public string Text(string template) => Words.Resolve(template);
 
         /// <summary>Reference pixels (1080 tall) to output pixels.</summary>
         public double Px(double reference) => Frame.ToPixels(reference);

@@ -112,17 +112,17 @@ namespace Krab.TypeLayout.Samples
             var size = frame.ToPixels(52);
             var hanging = new PlacementOptions(size, vertical: VerticalAnchor.CapTop);
             var perimeter = new RectPerimeterPath(safe, cornerGap: size);
-            _drawer.DrawFlow(perimeter, "Gigandect",
+            _drawer.DrawFlow(perimeter, "Kimura",
                 new FlowOptions(frame.ToPixels(12), FlowAlignment.Justify, FlowFill.WholeText), hanging, Color.white);
 
             var inner = safe.Inset(frame.ToPixels(160));
             var column = new LinePath(new Point2(inner.Left + inner.Width * 0.75, inner.Top),
                 new Point2(inner.Left + inner.Width * 0.75, inner.Bottom));
-            _drawer.DrawFlow(column, "Gigandect", new FlowOptions(frame.ToPixels(12), fill: FlowFill.Glyphs),
+            _drawer.DrawFlow(column, "Kimura", new FlowOptions(frame.ToPixels(12), fill: FlowFill.Glyphs),
                 new PlacementOptions(size), Color.white);
 
             var row = LinePath.AlongEdge(inner, RectEdge.Top);
-            _drawer.DrawFlow(row, "ectGigande", new FlowOptions(alignment: FlowAlignment.Justify, inkFlush: true),
+            _drawer.DrawFlow(row, "KIMURA", new FlowOptions(alignment: FlowAlignment.Justify, inkFlush: true),
                 new PlacementOptions(size, vertical: VerticalAnchor.Baseline), Color.white);
         }
 
@@ -134,7 +134,7 @@ namespace Krab.TypeLayout.Samples
             var ring = new FlowOptions(frame.ToPixels(8), FlowAlignment.Justify, FlowFill.WholeText);
             _drawer.DrawFlow(ArcPath.Circle(center, frame.ToPixels(440)), "Middle Model ", ring,
                 new PlacementOptions(size), Color.white);
-            _drawer.DrawFlow(ArcPath.Circle(center, frame.ToPixels(350), clockwise: false), "Gigandect ", ring,
+            _drawer.DrawFlow(ArcPath.Circle(center, frame.ToPixels(350), clockwise: false), "Kimura ", ring,
                 new PlacementOptions(size), Color.white);
 
             var clock = ArcPath.Circle(center, frame.ToPixels(230));

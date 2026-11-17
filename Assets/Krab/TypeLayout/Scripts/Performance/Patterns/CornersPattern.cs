@@ -1,4 +1,3 @@
-using System;
 using Krab.TypeLayout.Core.Distribution;
 using Krab.TypeLayout.Core.Geometry;
 using Krab.TypeLayout.Core.Paths;
@@ -18,12 +17,12 @@ namespace Krab.TypeLayout.Performance.Patterns
         private readonly PrefsFloat _size;
 
         public CornersPattern() : base("Corners",
-            "Four labels flush to the safe-area corners. {bpm} and {beat} are replaced live.")
+            "Four labels flush to the safe-area corners, by default the event, time, date and tempo.")
         {
-            _topLeft = new PrefsString(Key("Top Left"), "KRAB");
-            _topRight = new PrefsString(Key("Top Right"), "{bpm} BPM");
-            _bottomLeft = new PrefsString(Key("Bottom Left"), "TYPE LAYOUT");
-            _bottomRight = new PrefsString(Key("Bottom Right"), "{beat}");
+            _topLeft = new PrefsString(Key("Top Left"), "{event}");
+            _topRight = new PrefsString(Key("Top Right"), "{time}");
+            _bottomLeft = new PrefsString(Key("Bottom Left"), "{date}");
+            _bottomRight = new PrefsString(Key("Bottom Right"), "{bpm} BPM  {position}");
             _size = new PrefsFloat(Key("Size"), 36);
         }
 
@@ -48,20 +47,10 @@ namespace Krab.TypeLayout.Performance.Patterns
             var start = new FlowOptions(inkFlush: true);
             var end = new FlowOptions(alignment: FlowAlignment.End, inkFlush: true);
 
-            context.Drawer.DrawFlow(top, Expand(_topLeft.Get(), context), start, hang, context.Color);
-            context.Drawer.DrawFlow(top, Expand(_topRight.Get(), context), end, hang, context.Color);
-            context.Drawer.DrawFlow(bottom, Expand(_bottomLeft.Get(), context), start, rest, context.Color);
-            context.Drawer.DrawFlow(bottom, Expand(_bottomRight.Get(), context), end, rest, context.Color);
-        }
-
-        private static string Expand(string text, in PatternContext context)
-        {
-            if (string.IsNullOrEmpty(text) || text.IndexOf('{') < 0) return text;
-
-            var beat = (long)Math.Floor(context.Beats);
-            var bar = Math.Floor(beat / 4.0) + 1;
-            return text.Replace("{bpm}", context.Bpm.ToString("0"))
-                .Replace("{beat}", $"{bar:0}.{beat - (bar - 1) * 4 + 1:0}");
+            context.Drawer.DrawFlow(top, context.Text(_topLeft.Get()), start, hang, context.Color);
+            context.Drawer.DrawFlow(top, context.Text(_topRight.Get()), end, hang, context.Color);
+            context.Drawer.DrawFlow(bottom, context.Text(_bottomLeft.Get()), start, rest, context.Color);
+            context.Drawer.DrawFlow(bottom, context.Text(_bottomRight.Get()), end, rest, context.Color);
         }
     }
 }

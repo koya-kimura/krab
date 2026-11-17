@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Krab.Common.Timing;
 using Krab.Common.Views;
@@ -53,6 +54,8 @@ namespace Krab.TypeLayout.Performance
             new TunnelPattern()
         };
 
+        private readonly TypeWords _words = new();
+
         private TypeLayoutCanvas _canvas;
         private TypeLayoutDrawer _drawer;
         private IBPMManager _bpmManager;
@@ -76,7 +79,8 @@ namespace Krab.TypeLayout.Performance
             _drawer.ShowGuides = _showGuides.Get();
             if (_drawer.ShowGuides) UniteGuideRenderer.DrawRect(_canvas, safeArea, SafeAreaGuideColor);
 
-            var context = new PatternContext(frame, safeArea, beats, bpm, _drawer, _color.Get());
+            _words.BeginFrame(beats, bpm, DateTime.Now);
+            var context = new PatternContext(frame, safeArea, beats, bpm, _drawer, _color.Get(), _words);
             foreach (var pattern in _patterns)
                 pattern.Draw(context);
         }
@@ -93,6 +97,7 @@ namespace Krab.TypeLayout.Performance
         {
             return UI.Tabs(
                 ("Patterns", CreatePatternsTab),
+                ("Words", _words.CreateElement),
                 ("Display", CreateDisplayTab));
         }
 

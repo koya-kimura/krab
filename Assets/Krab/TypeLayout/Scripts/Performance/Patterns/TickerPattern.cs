@@ -18,7 +18,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         public TickerPattern() : base("Ticker", "Horizontal bands of repeated text scrolling in alternate directions.")
         {
-            _text = new PrefsString(Key("Text"), "MIDDLE MODEL ");
+            _text = new PrefsString(Key("Text"), "{sub:upper} ");
             _size = new PrefsFloat(Key("Size"), 72);
             _rows = new PrefsInt(Key("Rows"), 3);
             _speed = new PrefsFloat(Key("Speed"), 60);
@@ -48,7 +48,7 @@ namespace Krab.TypeLayout.Performance.Patterns
                 var line = new LinePath(new Point2(area.Left, y), new Point2(area.Right, y));
                 var offset = row % 2 == 0 ? scroll : -scroll;
                 var flow = new FlowOptions(size * 0.1, fill: FlowFill.Glyphs, offset: offset);
-                context.Drawer.DrawFlow(line, _text.Get(), flow, placement, context.Color);
+                context.Drawer.DrawFlow(line, context.Text(_text.Get()), flow, placement, context.Color);
             }
         }
     }

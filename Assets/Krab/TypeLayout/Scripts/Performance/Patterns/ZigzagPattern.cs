@@ -23,7 +23,7 @@ namespace Krab.TypeLayout.Performance.Patterns
         public ZigzagPattern() : base("Zigzag",
             "Text running along a zigzag across the center, turning sharply at each tooth.")
         {
-            _text = new PrefsString(Key("Text"), "Middle Model ");
+            _text = new PrefsString(Key("Text"), "{sub} ");
             _size = new PrefsFloat(Key("Size"), 44);
             _teeth = new PrefsInt(Key("Teeth"), 4);
             _height = new PrefsFloat(Key("Height"), 360);
@@ -56,8 +56,8 @@ namespace Krab.TypeLayout.Performance.Patterns
             var size = context.Px(_size.Get());
             var flow = new FlowOptions(size * 0.12, fill: FlowFill.Glyphs,
                 offset: BeatSteps.Scroll(context.Beats, context.Px(_speed.Get())));
-            context.Drawer.DrawFlow(new PolylinePath(_points), _text.Get(), flow, new PlacementOptions(size),
-                context.Color);
+            context.Drawer.DrawFlow(new PolylinePath(_points), context.Text(_text.Get()), flow,
+                new PlacementOptions(size), context.Color);
         }
     }
 }

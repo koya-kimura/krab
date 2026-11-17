@@ -16,7 +16,7 @@ namespace Krab.TypeLayout.Performance.Patterns
 
         public FrameLoopPattern() : base("Frame Loop", "Text circling the safe area, hanging inward from its edge.", true)
         {
-            _text = new PrefsString(Key("Text"), "Gigandect");
+            _text = new PrefsString(Key("Text"), "{main}");
             _size = new PrefsFloat(Key("Size"), 52);
             _speed = new PrefsFloat(Key("Speed"), 40);
         }
@@ -36,7 +36,7 @@ namespace Krab.TypeLayout.Performance.Patterns
             var flow = new FlowOptions(size * 0.25, FlowAlignment.Justify, FlowFill.WholeText,
                 BeatSteps.Scroll(context.Beats, context.Px(_speed.Get())));
             var placement = new PlacementOptions(size, vertical: VerticalAnchor.CapTop);
-            context.Drawer.DrawFlow(path, _text.Get(), flow, placement, context.Color);
+            context.Drawer.DrawFlow(path, context.Text(_text.Get()), flow, placement, context.Color);
         }
     }
 }

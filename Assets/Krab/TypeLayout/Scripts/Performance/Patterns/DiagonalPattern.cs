@@ -21,7 +21,7 @@ namespace Krab.TypeLayout.Performance.Patterns
         public DiagonalPattern() : base("Diagonal",
             "Parallel slanted bands of text crossing the whole frame, scrolling in alternate directions.")
         {
-            _text = new PrefsString(Key("Text"), "GIGANDECT ");
+            _text = new PrefsString(Key("Text"), "{main:upper} ");
             _size = new PrefsFloat(Key("Size"), 48);
             _lines = new PrefsInt(Key("Lines"), 7);
             _angle = new PrefsFloat(Key("Angle"), -30);
@@ -58,7 +58,7 @@ namespace Krab.TypeLayout.Performance.Patterns
                 var path = new LinePath(origin + direction * start, origin + direction * end);
                 var flow = new FlowOptions(size * 0.15, fill: FlowFill.Glyphs,
                     offset: line % 2 == 0 ? scroll : -scroll);
-                context.Drawer.DrawFlow(path, _text.Get(), flow, new PlacementOptions(size), context.Color);
+                context.Drawer.DrawFlow(path, context.Text(_text.Get()), flow, new PlacementOptions(size), context.Color);
             }
         }
 

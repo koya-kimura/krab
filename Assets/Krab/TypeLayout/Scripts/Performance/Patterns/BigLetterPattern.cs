@@ -18,7 +18,7 @@ namespace Krab.TypeLayout.Performance.Patterns
         public BigLetterPattern() : base("Big Letter",
             "One huge letter at the center whose shape is centered exactly, stepping through the text.")
         {
-            _text = new PrefsString(Key("Text"), "KRAB");
+            _text = new PrefsString(Key("Text"), "{main:upper}");
             _size = new PrefsFloat(Key("Size"), 760);
             _beatsPerStep = new PrefsFloat(Key("Beats Per Step"), 1);
         }
@@ -37,7 +37,7 @@ namespace Krab.TypeLayout.Performance.Patterns
             var step = BeatSteps.Step(context.Beats, Math.Max(0.25f, _beatsPerStep.Get()));
             var placement = new PlacementOptions(context.Px(_size.Get()), HorizontalAnchor.InkCenter,
                 VerticalAnchor.InkCenter, RotationMode.Upright);
-            context.Drawer.DrawSequence(_slot, Letters(_text.Get()), (int)(step % int.MaxValue), placement,
+            context.Drawer.DrawSequence(_slot, Letters(context.Text(_text.Get())), (int)(step % int.MaxValue), placement,
                 context.Color);
         }
     }

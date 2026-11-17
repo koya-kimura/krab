@@ -19,8 +19,8 @@ namespace Krab.TypeLayout.Performance.Patterns
         public OrbitPattern() : base("Orbit",
             "Two rings around the center turning in opposite directions; the outer reads outward, the inner inward.")
         {
-            _outerText = new PrefsString(Key("Outer Text"), "Middle Model ");
-            _innerText = new PrefsString(Key("Inner Text"), "Gigandect ");
+            _outerText = new PrefsString(Key("Outer Text"), "{sub} ");
+            _innerText = new PrefsString(Key("Inner Text"), "{main} ");
             _size = new PrefsFloat(Key("Size"), 44);
             _radius = new PrefsFloat(Key("Radius"), 420);
             _speed = new PrefsFloat(Key("Speed"), 30);
@@ -46,9 +46,10 @@ namespace Krab.TypeLayout.Performance.Patterns
 
             // Both rings move forward along their own direction, so they turn opposite ways on screen.
             var ring = new FlowOptions(size * 0.15, FlowAlignment.Justify, FlowFill.WholeText, scroll);
-            context.Drawer.DrawFlow(ArcPath.Circle(center, radius), _outerText.Get(), ring, placement, context.Color);
-            context.Drawer.DrawFlow(ArcPath.Circle(center, radius - size * 1.8, clockwise: false), _innerText.Get(),
-                ring, placement, context.Color);
+            context.Drawer.DrawFlow(ArcPath.Circle(center, radius), context.Text(_outerText.Get()), ring, placement,
+                context.Color);
+            context.Drawer.DrawFlow(ArcPath.Circle(center, radius - size * 1.8, clockwise: false),
+                context.Text(_innerText.Get()), ring, placement, context.Color);
         }
     }
 }

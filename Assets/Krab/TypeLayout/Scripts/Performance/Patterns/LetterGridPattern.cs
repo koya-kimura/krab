@@ -24,7 +24,7 @@ namespace Krab.TypeLayout.Performance.Patterns
         public LetterGridPattern() : base("Letter Grid",
             "One upright letter centered in every cell, picked at random from the letters and re-rolled on the beat.")
         {
-            _letters = new PrefsString(Key("Letters"), "Model");
+            _letters = new PrefsString(Key("Letters"), "{main}");
             _size = new PrefsFloat(Key("Size"), 110);
             _rows = new PrefsInt(Key("Rows"), 6);
             _beatsPerChange = new PrefsFloat(Key("Beats Per Change"), 1);
@@ -57,7 +57,7 @@ namespace Krab.TypeLayout.Performance.Patterns
             var step = BeatSteps.Step(context.Beats, Math.Max(0.25f, _beatsPerChange.Get()));
             var placement = new PlacementOptions(context.Px(_size.Get()), HorizontalAnchor.InkCenter,
                 VerticalAnchor.CapCenter, RotationMode.Upright);
-            context.Drawer.DrawRandom(_slots, Letters(_letters.Get()), _seed.Get(), step,
+            context.Drawer.DrawRandom(_slots, Letters(context.Text(_letters.Get())), _seed.Get(), step,
                 placement, context.Color);
         }
     }
