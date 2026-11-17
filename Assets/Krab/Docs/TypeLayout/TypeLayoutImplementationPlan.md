@@ -133,7 +133,7 @@ UIは「Patterns」「Words」「Display」の3タブに分けた。Patternsタ�
 
 ### 検証（2026-11-17）
 
-- EditModeテスト：TypeLayout 44件成功（全体269件）。Words追加時の `TextTemplateTests`（3件）は、ユーザーがPlay Mode中だったため未実行。
+- EditModeテスト：TypeLayout 47件成功（Words追加時の `TextTemplateTests` 3件を含む、全体272件）。
 - Words：Play中に `{main}` `{sub:upper}` `{event}` `{time}` `{date}` `{bpm} BPM {position}` `{list}` `{word3:lower}` の解決結果を確認し、Frame Loop・Ticker・Cornersの出力RTで表示を目視確認した。WordsタブのUI操作は未確認。
 - 16パターンを1つずつ単独で表示した出力RTと、全パターンONの出力を保存して目視確認した。Console Errorなし、各パターンのErrorなし。
 - Play中にスクリプトを再コンパイルしても、`TypeLayoutPerformance` と `TypeLayoutFont` が次のフレームで初期化し直すことを確認した（以前はNullReferenceExceptionになった）。
