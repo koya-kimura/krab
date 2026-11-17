@@ -59,6 +59,8 @@ namespace Krab.ShapeSynth.Samples
         {
             if (_evaluator == null) return;
 
+            ((TargetCameraCanvas)_canvas).EnsureInitialized();
+
             var keyboard = Keyboard.current;
             if (Time.timeAsDouble >= _nextTriggerSeconds
                 || (keyboard != null && keyboard.spaceKey.wasPressedThisFrame))

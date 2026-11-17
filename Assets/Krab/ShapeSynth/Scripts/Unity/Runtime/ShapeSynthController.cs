@@ -33,6 +33,7 @@ namespace Krab.ShapeSynth.Unity.Runtime
 
         private void Update()
         {
+            _canvas.EnsureInitialized();
             var width = _outputCamera.pixelWidth;
             var height = _outputCamera.pixelHeight;
             var context = new ReferenceContext(width, height);

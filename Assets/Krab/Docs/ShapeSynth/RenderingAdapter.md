@@ -48,3 +48,12 @@ OutputTextureProviderがRT生成・再生成・解放を所有する。Preview�
 ## Phase 8のStroke拡張
 
 DrawItemに不変ShapeStyleを追加。Fill/Stroke/Stroke Width/任意StrokeColorを公開APIで描画する。Circle/Rectangleはローカル線幅を行列で変形し、Polygonは画面上の線分へ展開されるため面積Scaleの平方根で幅を換算する。等方Scaleでは一致、非等方Scale/shearでは近似。詳細は [複数プリセットとStroke](MultiPresetPerformance.md)。既存Fill-onlyは維持する。
+
+## Play中のスクリプト再読み込み（2026-11-17）
+
+p5.UniteのUCanvasは、スクリプトの再読み込みの直前に描画コンテキストを破棄する（Play中の再読み込みも含む）。再読み込み後にAwakeは再実行されないため、Awakeでだけ `Initialize` していると、毎フレーム `Canvas not initialized` の例外が出ていた。
+
+`TargetCameraCanvas` は初期化済みフラグを `[NonSerialized]` で持ち、再読み込みでコンテキストと一緒にリセットされるようにした。描画する側（`ShapeSynthController` と各Sampleの `Update`）は、描画の前に `EnsureInitialized()` を呼ぶ。同じCameraでCanvasを作り直す。
+
+検証：Play中に一時スクリプトの追加と削除で再読み込みを2回起こし、どちらの後もコンソールのエラーが0件で、描画コンテキストがあり、フレームの送信が続くことを確認した。EditMode 319件成功。
+

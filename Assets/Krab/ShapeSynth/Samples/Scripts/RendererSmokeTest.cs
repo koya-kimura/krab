@@ -35,6 +35,7 @@ namespace Krab.ShapeSynth.Samples
 
         private void Update()
         {
+            _canvas.EnsureInitialized();
             var width = _outputCamera.pixelWidth;
             var height = _outputCamera.pixelHeight;
             LastItems = _evaluator.Evaluate(Time.timeAsDouble, new ReferenceContext(width, height));
