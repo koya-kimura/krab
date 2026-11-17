@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
@@ -23,48 +24,69 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private static readonly string[] FlipNames = Enum.GetNames(typeof(PresetFlip));
 
-        /// <summary>Column headings, shown once above a block of Parameter rows.</summary>
+        /// <summary>
+        /// Column headings, shown once above a block of Parameter rows. The header and every row are rebuilt
+        /// with or without the Flip column, so no empty placeholder shifts the columns. RosettaUI's switching
+        /// wrappers size to their content, so every switching cell also gets its column width explicitly.
+        /// </summary>
         private static Element ParameterHeader(PresetLayout copies = null)
         {
-            Element Heading(string text, float width) =>
-                UI.Label(text).SetWidth(width).SetColor(PresetEditorPalette.Title);
+            return UI.DynamicElementOnStatusChanged(() => HasCopies(copies), withFlip =>
+            {
+                Element Heading(string text, float width) =>
+                    UI.Label(text).SetWidth(width).SetColor(PresetEditorPalette.Title);
 
-            return UI.Row(
-                UI.Space().SetWidth(NameColumnWidth),
-                Heading("Base", NumberColumnWidth),
-                Heading("Rand", NumberColumnWidth),
-                Heading("Depth", NumberColumnWidth),
-                Heading("Unit", UnitColumnWidth),
-                Heading("Now", NowColumnWidth),
-                UI.DynamicElementIf(() => copies != null && copies.Kind != PresetLayoutKind.None,
-                    () => Heading("Flip", FlipColumnWidth)),
-                Heading("Bind", BindColumnWidth));
+                var cells = new List<Element>
+                {
+                    UI.Space().SetWidth(NameColumnWidth),
+                    Heading("Base", NumberColumnWidth),
+                    Heading("Rand", NumberColumnWidth),
+                    Heading("Depth", NumberColumnWidth),
+                    Heading("Unit", UnitColumnWidth),
+                    Heading("Now", NowColumnWidth)
+                };
+                if (withFlip) cells.Add(Heading("Flip", FlipColumnWidth));
+                cells.Add(Heading("Bind", BindColumnWidth));
+                return UI.Row(cells.ToArray());
+            });
         }
+
+        private static bool HasCopies(PresetLayout copies) => copies != null && copies.Kind != PresetLayoutKind.None;
 
         /// <param name="copies">The owning Shape's Layout; Flip is offered only while it has copies.</param>
         /// <param name="initialDepth">The first Depth when a Value is bound; independent of the label.</param>
         private Element ParameterRow(string name, PresetParameter parameter, PresetQuantity quantity,
             PresetLayout copies = null, InitialDepth initialDepth = InitialDepth.FromBase)
         {
+            return UI.DynamicElementOnStatusChanged(() => HasCopies(copies),
+                withFlip => ParameterCells(name, parameter, quantity, copies, initialDepth, withFlip));
+        }
+
+        private Element ParameterCells(string name, PresetParameter parameter, PresetQuantity quantity,
+            PresetLayout copies, InitialDepth initialDepth, bool withFlip)
+        {
             var label = UI.Label(name).SetWidth(NameColumnWidth);
             label.RegisterUpdateCallback(element =>
                 element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
 
-            return UI.Row(
+            var cells = new List<Element>
+            {
                 label,
-                NumberCell(() => parameter.Base, value => parameter.Base = value)
-                    .SetWidth(NumberColumnWidth),
+                NumberCell(() => parameter.Base, value => parameter.Base = value).SetWidth(NumberColumnWidth),
                 NumberCell(() => parameter.Random, value => parameter.Random = Math.Abs(value))
                     .SetWidth(NumberColumnWidth),
                 UI.DynamicElementOnStatusChanged(
                     () => parameter.GetBinding() != null,
                     bound => bound
                         ? DepthField(parameter).SetWidth(NumberColumnWidth)
-                        : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource)),
+                        : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource))
+                    .SetWidth(NumberColumnWidth),
                 UnitColumn(parameter, quantity).SetWidth(UnitColumnWidth),
-                UI.Label(() => NowText(parameter, quantity, copies)).SetWidth(NowColumnWidth),
-                UI.DynamicElementIf(() => copies != null && copies.Kind != PresetLayoutKind.None,
-                    () => UI.DynamicElementOnStatusChanged(
+                UI.Label(() => NowText(parameter, quantity, copies)).SetWidth(NowColumnWidth)
+            };
+            if (withFlip)
+            {
+                cells.Add(UI.DynamicElementOnStatusChanged(
                         () => parameter.GetBinding() != null,
                         bound => bound
                             ? Choice(null, () => (int)parameter.Flip, value =>
@@ -72,8 +94,12 @@ namespace Krab.ShapeSynth.PresetEditor
                                 parameter.Flip = (PresetFlip)value;
                                 Changed();
                             }, FlipNames).SetWidth(FlipColumnWidth)
-                            : UI.Label("-").SetWidth(FlipColumnWidth).SetColor(PresetEditorPalette.DragSource))),
-                BindChoice(parameter, initialDepth));
+                            : UI.Label("-").SetWidth(FlipColumnWidth).SetColor(PresetEditorPalette.DragSource))
+                    .SetWidth(FlipColumnWidth));
+            }
+
+            cells.Add(BindChoice(parameter, initialDepth).SetWidth(BindColumnWidth));
+            return UI.Row(cells.ToArray());
         }
 
         private Element DepthField(PresetParameter parameter)
