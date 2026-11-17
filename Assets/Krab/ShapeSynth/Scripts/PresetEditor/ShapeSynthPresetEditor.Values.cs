@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
@@ -10,8 +8,6 @@ namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
-        private static readonly string[] WaveformNames = Enum.GetNames(typeof(LfoWaveform));
-        private static readonly string[] CurveNames = Enum.GetNames(typeof(EasingCurve));
 
         private int _valueNamesRevision;
 
@@ -85,50 +81,6 @@ namespace Krab.ShapeSynth.PresetEditor
                 default:
                     return "◆ LFO";
             }
-        }
-
-        private IEnumerable<Element> ComponentFields(PresetValue value, PresetComponent component)
-        {
-            yield return NumberField("Weight", () => component.Weight, weight => component.Weight = weight);
-            if (component.Kind == ModulatorKind.Adsr)
-            {
-                yield return NumberField("Attack", () => component.Attack, beats => component.Attack = beats);
-                yield return CurveField("Attack Curve", () => component.AttackCurve,
-                    curve => component.AttackCurve = curve);
-                yield return NumberField("Decay", () => component.Decay, beats => component.Decay = beats);
-                yield return CurveField("Decay Curve", () => component.DecayCurve, curve => component.DecayCurve = curve);
-                yield return NumberField("Sustain Level", () => component.SustainLevel, level => component.SustainLevel = level);
-                yield return NumberField("Sustain Time", () => component.SustainTime, beats => component.SustainTime = beats);
-                yield return NumberField("Release", () => component.Release, beats => component.Release = beats);
-                yield return CurveField("Release Curve", () => component.ReleaseCurve,
-                    curve => component.ReleaseCurve = curve);
-            }
-            else if (component.Kind == ModulatorKind.Ramp)
-            {
-                yield return CurveField("Curve", () => component.RampCurve, curve => component.RampCurve = curve);
-                yield return NumberField("Duration", () => component.Duration, beats => component.Duration = beats);
-            }
-            else
-            {
-                yield return Choice("Waveform", () => (int)component.Waveform, index =>
-                {
-                    component.Waveform = (LfoWaveform)index;
-                    Changed();
-                }, WaveformNames);
-                yield return NumberField("Cycles / Beat", () => component.CyclesPerBeat, rate => component.CyclesPerBeat = rate);
-                yield return NumberField("Phase Offset", () => component.PhaseOffset, phase => component.PhaseOffset = phase);
-            }
-
-            yield return UI.Button("Remove Component", () => RemoveComponent(value, component));
-        }
-
-        private Element CurveField(string label, Func<EasingCurve> read, Action<EasingCurve> write)
-        {
-            return Choice(label, () => (int)read(), index =>
-            {
-                write((EasingCurve)index);
-                Changed();
-            }, CurveNames);
         }
 
         private void AddValue()
