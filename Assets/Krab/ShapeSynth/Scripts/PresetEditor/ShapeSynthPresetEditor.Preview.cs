@@ -102,7 +102,7 @@ namespace Krab.ShapeSynth.PresetEditor
             UpdatePreviewSignals();
         }
 
-        /// <summary>Playback of the background output, shared by the Visual and Values tabs.</summary>
+        /// <summary>Playback of the background output. Shown in the Visual window; the Values graph follows its Beat.</summary>
         private Element BuildTransportBar()
         {
             return UI.Column(

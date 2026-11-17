@@ -23,7 +23,7 @@ namespace Krab.ShapeSynth.PresetEditor
                             () => (_documentRevision, _valuesRevision),
                             _ => UI.Column(Document.Values.Select(ValueRow)))),
                     UI.Button("+ Value", AddValue)
-                ).SetWidth(220),
+                ).SetWidth(140),
                 UI.Column(
                     PaneTitle("Output"),
                     signalGraph.CreateElement(),

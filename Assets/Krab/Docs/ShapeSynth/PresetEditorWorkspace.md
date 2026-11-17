@@ -241,3 +241,14 @@ ShapeのInspectorのStyleに **To Color**、**Color Mix**、**Hue Shift** を追
 - Visualタブ中央のPreview画面（出力RTの `UI.Image`）を削除した。背景の出力と同じ映像を重ねて表示していただけで、ウインドウ幅の大半を占めて背景を覆っていた。VisualタブはHierarchy（260）とInspector（620）の2ペイン。
 - 再生操作（Play / Loop / BPM / Seed / Beat）はタブの外の上部へ移した。背景への描画（`ShapeSynthController.StaticPreview`）、Beatのスクラブ、Now表示、出力グラフのカーソルは従来どおり。
 - `IUiTarget.CreateElement()` がエディター本体を返す。以前は「Open Preset Editor」ボタンだけのウィンドウを経由し、Play開始時に専用ウィンドウを自動で開いていた。その専用ウィンドウ・自動表示・固定位置は廃止し、他のUiTargetと同じくUiBuilderのウィンドウに表示する。ShapeSynthの今後のUI（MIDIバインドなど）も同じくUiTargetとして追加する想定。
+
+## 追補: VisualとValuesの別ウインドウ化（2026-11-17）
+
+- Preset Editorは、Settingsウインドウから「Preset Editor - Visual」「Preset Editor - Values」の2つのランチャーで開く（Commonの `IUiWindowsTarget`）。2つのウインドウは同じPresetを編集する。
+- Visual：Name / New / Save / Open、Play / Loop / BPM、Beatスライダー、Hierarchy、Inspector。
+- Values：Valueの一覧と編集、Output（Signal Graph）。グラフのBeatカーソルはVisual側の再生に追従する。
+- エラー表示は両方のウインドウに出す。
+- 各ウインドウの中身は上下左右のScrollViewに入れ、ウインドウを小さくしたときにスクロールできるようにした。
+- ScrollView直下の各ブロックは縮まないようにした（FlexShrink 0）。縮むと、小さいウインドウでスクロールする代わりにHierarchy / Inspectorが押しつぶされるため。
+- 検証（2026-11-17）：コンパイル成功、EditMode 319件成功。Play Modeで、Settingsに2つのランチャーが並ぶことを確認した。また、UiBuilderと同じ構成のウインドウを400×300に縮めて測り、Visual（中身880×607）とValues（中身740×418）の両方で上下左右のスクロールバーが出ることを確認した。実際のランチャーからウインドウを開く操作と、見た目は未確認。
+- 横幅を詰めた：Hierarchyの枠を170、Valueの一覧を140にした。Hierarchy下の操作は「Shapeの種類（ドロップダウン）＋ + Shape」「+ Group / Delete」の2行にした。Play Modeで測った中身の幅は、Visualが790、Valuesが660（以前は880と740）。ドロップダウンの幅92は、一番長い「Rectangle」（文字幅57）が入る大きさ。

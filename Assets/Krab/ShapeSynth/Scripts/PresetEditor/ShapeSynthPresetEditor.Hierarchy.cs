@@ -22,13 +22,15 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.ScrollViewVertical(
                     320,
                     UI.DynamicElementOnStatusChanged(() => _documentRevision, _ => NodeRow(Document.RootGroup, 0))),
-                Choice(
-                    "Shape",
-                    () => Array.IndexOf(ShapeKinds, _addKind),
-                    value => _addKind = ShapeKinds[value],
-                    ShapeKinds.Select(kind => kind.ToString())),
+                // Two short rows keep the pane narrow: the Shape kind sits beside the button that adds it.
                 UI.Row(
-                    UI.Button("+ Shape", () => AddNode(_addKind)),
+                    Choice(
+                        null,
+                        () => Array.IndexOf(ShapeKinds, _addKind),
+                        value => _addKind = ShapeKinds[value],
+                        ShapeKinds.Select(kind => kind.ToString())).SetWidth(92),
+                    UI.Button("+ Shape", () => AddNode(_addKind))),
+                UI.Row(
                     UI.Button("+ Group", () => AddNode(PresetNodeKind.Group)),
                     UI.Button("Delete", DeleteSelected)));
         }

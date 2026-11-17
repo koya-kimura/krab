@@ -87,8 +87,16 @@ namespace Krab.Common.Views
                 .Select(item => item.Element).ToList();
         }
 
-        private static Element CreateLauncher(TargetEntry entry) =>
-            UI.WindowLauncher(entry.Title, UI.Window(entry.Title, UI.Page(entry.Target.CreateElement())));
+        private static Element CreateLauncher(TargetEntry entry)
+        {
+            if (!(entry.Target is IUiWindowsTarget windows)) return Launcher(entry.Title, entry.Target.CreateElement());
+
+            return UI.Column(windows.CreateWindows()
+                .Select(window => Launcher($"{entry.Title} - {window.Name}", window.Content)));
+        }
+
+        private static Element Launcher(string title, Element content) =>
+            UI.WindowLauncher(title, UI.Window(title, UI.Page(content)));
 
         private sealed class TargetEntry
         {

@@ -20,25 +20,55 @@ namespace Krab.ShapeSynth.PresetEditor
         private int _openIndex;
 
         /// <summary>
-        /// The whole editor; UiBuilder opens it from the shared Settings window like any other target.
-        /// The preset is drawn in the background output, so the editor has no preview image of its own.
+        /// Two windows over the same document, opened from the shared Settings window. Visual owns the file bar and
+        /// playback; Values only edits signals. The preset is drawn in the background output, so neither window has
+        /// a preview image of its own. Each window scrolls both ways when it is made smaller than its content.
         /// </summary>
+        public IReadOnlyList<(string Name, Element Content)> CreateWindows()
+        {
+            EnsureDocument();
+            return new[] { ("Visual", BuildVisualWindow()), ("Values", BuildValuesWindow()) };
+        }
+
+        /// <summary>Single-window form for hosts that do not use CreateWindows: the Visual window.</summary>
         public Element CreateElement()
         {
             EnsureDocument();
-            return UI.Column(
+            return BuildVisualWindow();
+        }
+
+        private Element BuildVisualWindow()
+        {
+            return Scrollable(
                 BuildFileBar(),
                 BuildTransportBar(),
-                UI.DynamicElementIf(() => _error != null, () => UI.Label(() => _error).SetColor(PresetEditorPalette.Error)),
+                BuildMessages(),
+                UI.Row(
+                    BuildHierarchyPane().SetWidth(170),
+                    BuildInspectorPane().SetWidth(620)));
+        }
+
+        private Element BuildValuesWindow()
+        {
+            return Scrollable(
+                BuildMessages(),
+                BuildValuesView());
+        }
+
+        private Element BuildMessages()
+        {
+            return UI.Column(
+                UI.DynamicElementIf(
+                    () => _error != null,
+                    () => UI.Label(() => _error).SetColor(PresetEditorPalette.Error)),
                 UI.DynamicElementIf(
                     () => _listWarning != null,
-                    () => UI.Label(() => _listWarning).SetColor(PresetEditorPalette.Error)),
-                UI.Tabs(
-                    ("Visual", UI.Row(
-                        BuildHierarchyPane().SetWidth(260),
-                        BuildInspectorPane().SetWidth(620))),
-                    ("Values", BuildValuesView())));
+                    () => UI.Label(() => _listWarning).SetColor(PresetEditorPalette.Error)));
         }
+
+        // Blocks keep their natural height; otherwise a short window squeezes the inner panes instead of scrolling.
+        private static Element Scrollable(params Element[] contents) =>
+            UI.ScrollViewVerticalAndHorizontal(null, null, contents.Select(content => content.SetFlexShrink(0)));
 
         private Element BuildFileBar()
         {

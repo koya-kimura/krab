@@ -14,7 +14,7 @@ namespace Krab.ShapeSynth.PresetEditor
     [RequireComponent(typeof(ShapeSynthController))]
     [UiTarget("ShapeSynth/Authoring", "Preset Editor", 100)]
     [MovedFrom("Krab.ShapeSynth.Samples.PresetEditor")]
-    public sealed partial class ShapeSynthPresetEditor : MonoBehaviour, IUiTarget, IUiSaveTarget
+    public sealed partial class ShapeSynthPresetEditor : MonoBehaviour, IUiTarget, IUiWindowsTarget, IUiSaveTarget
     {
         private readonly Dictionary<string, int> _childrenRevisions = new();
         private readonly HashSet<string> _expandedGroups = new();

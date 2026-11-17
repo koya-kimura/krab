@@ -14,6 +14,7 @@ public class BPMManager : MonoBehaviour, IBPMManager, IUiTarget
 - 属性は継承可能。未指定・空のパスは `Other`、空のタイトルは型名。
   パスの各要素の前後の空白と空要素は除去します。
 - 実際にDIから渡された対象のみ表示します。`Save` ボタンはPrefsを保存します。⌘S はPrefsを保存したあと、`IUiSaveTarget` を実装した対象の `Save()` も呼びます（例：Preset Editorは未保存の変更があるときだけPresetを保存）。
+- `IUiWindowsTarget` を実装した対象は、1つのウインドウの代わりに `CreateWindows()` の各ウインドウを「タイトル - 名前」のランチャーとして並べます（例：Preset Editor - Visual / Values）。
 
 現在の分類:
 
