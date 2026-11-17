@@ -19,7 +19,7 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetDocument
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 4;
 
         /// <summary>Deepest allowed Node, counting the Root Group as 0.</summary>
         public const int MaxDepth = 64;
@@ -244,7 +244,7 @@ namespace Krab.ShapeSynth.Core.Presets
         public PresetParameter FillSaturation = new();
         public PresetParameter FillBrightness = new() { Base = 1 };
         public double FillAlpha = 1;
-        public double StrokeWidth = 1;
+        public PresetParameter StrokeWidth = new() { Base = 1 };
         public PresetParameter StrokeHue = new();
         public PresetParameter StrokeSaturation = new();
         public PresetParameter StrokeBrightness = new() { Base = 1 };
@@ -284,6 +284,7 @@ namespace Krab.ShapeSynth.Core.Presets
             yield return FillHue;
             yield return FillSaturation;
             yield return FillBrightness;
+            yield return StrokeWidth;
             yield return StrokeHue;
             yield return StrokeSaturation;
             yield return StrokeBrightness;

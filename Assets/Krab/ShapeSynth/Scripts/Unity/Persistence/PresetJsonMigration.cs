@@ -25,6 +25,7 @@ namespace Krab.ShapeSynth.Unity.Persistence
         {
             if (document.Value<int>("SchemaVersion") == 1) UpgradeFromV1(document);
             if (document.Value<int>("SchemaVersion") == 2) UpgradeFromV2(document);
+            if (document.Value<int>("SchemaVersion") == 3) UpgradeFromV3(document);
         }
 
         // v1: a flat Modulator list bound by ModulatorId. v2: Values of weighted components bound by ValueId.
@@ -152,5 +153,27 @@ namespace Krab.ShapeSynth.Unity.Persistence
         }
 
         private static JObject ConstantParameter(double value) => new() { ["Base"] = value };
+
+        // v3: a fixed StrokeWidth number. v4: StrokeWidth is a Parameter (px), so it can be bound.
+        private static void UpgradeFromV3(JObject document)
+        {
+            if (document["RootGroup"] is JObject root) UpgradeStrokeWidth(root);
+
+            document["SchemaVersion"] = 4;
+        }
+
+        private static void UpgradeStrokeWidth(JObject node)
+        {
+            var width = node["StrokeWidth"];
+            if (width == null || width.Type == JTokenType.Integer || width.Type == JTokenType.Float)
+                node["StrokeWidth"] = ConstantParameter(width?.Value<double>() ?? 1);
+
+            if (!(node["Children"] is JArray children)) return;
+
+            foreach (var child in children.OfType<JObject>())
+            {
+                UpgradeStrokeWidth(child);
+            }
+        }
     }
 }

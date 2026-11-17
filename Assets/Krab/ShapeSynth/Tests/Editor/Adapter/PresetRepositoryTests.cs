@@ -65,7 +65,8 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             circle.StrokeBrightness.Base = 0.5;
             circle.Fill = false;
             circle.Stroke = true;
-            circle.StrokeWidth = 2.75;
+            circle.StrokeWidth.Base = 2.75;
+            circle.StrokeWidth.Bind(source.Values[0].Id, 4);
             circle.Opacity.Bindings[0].Depth = 0.6;
             var subgroup = source.AddNode(source.RootGroup.Id, PresetNodeKind.Group);
             subgroup.Name = "Nested group";
@@ -90,7 +91,8 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             Assert.That(loaded.RootGroup.Children[0].StrokeBrightness.Base, Is.EqualTo(0.5));
             Assert.That(loaded.RootGroup.Children[0].Fill, Is.False);
             Assert.That(loaded.RootGroup.Children[0].Stroke, Is.True);
-            Assert.That(loaded.RootGroup.Children[0].StrokeWidth, Is.EqualTo(2.75));
+            Assert.That(loaded.RootGroup.Children[0].StrokeWidth.Base, Is.EqualTo(2.75));
+            Assert.That(loaded.RootGroup.Children[0].StrokeWidth.GetBinding().Depth, Is.EqualTo(4));
             Assert.That(loaded.RootGroup.Children[0].Opacity.Bindings[0].Depth, Is.EqualTo(0.6));
             Assert.That(loaded.RootGroup.Children[1].Children[0].Vertices[1].X, Is.EqualTo(73.5));
             Assert.That(Directory.GetFiles(_directory), Has.Length.EqualTo(1));
@@ -229,6 +231,27 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             Assert.That(shape.StrokeSaturation.Base, Is.EqualTo(1).Within(1e-9));
             Assert.That(shape.StrokeBrightness.Base, Is.EqualTo(1).Within(1e-9));
             Assert.That(shape.StrokeAlpha, Is.EqualTo(0.25));
+            Assert.DoesNotThrow(() => PresetCompiler.Compile(loaded));
+        }
+
+        [Test]
+        public void LoadUpgradesSchemaV3StrokeWidthNumbersToParameters()
+        {
+            var repository = new PresetRepository(_directory);
+            var current = PresetDocument.CreateNew();
+            var v3 = JObject.FromObject(current);
+            v3["SchemaVersion"] = 3;
+            v3["RootGroup"]["StrokeWidth"] = 1;
+            v3["RootGroup"]["Children"][0]["StrokeWidth"] = 2.5;
+            Directory.CreateDirectory(_directory);
+            File.WriteAllText(FilePath(current.Id + ".json"), v3.ToString());
+
+            var loaded = repository.Load(current.Id);
+
+            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
+            Assert.That(loaded.RootGroup.StrokeWidth.Base, Is.EqualTo(1));
+            Assert.That(loaded.RootGroup.Children[0].StrokeWidth.Base, Is.EqualTo(2.5));
+            Assert.That(loaded.RootGroup.Children[0].StrokeWidth.GetBinding(), Is.Null);
             Assert.DoesNotThrow(() => PresetCompiler.Compile(loaded));
         }
 

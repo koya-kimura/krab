@@ -142,7 +142,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             rectangle.StrokeAlpha = 0.25;
             rectangle.Fill = false;
             rectangle.Stroke = true;
-            rectangle.StrokeWidth = 3;
+            rectangle.StrokeWidth.Base = 3;
             rectangle.PositionY.Bind(lfo.Id, 2);
 
             var compiled = PresetCompiler.CompileGroup(document);
@@ -165,7 +165,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(shape.StrokeColor.Alpha, Is.EqualTo(0.25));
             Assert.That(shape.Style.FillEnabled, Is.False);
             Assert.That(shape.Style.StrokeEnabled, Is.True);
-            Assert.That(shape.Style.StrokeWidth, Is.EqualTo(3));
+            Assert.That(shape.StrokeWidth.BaseValue, Is.EqualTo(3));
         }
 
         [Test]

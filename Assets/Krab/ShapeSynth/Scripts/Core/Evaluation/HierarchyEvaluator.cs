@@ -87,6 +87,7 @@ namespace Krab.ShapeSynth.Core.Evaluation
             private readonly ParameterEvaluator _width;
             private readonly ParameterEvaluator _height;
             private readonly ParameterEvaluator _opacity;
+            private readonly ParameterEvaluator _strokeWidth;
             private readonly ColorEvaluator _fillColor;
             private readonly ColorEvaluator _strokeColor;
             private readonly EvaluatedNode[] _children;
@@ -119,12 +120,13 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 _height = new ParameterEvaluator(_shape.Height, modulators, context,
                     _shape.Kind == ShapeKind.Circle ? 6UL : 7UL);
                 _opacity = new ParameterEvaluator(_shape.Opacity, modulators, context, 8);
-                // Random keys: fill hue keeps 10 (the former Hue Shift); 9 (the former Color Mix) is retired.
+                // Random keys: fill hue keeps 10 (the former Hue Shift); 9 (the former Color Mix) is retired; 16 is stroke width.
                 _fillColor = new ColorEvaluator(_shape.FillColor, modulators, context, 10, 11, 12);
                 _strokeColor = ReferenceEquals(_shape.StrokeColor, _shape.FillColor)
                     ? _fillColor
                     : new ColorEvaluator(_shape.StrokeColor, modulators, context, 13, 14, 15);
-                MaxDelayBeats = Math.Max(MaxDelayBeats, MaxDelay(_width, _height, _opacity));
+                _strokeWidth = new ParameterEvaluator(_shape.StrokeWidth, modulators, context, 16);
+                MaxDelayBeats = Math.Max(MaxDelayBeats, MaxDelay(_width, _height, _opacity, _strokeWidth));
                 MaxDelayBeats = Math.Max(MaxDelayBeats, _fillColor.MaxDelayBeats);
                 MaxDelayBeats = Math.Max(MaxDelayBeats, _strokeColor.MaxDelayBeats);
             }
@@ -153,7 +155,8 @@ namespace Krab.ShapeSynth.Core.Evaluation
                         ? fill
                         : _strokeColor.Evaluate(now, context);
                     output.Add(new DrawItem(_shape, world, _width.Evaluate(now, context),
-                        _height.Evaluate(now, context), _opacity.Evaluate(now, context), fill, stroke));
+                        _height.Evaluate(now, context), _opacity.Evaluate(now, context), fill, stroke,
+                        _strokeWidth.Evaluate(now, context)));
                 }
 
                 foreach (var child in _children)

@@ -136,19 +136,20 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private IEnumerable<Element> StrokeFields(PresetNode node)
         {
-            yield return NumberField("Stroke Width", () => node.StrokeWidth, value => node.StrokeWidth = value);
-            foreach (var element in ColorFields(node, "Stroke Color", node.StrokeHue, node.StrokeSaturation,
-                         node.StrokeBrightness, () => node.StrokeAlpha, alpha => node.StrokeAlpha = alpha))
-            {
-                yield return element;
-            }
+            return ColorFields(node, "Stroke Color", node.StrokeHue, node.StrokeSaturation, node.StrokeBrightness,
+                () => node.StrokeAlpha, alpha => node.StrokeAlpha = alpha, node.StrokeWidth);
         }
 
+        /// <param name="strokeWidth">The stroke's Width row, placed first in the same table; null for Fill.</param>
         private IEnumerable<Element> ColorFields(PresetNode node, string label, PresetParameter hue,
-            PresetParameter saturation, PresetParameter brightness, Func<double> readAlpha, Action<double> writeAlpha)
+            PresetParameter saturation, PresetParameter brightness, Func<double> readAlpha, Action<double> writeAlpha,
+            PresetParameter strokeWidth = null)
         {
             yield return HsbColorField(label, hue, saturation, brightness, readAlpha, writeAlpha);
             yield return ParameterHeader(node.Layout);
+            if (strokeWidth != null)
+                yield return ParameterRow("Width", strokeWidth, PresetQuantity.Length, node.Layout);
+
             yield return ParameterRow("Hue", hue, PresetQuantity.Angle, node.Layout, InitialDepth.Degrees360);
             yield return ParameterRow("Saturation", saturation, PresetQuantity.Ratio, node.Layout);
             yield return ParameterRow("Brightness", brightness, PresetQuantity.Ratio, node.Layout);

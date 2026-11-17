@@ -50,7 +50,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             {
                 Assert.That(item.Style.FillEnabled, Is.False);
                 Assert.That(item.Style.StrokeEnabled, Is.True);
-                Assert.That(item.Style.StrokeWidth, Is.EqualTo(4));
+                Assert.That(item.StrokeWidth, Is.EqualTo(4));
                 AssertColor(item.FillColor, 252 / 255.0, 70 / 255.0, 34 / 255.0);
                 Assert.That(item.Opacity, Is.InRange(0, 1));
                 Assert.That(item.WorldTransform.M02, Is.EqualTo(0).Within(1e-9));
@@ -121,7 +121,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(circles.Length, Is.InRange(1, 25));
             Assert.That(
                 rectangles.All(shape =>
-                    !shape.Style.FillEnabled && shape.Style.StrokeEnabled && shape.Style.StrokeWidth == 3),
+                    !shape.Style.FillEnabled && shape.Style.StrokeEnabled && shape.StrokeWidth.BaseValue == 3),
                 Is.True);
             Assert.That(circles.Select(shape => shape.FillColor.ConstantColor.Value)
                 .All(color => color.R > color.G && color.R > color.B), Is.True);

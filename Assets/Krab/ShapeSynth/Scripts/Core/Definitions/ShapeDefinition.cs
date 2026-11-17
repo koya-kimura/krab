@@ -23,12 +23,15 @@ namespace Krab.ShapeSynth.Core.Definitions
         /// <summary>The same instance as FillColor unless a separate stroke color was given.</summary>
         public ColorDefinition StrokeColor { get; }
 
+        /// <summary>Local stroke width; a value of 0 or below draws no stroke.</summary>
+        public ParameterDefinition StrokeWidth { get; }
+
         public ShapeStyle Style { get; }
         public IReadOnlyList<Point2> Vertices { get; }
 
         private ShapeDefinition(ShapeKind kind, ParameterDefinition width, ParameterDefinition height,
             TransformDefinition transform, ParameterDefinition opacity, RgbaColor? color, Point2[] vertices,
-            ShapeStyle style, ColorDefinition fillColor, ColorDefinition strokeColor)
+            ShapeStyle style, ColorDefinition fillColor, ColorDefinition strokeColor, ParameterDefinition strokeWidth)
         {
             Kind = kind;
             Width = width ?? throw new ArgumentNullException(nameof(width));
@@ -37,27 +40,32 @@ namespace Krab.ShapeSynth.Core.Definitions
             Opacity = opacity ?? ParameterDefinition.Constant(1);
             FillColor = fillColor ?? (color.HasValue ? ColorDefinition.Constant(color.Value) : ColorDefinition.White);
             StrokeColor = strokeColor ?? FillColor;
+            StrokeWidth = strokeWidth ?? ParameterDefinition.Constant(1);
             Style = style ?? new ShapeStyle();
             Vertices = Array.AsReadOnly(vertices);
         }
 
-        // fillColor, when given, replaces the constant color; strokeColor defaults to the fill color.
+        // fillColor, when given, replaces the constant color; strokeColor defaults to the fill color and
+        // strokeWidth to a constant 1.
         public static ShapeDefinition Circle(ParameterDefinition diameter, TransformDefinition transform = null,
             ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null,
-            ColorDefinition fillColor = null, ColorDefinition strokeColor = null) =>
+            ColorDefinition fillColor = null, ColorDefinition strokeColor = null,
+            ParameterDefinition strokeWidth = null) =>
             new ShapeDefinition(ShapeKind.Circle, diameter, diameter, transform, opacity, color,
-                Array.Empty<Point2>(), style, fillColor, strokeColor);
+                Array.Empty<Point2>(), style, fillColor, strokeColor, strokeWidth);
 
         public static ShapeDefinition Rectangle(ParameterDefinition width, ParameterDefinition height,
             TransformDefinition transform = null, ParameterDefinition opacity = null, RgbaColor? color = null,
-            ShapeStyle style = null, ColorDefinition fillColor = null, ColorDefinition strokeColor = null) =>
+            ShapeStyle style = null, ColorDefinition fillColor = null, ColorDefinition strokeColor = null,
+            ParameterDefinition strokeWidth = null) =>
             new ShapeDefinition(ShapeKind.Rectangle, width, height, transform, opacity, color,
-                Array.Empty<Point2>(), style, fillColor, strokeColor);
+                Array.Empty<Point2>(), style, fillColor, strokeColor, strokeWidth);
 
         /// <summary>Vertices are caller-defined offsets from local (0,0); never recentered by their bounds.</summary>
         public static ShapeDefinition Polygon(IReadOnlyList<Point2> vertices, TransformDefinition transform = null,
             ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null,
-            ColorDefinition fillColor = null, ColorDefinition strokeColor = null)
+            ColorDefinition fillColor = null, ColorDefinition strokeColor = null,
+            ParameterDefinition strokeWidth = null)
         {
             if (vertices == null) throw new ArgumentNullException(nameof(vertices));
             if (vertices.Count < 3)
@@ -70,7 +78,8 @@ namespace Krab.ShapeSynth.Core.Definitions
             }
 
             return new ShapeDefinition(ShapeKind.Polygon, ParameterDefinition.Constant(0),
-                ParameterDefinition.Constant(0), transform, opacity, color, copy, style, fillColor, strokeColor);
+                ParameterDefinition.Constant(0), transform, opacity, color, copy, style, fillColor, strokeColor,
+                strokeWidth);
         }
     }
 }

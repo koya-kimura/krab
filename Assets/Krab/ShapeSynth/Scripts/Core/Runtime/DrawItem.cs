@@ -10,6 +10,9 @@ namespace Krab.ShapeSynth.Core.Runtime
         public ShapeKind Kind { get; }
         public RgbaColor FillColor { get; }
         public RgbaColor StrokeColor { get; }
+
+        /// <summary>Evaluated local stroke width; may be 0 or negative, which draws no stroke.</summary>
+        public double StrokeWidth { get; }
         public ShapeStyle Style { get; }
         public IReadOnlyList<Point2> Vertices { get; }
         public Affine2D WorldTransform { get; }
@@ -18,11 +21,12 @@ namespace Krab.ShapeSynth.Core.Runtime
         public double Opacity { get; }
 
         internal DrawItem(ShapeDefinition shape, Affine2D worldTransform, double width, double height, double opacity,
-            RgbaColor fillColor, RgbaColor strokeColor)
+            RgbaColor fillColor, RgbaColor strokeColor, double strokeWidth)
         {
             Kind = shape.Kind;
             FillColor = fillColor;
             StrokeColor = strokeColor;
+            StrokeWidth = strokeWidth;
             Style = shape.Style;
             Vertices = shape.Vertices;
             WorldTransform = worldTransform;

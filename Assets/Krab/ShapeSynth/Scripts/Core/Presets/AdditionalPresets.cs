@@ -21,7 +21,8 @@ namespace Krab.ShapeSynth.Core.Presets
                 var size = 0.2 + i * 0.14;
                 var diameter = Dimension(size * 0.12, size * 0.88, slots.Length > 1 ? size * 0.025 * (i + 1) : 0);
                 children[i] = ShapeDefinition.Circle(diameter, opacity: Opacity(), color: Hex(0xFC4622),
-                    style: new ShapeStyle(fill: false, stroke: true, strokeWidth: 4));
+                    style: new ShapeStyle(fill: false, stroke: true),
+                    strokeWidth: ParameterDefinition.Constant(4));
             }
 
             return Target(slots, children);
@@ -75,7 +76,8 @@ namespace Krab.ShapeSynth.Core.Presets
             var rotation = Absolute(0, 160, slots.Length > 1 ? 20 : 0);
             var shape = ShapeDefinition.Polygon(vertices,
                 new TransformDefinition(rotationDegrees: rotation, scaleX: scale, scaleY: scale),
-                Opacity(), Hex(0x4C00D2), new ShapeStyle(fill: false, stroke: true, strokeWidth: 8));
+                Opacity(), Hex(0x4C00D2), new ShapeStyle(fill: false, stroke: true),
+                strokeWidth: ParameterDefinition.Constant(8));
             return Target(slots, new INodeDefinition[] { shape });
         }
 
@@ -89,7 +91,8 @@ namespace Krab.ShapeSynth.Core.Presets
                 {
                     var transform = new TransformDefinition(Dimension((col - 2) * 0.14), Dimension((2 - row) * 0.14));
                     children.Add(ShapeDefinition.Rectangle(Dimension(0.07, 0.03), Dimension(0.07, 0.03), transform,
-                        Opacity(), Hex(0xB46600), new ShapeStyle(fill: false, stroke: true, strokeWidth: 3)));
+                        Opacity(), Hex(0xB46600), new ShapeStyle(fill: false, stroke: true),
+                        strokeWidth: ParameterDefinition.Constant(3)));
                     if (SeededRandom.Range(0, 1, new RandomContext(seed, row, col), salt: 85) < 0.35)
                     {
                         children.Add(ShapeDefinition.Circle(Dimension(0.012, 0.025), transform, Opacity(),

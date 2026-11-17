@@ -201,7 +201,7 @@ namespace Krab.ShapeSynth.Core.Presets
             return model.Random == 0 ? parameter : parameter.WithBaseRandom(RandomRange.Spread(scale * model.Random));
         }
 
-        private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke, node.StrokeWidth);
+        private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke);
 
         private static INodeDefinition CompileNode(PresetNode node, ValueIndices indices,
             GroupRuntimeDefinition runtime = null)
@@ -257,14 +257,17 @@ namespace Krab.ShapeSynth.Core.Presets
             {
                 case PresetNodeKind.Circle:
                     return ShapeDefinition.Circle(parameter(node.Width), transform, opacity, style: Style(node),
-                        fillColor: fill, strokeColor: stroke);
+                        fillColor: fill, strokeColor: stroke,
+                        strokeWidth: parameter(node.StrokeWidth));
                 case PresetNodeKind.Rectangle:
                     return ShapeDefinition.Rectangle(parameter(node.Width), parameter(node.Height),
-                        transform, opacity, style: Style(node), fillColor: fill, strokeColor: stroke);
+                        transform, opacity, style: Style(node), fillColor: fill, strokeColor: stroke,
+                        strokeWidth: parameter(node.StrokeWidth));
                 case PresetNodeKind.Polygon:
                     return ShapeDefinition.Polygon(
                         node.Vertices.Select(point => new Point2(point.X, point.Y)).ToArray(), transform, opacity,
-                        style: Style(node), fillColor: fill, strokeColor: stroke);
+                        style: Style(node), fillColor: fill, strokeColor: stroke,
+                        strokeWidth: parameter(node.StrokeWidth));
                 default:
                     throw new ArgumentException("Unknown Node kind.");
             }

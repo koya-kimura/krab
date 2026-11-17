@@ -64,11 +64,13 @@ namespace Krab.ShapeSynth.Unity.Rendering
                 }
 
                 var style = item.Style ?? new ShapeStyle();
-                if (!style.FillEnabled && (!style.StrokeEnabled || style.StrokeWidth <= 0)) continue;
+                // A stroke width bound below zero simply draws no stroke, like a non-positive size draws nothing.
+                var stroked = style.StrokeEnabled && item.StrokeWidth > 0;
+                if (!style.FillEnabled && !stroked) continue;
 
                 // Convert every submitted value before mutating the canvas or opening a polygon path.
                 var matrix = CreateTargetMatrix(item.WorldTransform, width, height, invertTargetY);
-                var strokeWidth = ResolveStrokeWidth(item.Kind, style.StrokeWidth, item.WorldTransform);
+                var strokeWidth = stroked ? ResolveStrokeWidth(item.Kind, item.StrokeWidth, item.WorldTransform) : 0f;
                 var fill = style.FillEnabled ? MakeColor(item.FillColor, item.Opacity, nameof(items)) : Color.white;
                 var stroke = style.StrokeEnabled && strokeWidth > 0
                     ? MakeColor(item.StrokeColor, item.Opacity, nameof(items))
