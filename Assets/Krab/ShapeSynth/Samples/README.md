@@ -13,7 +13,7 @@
 
 初期値はAttack=1拍、Decay=0.5拍、SustainLevel=0.35、SustainTime=1拍、Release=1拍、反復前の休止=1拍。BPM120なら1周期2.25秒。
 
-描画はUCanvasのScreenOverlay/Indirect、ピクセル単位。検証用の画面配置は出力Cameraの寸法から計算する。このRT/Preview経路では小さいYが画面上側に見えるため、表示用の配置をそれに合わせている。中央原点・X右/Y上というCore側の座標方針と、一般的な座標変換は将来の正式Adapterで扱う。
+描画はUCanvasのScreenOverlay/Indirect、ピクセル単位。検証用の画面配置は出力Cameraの寸法から計算する。このRT/Preview経路では小さいYが画面上側に見えるため、表示用の配置をそれに合わせている。正式Adapterでの中央原点・X右/Y上の座標変換は [描画Adapter](../../Docs/ShapeSynth/RenderingAdapter.md) を参照。
 
 出力経路：UCanvas → Main Camera → 既存OutputTextureProviderのRT → 既存OutputPreviewDisplay/RawImage → Game View。既存SyphonController/Serverも同じRTにTextureモードで接続する。Syphonクライアントでの受信は別途確認が必要。
 

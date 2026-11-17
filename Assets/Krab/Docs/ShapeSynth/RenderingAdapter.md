@@ -39,7 +39,7 @@ OutputTextureProviderがRT生成・再生成・解放を所有する。Preview�
 - 3つのデモはそれぞれTargetCameraCanvasを使用し、同じOutput Cameraを指定する。
 - Space=ADSR再開始、R=Release、L=LFO再開始、D=既存UI切替。新しい静的描画チェックに操作は不要。
 
-既存Sceneの移行はEditorの `RendererSmokeSceneSetup.Upgrade()` を使う。保存済みSmokeTestのEditModeのみ受け付ける。再構築用Builderも同じ構成を作る。本番Sceneは変更しない。
+再構築用の `ShapeSynthSmokeSceneBuilder` も同じ構成を作る。本番Sceneは変更しない。
 
 数値テストとCamera送信確認はGPUの最終映像や演出の目視判断を代替しない。実行ごとの結果はgitignore対象のReportsへ記録する。
 
