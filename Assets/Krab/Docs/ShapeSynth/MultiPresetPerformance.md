@@ -56,3 +56,12 @@ Coreの `CreateDefault()` は互換用に従来のFX01・2 Modulatorを維持し
 Input Systemイベントと明示Updateによる入力経路で、Q/W/E/A/Sの対応、保持で連打しないこと、TextFieldフォーカス時の抑止を検証した。物理キーによる通常操作、映像の最終的な見た目、外部Syphon受信はユーザー確認対象。RenderTexture画像は `Reports/Phase8Combined.png`。
 
 今後は本来の円別タイミング、Polygon Strokeの異方的変形、プリセットID/ルーティングの編集UI、保存形式の版管理を検討する。MIDI、シーケンサー、Pooling、汎用Layout、全30プリセットの移植は今回の対象外。
+
+## 追補: MIDIでユーザープリセットをTrigger（2026-11-17）
+
+- Performanceの「User Presets」の各行に「MIDI」ボタンを追加した。MIDIの割り当て方はMIDI Sample（`ParamSampleComponent`）と同じで、ボタンから割り当てたNoteやボタンを押すと、そのプリセットがTriggerされる。Releaseは送らない（押したらTriggerするだけ）。
+- 保存済みプリセット1つにつき、Momentaryのアクション `ShapeSynth.UserPreset.<プリセットID>` を1つ登録する。割り当てはプリセットIDで保存されるので、名前を変えても外れない。割り当ての保存は、ほかのMIDI設定と同じくPrefsの保存（Settingsの「Save」かCmd+S）。
+- 起動時（Start）に保存済みプリセットを読み込んで登録するので、UIを開かなくてもMIDIで演奏できる。「Refresh User Presets」で、増えたプリセットを登録し、消えたプリセットの登録を外す。
+- Trigger時にはファイルを読み直してCompileする（従来のTriggerボタンと同じ）。Preset Editorで保存した変更は、次のTriggerから反映される。
+- 制限：Play中にスクリプトを再読み込みすると、MIDIの登録が消える（MIDI Sampleと同じ。DIの注入が再実行されないため）。Playし直すと戻る。
+- 検証：Performance SceneのPlayで、5つのプリセットそれぞれにアクションが登録されることを確認した。テスト用のNote（ch15 / 127）を一時的に割り当て、`MidiBindingManager.Receive` で押下を送ると Voice が0→1、離しではTriggerされず、別フレームの再押下で1→2になった。確認後に割り当ては外した。User Presetsの各行に「Trigger | MIDI」が並び、エラーは0件だった。EditMode 319件成功。実機のMIDIコントローラーでの確認は未実施。

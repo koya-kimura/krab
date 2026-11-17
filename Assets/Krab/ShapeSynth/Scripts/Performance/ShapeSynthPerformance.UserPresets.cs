@@ -25,6 +25,7 @@ namespace Krab.ShapeSynth.Performance
                 _userPresets = UserPresetRepository.List(out var errors);
                 _userPresetStatus = $"{_userPresets.Count} user presets. " + string.Join("; ", errors);
                 _userPresetRevision++;
+                SyncMidiTriggers();
             }
             catch (Exception exception)
             {
@@ -70,7 +71,8 @@ namespace Krab.ShapeSynth.Performance
                 var label = UI.Label(() => (_selectedUserPresetId == document.Id ? "> " : "") + document.Name);
                 rows.Add(UI.Row(
                     UI.Button(label, () => _selectedUserPresetId = document.Id),
-                    UI.Button("Trigger", () => TriggerUserPreset(document.Id))));
+                    UI.Button("Trigger", () => TriggerUserPreset(document.Id)),
+                    MidiTriggerButton(document.Id, document.Name)));
             }
 
             return UI.Column(rows);

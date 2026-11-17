@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Krab.Common.Midi.Bindings;
+using Krab.Common.Midi.Views;
 using Krab.Common.Timing;
 using Krab.Common.Views;
 using Krab.ShapeSynth.Core.Performance;
@@ -43,7 +45,11 @@ namespace Krab.ShapeSynth.Performance
             {
                 Debug.LogError($"{nameof(ShapeSynthPerformance)} requires BPM injection.", this);
                 enabled = false;
+                return;
             }
+
+            // Load the saved presets now so their MIDI triggers work before the UI is opened.
+            RefreshUserPresets();
         }
 
         private void Update()
@@ -70,9 +76,11 @@ namespace Krab.ShapeSynth.Performance
         public int VoiceCount => _controller ? _controller.Collection.Voices.Count : 0;
 
         [Inject]
-        public void Construct(IBPMManager bpm)
+        public void Construct(IBPMManager bpm, IMidiBindingProvider midi, IMidiBindingUi midiUi)
         {
             _bpm = bpm;
+            _midiBindings = midi.Bindings;
+            _midiUi = midiUi;
         }
 
         public VoiceInstance TriggerFx01()
