@@ -14,7 +14,7 @@ namespace Krab.ShapeSynth.PresetEditor
     [RequireComponent(typeof(ShapeSynthController))]
     [UiTarget("ShapeSynth/Authoring", "Preset Editor", 100)]
     [MovedFrom("Krab.ShapeSynth.Samples.PresetEditor")]
-    public sealed partial class ShapeSynthPresetEditor : MonoBehaviour, IUiTarget
+    public sealed partial class ShapeSynthPresetEditor : MonoBehaviour, IUiTarget, IUiSaveTarget
     {
         private readonly Dictionary<string, int> _childrenRevisions = new();
         private readonly HashSet<string> _expandedGroups = new();
@@ -104,6 +104,12 @@ namespace Krab.ShapeSynth.PresetEditor
             });
 
             if (!_dirty) RefreshSavedPresets();
+        }
+
+        /// <summary>The Settings save shortcut (Cmd+S): writes the open preset only when it has unsaved changes.</summary>
+        public void Save()
+        {
+            if (_dirty) SaveDocument();
         }
 
         public void SelectNode(string id)

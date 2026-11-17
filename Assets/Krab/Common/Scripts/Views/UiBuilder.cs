@@ -29,7 +29,7 @@ namespace Krab.Common.Views
         private void Update()
         {
             if (_toggleUIAction.WasPressedThisFrame()) _root.enabled = !_root.enabled;
-            if (_prefsSaveAction.WasPressedThisFrame()) Prefs.Save();
+            if (_prefsSaveAction.WasPressedThisFrame()) SaveAll();
         }
 
         private void OnEnable()
@@ -48,6 +48,17 @@ namespace Krab.Common.Views
         public void Constructs(IEnumerable<IUiTarget> targets)
         {
             _targets = targets.ToList();
+        }
+
+        private void SaveAll()
+        {
+            Prefs.Save();
+            if (_targets == null) return;
+
+            foreach (var target in _targets.OfType<IUiSaveTarget>())
+            {
+                target.Save();
+            }
         }
 
         private Element CreateElement()

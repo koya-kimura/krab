@@ -12,6 +12,9 @@ namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
+        // Fixed so the preview of Rand stays the same between edits; performance triggers vary the seed.
+        private const int PreviewSeed = 1234;
+
         private const double PreviewDelaySeconds = 0.3;
 
         private PreviewSignal[] _previewSignals = Array.Empty<PreviewSignal>();
@@ -23,7 +26,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private bool _loop = true;
         private float _beat;
         private float _bpm = 120;
-        private int _seed = 1234;
 
         public bool IsPlaying => _playing;
 
@@ -69,7 +71,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     .ToArray();
                 _signalByComponent = _previewSignals.ToDictionary(signal => signal.Model);
                 UpdatePreviewSignals();
-                _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, _seed);
+                _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, PreviewSeed);
             });
         }
 
@@ -111,12 +113,7 @@ namespace Krab.ShapeSynth.PresetEditor
                         else Play();
                     }),
                     LoopButton(),
-                    UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value)),
-                    UI.Field("Seed", () => _seed, value =>
-                    {
-                        _seed = value;
-                        QueuePreview();
-                    })),
+                    UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value))),
                 // Own row: sharing one with labeled fields pushed the slider past the edge.
                 UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats));
         }

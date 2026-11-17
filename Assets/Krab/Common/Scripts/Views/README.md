@@ -13,7 +13,7 @@ public class BPMManager : MonoBehaviour, IBPMManager, IUiTarget
 - `Order`: 小さい順。同値なら表示名のOrdinal順。カテゴリの順序は配下の最小値。
 - 属性は継承可能。未指定・空のパスは `Other`、空のタイトルは型名。
   パスの各要素の前後の空白と空要素は除去します。
-- 実際にDIから渡された対象のみ表示します。`Save` と ⌘S は従来通りPrefsを保存します。
+- 実際にDIから渡された対象のみ表示します。`Save` ボタンはPrefsを保存します。⌘S はPrefsを保存したあと、`IUiSaveTarget` を実装した対象の `Save()` も呼びます（例：Preset Editorは未保存の変更があるときだけPresetを保存）。
 
 現在の分類:
 
