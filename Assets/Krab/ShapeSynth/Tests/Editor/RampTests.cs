@@ -4,7 +4,6 @@ using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Modulation;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Core.Runtime;
 using NUnit.Framework;

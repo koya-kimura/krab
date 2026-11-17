@@ -1,6 +1,5 @@
 using System;
 using Krab.ShapeSynth.Core.Definitions;
-using Krab.ShapeSynth.Core.Performance;
 
 namespace Krab.ShapeSynth.Core.Presets
 {

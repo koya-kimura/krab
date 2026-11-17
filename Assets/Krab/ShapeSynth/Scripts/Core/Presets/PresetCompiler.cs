@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Geometry;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Runtime;
 
 namespace Krab.ShapeSynth.Core.Presets

@@ -4,7 +4,6 @@ using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Modulation;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Core.Runtime;
 using NUnit.Framework;
@@ -253,7 +252,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         public void RestartReplacesPreviewWithoutOverlapAndLeavesOtherTargetRunning()
         {
             var previewTarget = PresetCompiler.Compile(PresetDocument.CreateNew());
-            var performanceTarget = PresetCatalog.Build(PerformanceSettings.CreateForPerformance(), "pad01", 1);
+            var performanceTarget = PresetCompiler.Compile(PresetDocument.CreateNew());
             var voices = new VoiceCollection();
             var oldPreview = voices.Spawn(previewTarget, 0, 60);
             var performance = voices.Spawn(performanceTarget, 0, 60);
@@ -262,7 +261,7 @@ namespace Krab.ShapeSynth.Tests.Editor
 
             Assert.That(oldPreview.IsFinished(0.01), Is.True);
             Assert.That(voices.Voices, Is.EqualTo(new[] { performance, replacement }));
-            Assert.That(voices.Evaluate(0.01, new ReferenceContext(100, 80)), Has.Count.EqualTo(6));
+            Assert.That(voices.Evaluate(0.01, new ReferenceContext(100, 80)), Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -296,23 +295,6 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(voice.IsFinished(0.19), Is.False);
             Assert.That(voice.IsFinished(0.2), Is.True);
             Assert.That(voice.Evaluate(0.2, new ReferenceContext(100, 80)), Is.Empty);
-        }
-
-        [Test]
-        public void BuiltInPerformanceAndUserCompiledTargetCanRenderTogether()
-        {
-            var userTarget = PresetCompiler.Compile(PresetDocument.CreateNew());
-            var builtInTarget = PresetCatalog.Build(PerformanceSettings.CreateForPerformance(), "pad01", 1);
-            var voices = new VoiceCollection();
-
-            voices.Spawn(builtInTarget, 0, 120);
-            voices.Spawn(userTarget, 0, 120);
-
-            var items = voices.Evaluate(0.05, new ReferenceContext(1920, 1080));
-
-            Assert.That(voices.Voices, Has.Count.EqualTo(2));
-            Assert.That(items, Has.Count.EqualTo(6));
-            Assert.That(items.Count(item => item.Kind == ShapeKind.Circle), Is.EqualTo(6));
         }
 
         [Test]

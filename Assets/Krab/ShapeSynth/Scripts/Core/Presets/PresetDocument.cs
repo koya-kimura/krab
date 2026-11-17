@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Krab.ShapeSynth.Core.Definitions;
-using Krab.ShapeSynth.Core.Performance;
 
 namespace Krab.ShapeSynth.Core.Presets
 {

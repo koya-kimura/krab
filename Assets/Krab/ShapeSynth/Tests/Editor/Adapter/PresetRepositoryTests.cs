@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Unity.Persistence;
 using Newtonsoft.Json;

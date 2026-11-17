@@ -1,5 +1,7 @@
 # Phase 8：5プリセットの演奏とStroke
 
+> 2026-11-17：組み込みプリセットとこの仕組みは削除した。現在の演奏UIは [ユーザープリセットの演奏UI](UserPresetPerformance.md) を参照。以下は当時の記録。
+
 ## 操作
 
 `Assets/Krab/ShapeSynth/Samples/ShapeSynthPerformance.unity` を開いてPlayする。

@@ -1,5 +1,7 @@
 # Phase 7：FX01演奏サンプルとModulator Library
 
+> 2026-11-17：組み込みプリセットとこの仕組みは削除した。現在の演奏UIは [ユーザープリセットの演奏UI](UserPresetPerformance.md) を参照。以下は当時の記録。
+
 Phase 8で5キーとStrokeへ拡張した。最新の操作・JSON補完仕様は [複数プリセット](MultiPresetPerformance.md) を参照。
 
 ## 起動と操作

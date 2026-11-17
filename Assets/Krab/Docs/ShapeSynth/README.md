@@ -1,8 +1,10 @@
 # ShapeSynth ドキュメント
 
-- [複数プリセットとStroke](MultiPresetPerformance.md)：Phase 8の5キー演奏、輪郭描画、v1 JSON互換補完。
+- [ユーザープリセットの演奏UI](UserPresetPerformance.md)：Preset Editorで作ったプリセットだけを「名前 | Trigger | MIDI」で並べる。組み込みプリセットは削除。
 
-- [演奏サンプルとModulator UI](PerformanceAndModulators.md)：Phase 7のFX01、ID管理、編集と専用JSON保存。
+- [複数プリセットとStroke](MultiPresetPerformance.md)：Phase 8の5キー演奏、輪郭描画、v1 JSON互換補完（組み込みプリセットは2026-11-17に削除。当時の記録）。
+
+- [演奏サンプルとModulator UI](PerformanceAndModulators.md)：Phase 7のFX01、ID管理、編集と専用JSON保存（2026-11-17に削除。当時の記録）。
 
 - [Random / Delay / Flip](Variation.md)：旧Phase 6 Variationを置き換え。Seed付きRandom（Base/Depth/Delayへ加算）、Bindingの遅れ、複製ごとのFlip。
 

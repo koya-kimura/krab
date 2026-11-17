@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Modulation;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 using UnityEngine;

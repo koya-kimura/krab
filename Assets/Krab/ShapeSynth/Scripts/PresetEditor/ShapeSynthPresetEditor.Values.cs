@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 

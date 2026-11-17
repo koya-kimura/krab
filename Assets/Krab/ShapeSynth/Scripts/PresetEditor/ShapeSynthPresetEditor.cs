@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Krab.Common.Views;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Unity.Persistence;
 using Krab.ShapeSynth.Unity.Runtime;

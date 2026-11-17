@@ -109,3 +109,5 @@ Referenceの単位、LFOの波形/位相、Polygonの表現、加算後の描画
 2026-11-17: 色をHSBのParameterに一本化し、Fill / Strokeを同じ仕様にした（[HSBによる色](HsbColor.md)）。To Color / Color Mix / Hue Shiftは廃止し、SchemaVersion 3へ移行した。
 
 2026-11-17: Stroke WidthをBindできるParameterにした（[HSBによる色](HsbColor.md)のStroke Width節）。SchemaVersion 4へ移行した。
+
+2026-11-17: 組み込みプリセット（FX01など）とPerformanceSettingsを削除し、Performanceをユーザープリセットだけの縦一覧（名前 | Trigger | MIDI）にした（[ユーザープリセットの演奏UI](UserPresetPerformance.md)）。
