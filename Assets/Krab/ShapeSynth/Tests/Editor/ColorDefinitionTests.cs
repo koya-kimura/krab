@@ -1,110 +1,156 @@
 using System;
-using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Geometry;
 using Krab.ShapeSynth.Core.Modulation;
 using Krab.ShapeSynth.Core.Presets;
+using Krab.ShapeSynth.Core.Runtime;
 using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor
 {
     public sealed class ColorDefinitionTests
     {
-        private static readonly RgbaColor Red = new(1, 0, 0);
-        private static readonly RgbaColor Blue = new(0, 0, 1, 0.5);
+        private static readonly ReferenceContext Context = new(100, 100);
 
-        [Test]
-        public void MixBlendsRgbaAndClampsToEnds()
+        [TestCase(1, 0, 0, 0, 1, 1)]
+        [TestCase(0, 1, 0, 120, 1, 1)]
+        [TestCase(0, 0, 1, 240, 1, 1)]
+        [TestCase(1, 0, 1, 300, 1, 1)]
+        [TestCase(1, 0.5, 0.5, 0, 0.5, 1)]
+        [TestCase(0.4, 0.4, 0.4, 0, 0, 0.4)]
+        [TestCase(0, 0, 0, 0, 0, 0)]
+        public void ConvertsBetweenRgbAndHsb(double r, double g, double b, double hue, double saturation,
+            double brightness)
         {
-            var color = new ColorDefinition(Red, Blue);
+            var (h, s, v) = ColorDefinition.ToHsb(new RgbaColor(r, g, b));
 
-            AssertColor(color.Resolve(0, 0), 1, 0, 0, 1);
-            AssertColor(color.Resolve(0.25, 0), 0.75, 0, 0.25, 0.875);
-            AssertColor(color.Resolve(-3, 0), 1, 0, 0, 1);
-            AssertColor(color.Resolve(7, 0), 0, 0, 1, 0.5);
+            Assert.That(new[] { h, s, v }, Is.EqualTo(new[] { hue, saturation, brightness }).Within(1e-12));
+            AssertColor(ColorDefinition.FromHsb(hue, saturation, brightness), r, g, b, 1);
         }
 
         [Test]
-        public void HueShiftRotatesHueAndWrapsBothWays()
+        public void RoundTripsArbitraryColors()
         {
-            AssertColor(ColorDefinition.ShiftHue(Red, 120), 0, 1, 0, 1);
-            AssertColor(ColorDefinition.ShiftHue(Red, 240), 0, 0, 1, 1);
-            AssertColor(ColorDefinition.ShiftHue(Red, -120), 0, 0, 1, 1);
-            AssertColor(ColorDefinition.ShiftHue(Red, 720 + 60), 1, 1, 0, 1);
-            AssertColor(ColorDefinition.ShiftHue(Red, 360), 1, 0, 0, 1);
+            foreach (var color in new[]
+                     {
+                         new RgbaColor(0.13, 0.57, 0.91), new RgbaColor(0.99, 0.2, 0.6), new RgbaColor(0.3, 0.3, 0.1)
+                     })
+            {
+                var (h, s, v) = ColorDefinition.ToHsb(color);
+                AssertColor(ColorDefinition.FromHsb(h, s, v), color.R, color.G, color.B, 1);
+            }
+        }
+
+        [TestCase(-120, 0, 0, 1)]
+        [TestCase(360, 1, 0, 0)]
+        [TestCase(780, 1, 1, 0)]
+        [TestCase(-1e-15, 1, 0, 0)]
+        public void HueWrapsAroundTheCircle(double hue, double r, double g, double b)
+        {
+            AssertColor(ColorDefinition.FromHsb(hue, 1, 1), r, g, b, 1);
         }
 
         [Test]
-        public void HueShiftKeepsSaturationValueAlphaAndLeavesGray()
+        public void SaturationAndBrightnessAreClampedAndAlphaIsKept()
         {
-            var pastel = new RgbaColor(1, 0.5, 0.5, 0.3);
-
-            AssertColor(ColorDefinition.ShiftHue(pastel, 120), 0.5, 1, 0.5, 0.3);
-            AssertColor(ColorDefinition.ShiftHue(new RgbaColor(0.4, 0.4, 0.4), 90), 0.4, 0.4, 0.4, 1);
+            AssertColor(ColorDefinition.FromHsb(0, 1.5, 2, 0.3), 1, 0, 0, 0.3);
+            AssertColor(ColorDefinition.FromHsb(0, -0.2, 0.5), 0.5, 0.5, 0.5, 1);
+            AssertColor(ColorDefinition.FromHsb(0, 1, -1), 0, 0, 0, 1);
+            Assert.Throws<ArgumentOutOfRangeException>(() => ColorDefinition.FromHsb(double.NaN, 1, 1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new ColorDefinition(alpha: double.NaN));
         }
 
         [Test]
-        public void ResolveRejectsNonFiniteInputs()
+        public void ConstantColorsResolveToTheirExactRgba()
         {
-            var color = ColorDefinition.Constant(Red);
+            var color = new RgbaColor(252 / 255.0, 70 / 255.0, 34 / 255.0, 0.7);
+            var item = Evaluate(ShapeDefinition.Circle(ParameterDefinition.Constant(10), color: color));
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => color.Resolve(double.NaN, 0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => color.Resolve(0, double.PositiveInfinity));
+            Assert.That(item.FillColor, Is.EqualTo(color));
+            Assert.That(item.StrokeColor, Is.EqualTo(color));
         }
 
         [Test]
-        public void WithFillColorLeavesSourceShapeUnchanged()
+        public void DefaultColorIsWhite()
         {
-            var shape = ShapeDefinition.Circle(ParameterDefinition.Constant(10), color: Red);
-            var blended = shape.WithFillColor(new ColorDefinition(Red, Blue, ParameterDefinition.Constant(1)));
+            var item = Evaluate(ShapeDefinition.Circle(ParameterDefinition.Constant(10)));
 
-            Assert.That(shape.FillColor.Mix.BaseValue, Is.EqualTo(0));
-            Assert.That(blended.FillColor.To.B, Is.EqualTo(1));
-            Assert.That(blended.Width, Is.SameAs(shape.Width));
-            Assert.That(blended.Color.R, Is.EqualTo(1));
+            AssertColor(item.FillColor, 1, 1, 1, 1);
+            AssertColor(new ColorDefinition().Resolve(0, 0, 1), 1, 1, 1, 1);
         }
 
         [Test]
-        public void PresetBindingsDriveMixAndHuePerFrame()
+        public void BoundHueSaturationAndBrightnessAreEvaluatedEachFrame()
+        {
+            var fill = new ColorDefinition(Bound(0, 120), Bound(0, 2), ParameterDefinition.Constant(0.5), 0.8);
+            var shape = ShapeDefinition.Circle(ParameterDefinition.Constant(10), fillColor: fill);
+
+            // Signal 1 → hue 120°, saturation 2 clamped to 1, brightness 0.5.
+            AssertColor(Evaluate(shape, 1).FillColor, 0, 0.5, 0, 0.8);
+            // Signal 0 → hue 0°, saturation 0: a gray at the same brightness.
+            AssertColor(Evaluate(shape, 0).FillColor, 0.5, 0.5, 0.5, 0.8);
+        }
+
+        [Test]
+        public void FillAndStrokeAreIndependentColorsOfTheSameForm()
+        {
+            var fill = ColorDefinition.Constant(new RgbaColor(1, 0, 0));
+            var stroke = new ColorDefinition(Bound(240, 120), ParameterDefinition.Constant(1),
+                ParameterDefinition.Constant(1), 0.25);
+            var shape = ShapeDefinition.Circle(ParameterDefinition.Constant(10), fillColor: fill,
+                strokeColor: stroke);
+
+            var item = Evaluate(shape, 1);
+
+            AssertColor(item.FillColor, 1, 0, 0, 1);
+            AssertColor(item.StrokeColor, 1, 0, 0, 0.25);
+            AssertColor(Evaluate(shape, 0).StrokeColor, 0, 0, 1, 0.25);
+        }
+
+        [Test]
+        public void PresetColorsCompileToHsbParameters()
         {
             var document = PresetDocument.CreateNew();
-            var shape = document.RootGroup.Children.Single();
-            shape.Red = 1;
-            shape.Green = 0;
-            shape.Blue = 0;
-            shape.ToRed = 0;
-            shape.ToGreen = 0;
-            shape.ToBlue = 1;
-            shape.Opacity.Unbind();
-            var signal = new SettableSignal();
-            var context = new ReferenceContext(100, 100);
+            var node = document.RootGroup.Children[0];
+            node.FillHue.Base = 120;
+            node.FillSaturation.Base = 1;
+            node.FillBrightness.Base = 0.5;
+            node.FillAlpha = 0.5;
+            node.StrokeHue.Bind(document.Values[0].Id, 90);
 
-            shape.ColorMix.Bind(document.Values[0].Id, 1);
-            var evaluator = new HierarchyEvaluator(PresetCompiler.CompileGroup(document), new IModulator[] { signal });
-            signal.Value = 0.5;
+            var shape = (ShapeDefinition)PresetCompiler.CompileGroup(document).Children[0];
 
-            AssertColor(evaluator.Evaluate(0, context)[0].Color, 0.5, 0, 0.5, 1);
-
-            signal.Value = 1;
-
-            AssertColor(evaluator.Evaluate(0, context)[0].Color, 0, 0, 1, 1);
-
-            shape.ColorMix.Unbind();
-            shape.HueShift.Bind(document.Values[0].Id, 360);
-            evaluator = new HierarchyEvaluator(PresetCompiler.CompileGroup(document), new IModulator[] { signal });
-            signal.Value = 1.0 / 3;
-
-            AssertColor(evaluator.Evaluate(0, context)[0].Color, 0, 1, 0, 1);
+            AssertColor(shape.FillColor.Resolve(120, 1, 0.5), 0, 0.5, 0, 0.5);
+            Assert.That(shape.FillColor.ConstantColor, Is.Null);
+            Assert.That(shape.StrokeColor.Hue.Bindings, Has.Count.EqualTo(1));
+            Assert.That(shape.StrokeColor.Saturation.BaseValue, Is.EqualTo(0));
+            Assert.That(shape.StrokeColor.Brightness.BaseValue, Is.EqualTo(1));
         }
 
         [Test]
-        public void ValidationRejectsNonFiniteToColor()
+        public void ValidationRejectsNonFiniteAlpha()
         {
             var document = PresetDocument.CreateNew();
-            document.RootGroup.Children[0].ToGreen = double.NaN;
-
+            document.RootGroup.Children[0].FillAlpha = double.NaN;
             Assert.Throws<ArgumentOutOfRangeException>(document.Validate);
+
+            document.RootGroup.Children[0].FillAlpha = 1;
+            document.RootGroup.Children[0].StrokeAlpha = double.PositiveInfinity;
+            Assert.Throws<ArgumentOutOfRangeException>(document.Validate);
+        }
+
+        private static ParameterDefinition Bound(double baseValue, double depth)
+        {
+            return new ParameterDefinition(new ReferenceDefinition(ReferenceSource.Absolute), baseValue,
+                new BindingDefinition(0, depth));
+        }
+
+        private static DrawItem Evaluate(ShapeDefinition shape, double signal = 0)
+        {
+            var evaluator = new HierarchyEvaluator(new GroupDefinition(null, shape),
+                new IModulator[] { new Fixed(signal) });
+            return evaluator.Evaluate(0, Context)[0];
         }
 
         private static void AssertColor(RgbaColor color, double r, double g, double b, double a)
@@ -113,11 +159,16 @@ namespace Krab.ShapeSynth.Tests.Editor
                 Is.EqualTo(new[] { r, g, b, a }).Within(1e-9));
         }
 
-        private sealed class SettableSignal : IModulator
+        private sealed class Fixed : IModulator
         {
-            public double Value { get; set; }
+            private readonly double _value;
 
-            public double Evaluate(double nowSeconds) => Value;
+            public Fixed(double value)
+            {
+                _value = value;
+            }
+
+            public double Evaluate(double nowSeconds) => _value;
         }
     }
 }

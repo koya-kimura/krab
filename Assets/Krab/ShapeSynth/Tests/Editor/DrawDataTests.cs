@@ -27,7 +27,7 @@ namespace Krab.ShapeSynth.Tests.Editor
 
             Assert.That(items, Has.Count.EqualTo(3));
             Assert.That(items[0].Kind, Is.EqualTo(ShapeKind.Circle));
-            AssertColor(items[0].Color, 0.1, 0.2, 0.3, 0.4);
+            AssertColor(items[0].FillColor, 0.1, 0.2, 0.3, 0.4);
             Assert.That(items[0].Opacity, Is.EqualTo(-0.25));
             Assert.That(items[0].Vertices, Is.Empty);
             Assert.That(items[1].Kind, Is.EqualTo(ShapeKind.Rectangle));
@@ -35,7 +35,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(items[1].Height, Is.EqualTo(6));
             Assert.That(items[1].Opacity, Is.EqualTo(1.5));
             Assert.That(items[2].Kind, Is.EqualTo(ShapeKind.Polygon));
-            AssertColor(items[2].Color, 0.8, 0.7, 0.6, 1);
+            AssertColor(items[2].FillColor, 0.8, 0.7, 0.6, 1);
             Assert.That(items[2].Vertices, Has.Count.EqualTo(3));
             AssertPoint(items[2].Vertices[0], -2, 1);
             AssertPoint(items[2].Vertices[1], 3, 1);
@@ -71,7 +71,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             var second = evaluator.Evaluate(2, new ReferenceContext(800, 450))[0];
 
             Assert.That(second.Kind, Is.EqualTo(first.Kind));
-            AssertColor(second.Color, first.Color.R, first.Color.G, first.Color.B, first.Color.A);
+            AssertColor(second.FillColor, first.FillColor.R, first.FillColor.G, first.FillColor.B, first.FillColor.A);
             Assert.That(second.Width, Is.EqualTo(first.Width));
             Assert.That(second.Height, Is.EqualTo(first.Height));
             Assert.That(second.Opacity, Is.EqualTo(first.Opacity));

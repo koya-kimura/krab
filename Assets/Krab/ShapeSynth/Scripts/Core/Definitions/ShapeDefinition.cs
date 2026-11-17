@@ -18,59 +18,46 @@ namespace Krab.ShapeSynth.Core.Definitions
         public ParameterDefinition Width { get; }
         public ParameterDefinition Height { get; }
         public ParameterDefinition Opacity { get; }
-        /// <summary>The base fill color (FillColor.From).</summary>
-        public RgbaColor Color => FillColor.From;
-
         public ColorDefinition FillColor { get; }
+
+        /// <summary>The same instance as FillColor unless a separate stroke color was given.</summary>
+        public ColorDefinition StrokeColor { get; }
+
         public ShapeStyle Style { get; }
         public IReadOnlyList<Point2> Vertices { get; }
 
         private ShapeDefinition(ShapeKind kind, ParameterDefinition width, ParameterDefinition height,
             TransformDefinition transform, ParameterDefinition opacity, RgbaColor? color, Point2[] vertices,
-            ShapeStyle style, ColorDefinition fillColor)
+            ShapeStyle style, ColorDefinition fillColor, ColorDefinition strokeColor)
         {
             Kind = kind;
             Width = width ?? throw new ArgumentNullException(nameof(width));
             Height = height ?? throw new ArgumentNullException(nameof(height));
             Transform = transform ?? new TransformDefinition();
             Opacity = opacity ?? ParameterDefinition.Constant(1);
-            FillColor = fillColor ?? ColorDefinition.Constant(color ?? RgbaColor.White);
+            FillColor = fillColor ?? (color.HasValue ? ColorDefinition.Constant(color.Value) : ColorDefinition.White);
+            StrokeColor = strokeColor ?? FillColor;
             Style = style ?? new ShapeStyle();
             Vertices = Array.AsReadOnly(vertices);
         }
 
-        private ShapeDefinition(ShapeDefinition source, ColorDefinition fillColor)
-        {
-            Kind = source.Kind;
-            Width = source.Width;
-            Height = source.Height;
-            Transform = source.Transform;
-            Opacity = source.Opacity;
-            FillColor = fillColor ?? throw new ArgumentNullException(nameof(fillColor));
-            Style = source.Style;
-            Vertices = source.Vertices;
-        }
-
-        /// <summary>Returns a copy whose fill color is evaluated from fillColor; this Definition is unchanged.</summary>
-        public ShapeDefinition WithFillColor(ColorDefinition fillColor) => new ShapeDefinition(this, fillColor);
-
-        // fillColor, when given, replaces the constant color.
+        // fillColor, when given, replaces the constant color; strokeColor defaults to the fill color.
         public static ShapeDefinition Circle(ParameterDefinition diameter, TransformDefinition transform = null,
             ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null,
-            ColorDefinition fillColor = null) =>
+            ColorDefinition fillColor = null, ColorDefinition strokeColor = null) =>
             new ShapeDefinition(ShapeKind.Circle, diameter, diameter, transform, opacity, color,
-                Array.Empty<Point2>(), style, fillColor);
+                Array.Empty<Point2>(), style, fillColor, strokeColor);
 
         public static ShapeDefinition Rectangle(ParameterDefinition width, ParameterDefinition height,
             TransformDefinition transform = null, ParameterDefinition opacity = null, RgbaColor? color = null,
-            ShapeStyle style = null, ColorDefinition fillColor = null) =>
+            ShapeStyle style = null, ColorDefinition fillColor = null, ColorDefinition strokeColor = null) =>
             new ShapeDefinition(ShapeKind.Rectangle, width, height, transform, opacity, color,
-                Array.Empty<Point2>(), style, fillColor);
+                Array.Empty<Point2>(), style, fillColor, strokeColor);
 
         /// <summary>Vertices are caller-defined offsets from local (0,0); never recentered by their bounds.</summary>
         public static ShapeDefinition Polygon(IReadOnlyList<Point2> vertices, TransformDefinition transform = null,
             ParameterDefinition opacity = null, RgbaColor? color = null, ShapeStyle style = null,
-            ColorDefinition fillColor = null)
+            ColorDefinition fillColor = null, ColorDefinition strokeColor = null)
         {
             if (vertices == null) throw new ArgumentNullException(nameof(vertices));
             if (vertices.Count < 3)
@@ -83,7 +70,7 @@ namespace Krab.ShapeSynth.Core.Definitions
             }
 
             return new ShapeDefinition(ShapeKind.Polygon, ParameterDefinition.Constant(0),
-                ParameterDefinition.Constant(0), transform, opacity, color, copy, style, fillColor);
+                ParameterDefinition.Constant(0), transform, opacity, color, copy, style, fillColor, strokeColor);
         }
     }
 }

@@ -69,10 +69,9 @@ namespace Krab.ShapeSynth.Unity.Rendering
                 // Convert every submitted value before mutating the canvas or opening a polygon path.
                 var matrix = CreateTargetMatrix(item.WorldTransform, width, height, invertTargetY);
                 var strokeWidth = ResolveStrokeWidth(item.Kind, style.StrokeWidth, item.WorldTransform);
-                var fill = style.FillEnabled ? MakeColor(item.Color, item.Opacity, nameof(items)) : Color.white;
-                var strokeColor = style.StrokeColor ?? item.Color;
+                var fill = style.FillEnabled ? MakeColor(item.FillColor, item.Opacity, nameof(items)) : Color.white;
                 var stroke = style.StrokeEnabled && strokeWidth > 0
-                    ? MakeColor(strokeColor, item.Opacity, nameof(items))
+                    ? MakeColor(item.StrokeColor, item.Opacity, nameof(items))
                     : Color.black;
                 var itemWidth = Float(item.Width, nameof(items));
                 var itemHeight = Float(item.Height, nameof(items));

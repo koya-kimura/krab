@@ -51,7 +51,7 @@ namespace Krab.ShapeSynth.Tests.Editor
                 Assert.That(item.Style.FillEnabled, Is.False);
                 Assert.That(item.Style.StrokeEnabled, Is.True);
                 Assert.That(item.Style.StrokeWidth, Is.EqualTo(4));
-                AssertColor(item.Color, 252 / 255.0, 70 / 255.0, 34 / 255.0);
+                AssertColor(item.FillColor, 252 / 255.0, 70 / 255.0, 34 / 255.0);
                 Assert.That(item.Opacity, Is.InRange(0, 1));
                 Assert.That(item.WorldTransform.M02, Is.EqualTo(0).Within(1e-9));
                 Assert.That(item.WorldTransform.M12, Is.EqualTo(0).Within(1e-9));
@@ -123,7 +123,8 @@ namespace Krab.ShapeSynth.Tests.Editor
                 rectangles.All(shape =>
                     !shape.Style.FillEnabled && shape.Style.StrokeEnabled && shape.Style.StrokeWidth == 3),
                 Is.True);
-            Assert.That(circles.All(shape => shape.Color.R > shape.Color.G && shape.Color.R > shape.Color.B), Is.True);
+            Assert.That(circles.Select(shape => shape.FillColor.ConstantColor.Value)
+                .All(color => color.R > color.G && color.R > color.B), Is.True);
 
             var items = Evaluate(settings, "lead03", 1234, 0.05);
             var rectangleItems = items.Where(item => item.Kind == ShapeKind.Rectangle).ToArray();

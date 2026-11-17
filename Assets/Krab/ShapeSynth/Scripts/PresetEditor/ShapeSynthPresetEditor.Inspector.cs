@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Krab.ShapeSynth.Core.Definitions;
+using Krab.ShapeSynth.Core.Geometry;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
 using UnityEngine;
@@ -118,34 +120,38 @@ namespace Krab.ShapeSynth.PresetEditor
             });
         }
 
-        /// <summary>Color items appear only while Fill is on, stroke items only while Stroke is on.</summary>
+        /// <summary>
+        /// Fill items appear only while Fill is on, stroke items only while Stroke is on. Both colors use the same
+        /// fields: a picker for the resting color, then Hue / Saturation / Brightness rows that can be bound.
+        /// </summary>
         private IEnumerable<Element> StyleFields(PresetNode node)
         {
             yield return Toggle("Fill", () => node.Fill, value => node.Fill = value);
-            yield return UI.DynamicElementIf(() => node.Fill, () => UI.Column(FillFields(node)));
+            yield return UI.DynamicElementIf(() => node.Fill, () => UI.Column(ColorFields(node, "Fill Color",
+                node.FillHue, node.FillSaturation, node.FillBrightness,
+                () => node.FillAlpha, alpha => node.FillAlpha = alpha)));
             yield return Toggle("Stroke", () => node.Stroke, value => node.Stroke = value);
-            yield return UI.DynamicElementIf(() => node.Stroke, () => UI.Column(
-                NumberField("Stroke Width", () => node.StrokeWidth, value => node.StrokeWidth = value),
-                ColorField("Stroke Color",
-                    () => (node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha),
-                    value => (node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha) = value)));
+            yield return UI.DynamicElementIf(() => node.Stroke, () => UI.Column(StrokeFields(node)));
         }
 
-        /// <summary>To Color only matters while Color Mix can be above 0 (non-zero Base or a bound Value).</summary>
-        private IEnumerable<Element> FillFields(PresetNode node)
+        private IEnumerable<Element> StrokeFields(PresetNode node)
         {
-            yield return ColorField("Color",
-                () => (node.Red, node.Green, node.Blue, node.Alpha),
-                value => (node.Red, node.Green, node.Blue, node.Alpha) = value);
+            yield return NumberField("Stroke Width", () => node.StrokeWidth, value => node.StrokeWidth = value);
+            foreach (var element in ColorFields(node, "Stroke Color", node.StrokeHue, node.StrokeSaturation,
+                         node.StrokeBrightness, () => node.StrokeAlpha, alpha => node.StrokeAlpha = alpha))
+            {
+                yield return element;
+            }
+        }
+
+        private IEnumerable<Element> ColorFields(PresetNode node, string label, PresetParameter hue,
+            PresetParameter saturation, PresetParameter brightness, Func<double> readAlpha, Action<double> writeAlpha)
+        {
+            yield return HsbColorField(label, hue, saturation, brightness, readAlpha, writeAlpha);
             yield return ParameterHeader(node.Layout);
-            yield return ParameterRow("Color Mix", node.ColorMix, PresetQuantity.Ratio, node.Layout);
-            yield return UI.DynamicElementIf(
-                () => node.ColorMix.Base != 0 || node.ColorMix.GetBinding() != null,
-                () => ColorField("To Color",
-                    () => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha),
-                    value => (node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha) = value));
-            yield return ParameterRow("Hue Shift", node.HueShift, PresetQuantity.Angle, node.Layout,
-                InitialDepth.Degrees360);
+            yield return ParameterRow("Hue", hue, PresetQuantity.Angle, node.Layout, InitialDepth.Degrees360);
+            yield return ParameterRow("Saturation", saturation, PresetQuantity.Ratio, node.Layout);
+            yield return ParameterRow("Brightness", brightness, PresetQuantity.Ratio, node.Layout);
         }
 
         private Element Toggle(string label, Func<bool> read, Action<bool> write)
@@ -157,19 +163,41 @@ namespace Krab.ShapeSynth.PresetEditor
             });
         }
 
-        private Element ColorField(string label, Func<(double R, double G, double B, double A)> read,
-            Action<(double R, double G, double B, double A)> write)
+        /// <summary>
+        /// Shows the resting color of three HSB Parameters and writes a picked color back into their Bases. The
+        /// Parameters stay the only source of the color. Picking a gray keeps the hue, and black keeps the saturation,
+        /// so a later brighter pick does not jump back to red.
+        /// </summary>
+        private Element HsbColorField(string label, PresetParameter hue, PresetParameter saturation,
+            PresetParameter brightness, Func<double> readAlpha, Action<double> writeAlpha)
         {
             return UI.Field(label, () =>
             {
-                var (r, g, b, a) = read();
-                return new Color((float)r, (float)g, (float)b, (float)a);
+                var color = ColorDefinition.FromHsb(RestingValue(hue), RestingValue(saturation),
+                    RestingValue(brightness), readAlpha());
+                return new Color((float)color.R, (float)color.G, (float)color.B, (float)color.A);
             }, value =>
             {
-                write((value.r, value.g, value.b, value.a));
+                var (h, s, b) = ColorDefinition.ToHsb(new RgbaColor(value.r, value.g, value.b, value.a));
+                if (b > 0 && s > 0) SetRestingValue(hue, h);
+                if (b > 0) SetRestingValue(saturation, s);
+                SetRestingValue(brightness, b);
+                writeAlpha(value.a);
                 Changed();
             });
         }
+
+        // Color Parameters are Absolute (deg / turn / ratio); the resting value is Base × the unit factor.
+        private static double RestingValue(PresetParameter parameter) => parameter.Base * UnitFactor(parameter);
+
+        private static void SetRestingValue(PresetParameter parameter, double value)
+        {
+            var factor = UnitFactor(parameter);
+            if (factor != 0) parameter.Base = value / factor;
+        }
+
+        private static double UnitFactor(PresetParameter parameter) =>
+            parameter.Reference == ReferenceSource.Absolute ? parameter.Multiplier * parameter.AbsoluteValue : 1;
 
         private Element NumberField(string label, Func<double> read, Action<double> write)
         {

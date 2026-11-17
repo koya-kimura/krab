@@ -8,7 +8,8 @@ namespace Krab.ShapeSynth.Core.Runtime
     public sealed class DrawItem
     {
         public ShapeKind Kind { get; }
-        public RgbaColor Color { get; }
+        public RgbaColor FillColor { get; }
+        public RgbaColor StrokeColor { get; }
         public ShapeStyle Style { get; }
         public IReadOnlyList<Point2> Vertices { get; }
         public Affine2D WorldTransform { get; }
@@ -17,10 +18,11 @@ namespace Krab.ShapeSynth.Core.Runtime
         public double Opacity { get; }
 
         internal DrawItem(ShapeDefinition shape, Affine2D worldTransform, double width, double height, double opacity,
-            RgbaColor color)
+            RgbaColor fillColor, RgbaColor strokeColor)
         {
             Kind = shape.Kind;
-            Color = color;
+            FillColor = fillColor;
+            StrokeColor = strokeColor;
             Style = shape.Style;
             Vertices = shape.Vertices;
             WorldTransform = worldTransform;

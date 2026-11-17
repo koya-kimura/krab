@@ -133,8 +133,8 @@ namespace Krab.ShapeSynth.Core.Presets
                 }
             }
 
-            Color(node);
-            ToColor(node);
+            VoiceTime.RequireFinite(node.FillAlpha, "Fill Alpha");
+            VoiceTime.RequireFinite(node.StrokeAlpha, "Stroke Alpha");
             Style(node);
             if (node.Vertices == null || node.Vertices.Count > 2000
                 || (node.Kind == PresetNodeKind.Polygon && node.Vertices.Count < 3))
@@ -201,14 +201,7 @@ namespace Krab.ShapeSynth.Core.Presets
             return model.Random == 0 ? parameter : parameter.WithBaseRandom(RandomRange.Spread(scale * model.Random));
         }
 
-        private static RgbaColor Color(PresetNode node) =>
-            new RgbaColor(node.Red, node.Green, node.Blue, node.Alpha);
-
-        private static RgbaColor ToColor(PresetNode node) =>
-            new RgbaColor(node.ToRed, node.ToGreen, node.ToBlue, node.ToAlpha);
-
-        private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke, node.StrokeWidth,
-            new RgbaColor(node.StrokeRed, node.StrokeGreen, node.StrokeBlue, node.StrokeAlpha));
+        private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke, node.StrokeWidth);
 
         private static INodeDefinition CompileNode(PresetNode node, ValueIndices indices,
             GroupRuntimeDefinition runtime = null)
@@ -249,26 +242,29 @@ namespace Krab.ShapeSynth.Core.Presets
 
             var transform = new TransformDefinition(withPosition ? P(node.PositionX) : null,
                 withPosition ? P(node.PositionY) : null, P(node.Rotation), P(node.ScaleX), P(node.ScaleY));
-            var fill = new ColorDefinition(Color(node), ToColor(node), P(node.ColorMix), P(node.HueShift));
-            return CompileGeometry(node, transform, fill, P);
+            var fill = new ColorDefinition(P(node.FillHue), P(node.FillSaturation), P(node.FillBrightness),
+                node.FillAlpha);
+            var stroke = new ColorDefinition(P(node.StrokeHue), P(node.StrokeSaturation), P(node.StrokeBrightness),
+                node.StrokeAlpha);
+            return CompileGeometry(node, transform, fill, stroke, P);
         }
 
         private static ShapeDefinition CompileGeometry(PresetNode node, TransformDefinition transform,
-            ColorDefinition fill, Func<PresetParameter, ParameterDefinition> parameter)
+            ColorDefinition fill, ColorDefinition stroke, Func<PresetParameter, ParameterDefinition> parameter)
         {
             var opacity = parameter(node.Opacity);
             switch (node.Kind)
             {
                 case PresetNodeKind.Circle:
                     return ShapeDefinition.Circle(parameter(node.Width), transform, opacity, style: Style(node),
-                        fillColor: fill);
+                        fillColor: fill, strokeColor: stroke);
                 case PresetNodeKind.Rectangle:
                     return ShapeDefinition.Rectangle(parameter(node.Width), parameter(node.Height),
-                        transform, opacity, style: Style(node), fillColor: fill);
+                        transform, opacity, style: Style(node), fillColor: fill, strokeColor: stroke);
                 case PresetNodeKind.Polygon:
                     return ShapeDefinition.Polygon(
                         node.Vertices.Select(point => new Point2(point.X, point.Y)).ToArray(), transform, opacity,
-                        style: Style(node), fillColor: fill);
+                        style: Style(node), fillColor: fill, strokeColor: stroke);
                 default:
                     throw new ArgumentException("Unknown Node kind.");
             }

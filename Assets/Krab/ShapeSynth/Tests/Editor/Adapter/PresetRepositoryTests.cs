@@ -61,7 +61,8 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var circle = source.RootGroup.Children[0];
             circle.Name = "Pulse circle";
             circle.Width.Base = 0.37;
-            circle.Red = 0.25;
+            circle.FillHue.Base = 0.25;
+            circle.StrokeBrightness.Base = 0.5;
             circle.Fill = false;
             circle.Stroke = true;
             circle.StrokeWidth = 2.75;
@@ -85,7 +86,8 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             Assert.That(loaded.Values[0].Components[1].Weight, Is.EqualTo(-0.25));
             Assert.That(loaded.RootGroup.Children[0].Name, Is.EqualTo("Pulse circle"));
             Assert.That(loaded.RootGroup.Children[0].Width.Base, Is.EqualTo(0.37));
-            Assert.That(loaded.RootGroup.Children[0].Red, Is.EqualTo(0.25));
+            Assert.That(loaded.RootGroup.Children[0].FillHue.Base, Is.EqualTo(0.25));
+            Assert.That(loaded.RootGroup.Children[0].StrokeBrightness.Base, Is.EqualTo(0.5));
             Assert.That(loaded.RootGroup.Children[0].Fill, Is.False);
             Assert.That(loaded.RootGroup.Children[0].Stroke, Is.True);
             Assert.That(loaded.RootGroup.Children[0].StrokeWidth, Is.EqualTo(2.75));
@@ -169,6 +171,65 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             Assert.That(loaded.Values.Single().Components.Single().Weight, Is.EqualTo(1));
             Assert.That(loaded.Values.Single().Components.Single().Attack, Is.EqualTo(0.33));
             Assert.That(loaded.RootGroup.Children[0].Opacity.GetBinding().ValueId, Is.EqualTo(current.Values[0].Id));
+        }
+
+        [Test]
+        public void LoadUpgradesSchemaV2ColorsToHsbParameters()
+        {
+            var repository = new PresetRepository(_directory);
+            var current = PresetDocument.CreateNew();
+            var envelopeId = current.Values[0].Id;
+            var v2 = JObject.FromObject(current);
+            v2["SchemaVersion"] = 2;
+            var node = (JObject)v2["RootGroup"]["Children"][0];
+            foreach (var field in new[]
+                     {
+                         "FillHue", "FillSaturation", "FillBrightness", "FillAlpha", "StrokeHue", "StrokeSaturation",
+                         "StrokeBrightness", "StrokeAlpha"
+                     })
+            {
+                node.Remove(field);
+            }
+
+            // Red blended halfway to blue (alpha 0.5 → 1), hue-shifted by 30° plus a bound 360° sweep.
+            node["Red"] = 1;
+            node["Green"] = 0;
+            node["Blue"] = 0;
+            node["Alpha"] = 0.5;
+            node["ToRed"] = 0;
+            node["ToGreen"] = 0;
+            node["ToBlue"] = 1;
+            node["ToAlpha"] = 1;
+            node["ColorMix"] = new JObject { ["Base"] = 0.5 };
+            node["HueShift"] = new JObject
+            {
+                ["Base"] = 30, ["Random"] = 5,
+                ["Bindings"] = new JArray(new JObject { ["ValueId"] = envelopeId, ["Depth"] = 360 })
+            };
+            node["StrokeRed"] = 0;
+            node["StrokeGreen"] = 1;
+            node["StrokeBlue"] = 0;
+            node["StrokeAlpha"] = 0.25;
+            Directory.CreateDirectory(_directory);
+            File.WriteAllText(FilePath(current.Id + ".json"), v2.ToString());
+
+            var loaded = repository.Load(current.Id);
+            var shape = loaded.RootGroup.Children[0];
+
+            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
+            // The resting fill (0.5, 0, 0.5) is hue 300°, saturation 1, brightness 0.5; the shift adds 30°.
+            Assert.That(shape.FillHue.Base, Is.EqualTo(330).Within(1e-9));
+            Assert.That(shape.FillHue.Random, Is.EqualTo(5));
+            Assert.That(shape.FillHue.GetBinding().ValueId, Is.EqualTo(envelopeId));
+            Assert.That(shape.FillHue.GetBinding().Depth, Is.EqualTo(360));
+            Assert.That(shape.FillSaturation.Base, Is.EqualTo(1).Within(1e-9));
+            Assert.That(shape.FillBrightness.Base, Is.EqualTo(0.5).Within(1e-9));
+            Assert.That(shape.FillAlpha, Is.EqualTo(0.75).Within(1e-9));
+            Assert.That(shape.StrokeHue.Base, Is.EqualTo(120).Within(1e-9));
+            Assert.That(shape.StrokeSaturation.Base, Is.EqualTo(1).Within(1e-9));
+            Assert.That(shape.StrokeBrightness.Base, Is.EqualTo(1).Within(1e-9));
+            Assert.That(shape.StrokeAlpha, Is.EqualTo(0.25));
+            Assert.DoesNotThrow(() => PresetCompiler.Compile(loaded));
         }
 
         [Test]

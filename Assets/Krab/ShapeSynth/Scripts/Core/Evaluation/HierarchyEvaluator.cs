@@ -87,8 +87,8 @@ namespace Krab.ShapeSynth.Core.Evaluation
             private readonly ParameterEvaluator _width;
             private readonly ParameterEvaluator _height;
             private readonly ParameterEvaluator _opacity;
-            private readonly ParameterEvaluator _colorMix;
-            private readonly ParameterEvaluator _hueShift;
+            private readonly ColorEvaluator _fillColor;
+            private readonly ColorEvaluator _strokeColor;
             private readonly EvaluatedNode[] _children;
 
             public double MaxDelayBeats { get; }
@@ -119,9 +119,14 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 _height = new ParameterEvaluator(_shape.Height, modulators, context,
                     _shape.Kind == ShapeKind.Circle ? 6UL : 7UL);
                 _opacity = new ParameterEvaluator(_shape.Opacity, modulators, context, 8);
-                _colorMix = new ParameterEvaluator(_shape.FillColor.Mix, modulators, context, 9);
-                _hueShift = new ParameterEvaluator(_shape.FillColor.HueShiftDegrees, modulators, context, 10);
-                MaxDelayBeats = Math.Max(MaxDelayBeats, MaxDelay(_width, _height, _opacity, _colorMix, _hueShift));
+                // Random keys: fill hue keeps 10 (the former Hue Shift); 9 (the former Color Mix) is retired.
+                _fillColor = new ColorEvaluator(_shape.FillColor, modulators, context, 10, 11, 12);
+                _strokeColor = ReferenceEquals(_shape.StrokeColor, _shape.FillColor)
+                    ? _fillColor
+                    : new ColorEvaluator(_shape.StrokeColor, modulators, context, 13, 14, 15);
+                MaxDelayBeats = Math.Max(MaxDelayBeats, MaxDelay(_width, _height, _opacity));
+                MaxDelayBeats = Math.Max(MaxDelayBeats, _fillColor.MaxDelayBeats);
+                MaxDelayBeats = Math.Max(MaxDelayBeats, _strokeColor.MaxDelayBeats);
             }
 
             private static double MaxDelay(params ParameterEvaluator[] evaluators)
@@ -143,16 +148,48 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 var world = parent * local;
                 if (_shape != null)
                 {
-                    var color = _shape.FillColor.Resolve(_colorMix.Evaluate(now, context),
-                        _hueShift.Evaluate(now, context));
+                    var fill = _fillColor.Evaluate(now, context);
+                    var stroke = ReferenceEquals(_strokeColor, _fillColor)
+                        ? fill
+                        : _strokeColor.Evaluate(now, context);
                     output.Add(new DrawItem(_shape, world, _width.Evaluate(now, context),
-                        _height.Evaluate(now, context), _opacity.Evaluate(now, context), color));
+                        _height.Evaluate(now, context), _opacity.Evaluate(now, context), fill, stroke));
                 }
 
                 foreach (var child in _children)
                 {
                     child.Append(now, context, world, output);
                 }
+            }
+        }
+
+        /// <summary>Evaluates one HSB color; a Constant color returns its exact RGBA without sampling.</summary>
+        private sealed class ColorEvaluator
+        {
+            private readonly ColorDefinition _definition;
+            private readonly ParameterEvaluator _hue;
+            private readonly ParameterEvaluator _saturation;
+            private readonly ParameterEvaluator _brightness;
+
+            public double MaxDelayBeats { get; }
+
+            public ColorEvaluator(ColorDefinition definition, IReadOnlyList<IModulator> modulators,
+                RandomContext context, ulong hueKey, ulong saturationKey, ulong brightnessKey)
+            {
+                _definition = definition;
+                _hue = new ParameterEvaluator(definition.Hue, modulators, context, hueKey);
+                _saturation = new ParameterEvaluator(definition.Saturation, modulators, context, saturationKey);
+                _brightness = new ParameterEvaluator(definition.Brightness, modulators, context, brightnessKey);
+                MaxDelayBeats = Math.Max(_hue.MaxDelayBeats,
+                    Math.Max(_saturation.MaxDelayBeats, _brightness.MaxDelayBeats));
+            }
+
+            public RgbaColor Evaluate(double now, ReferenceContext context)
+            {
+                if (_definition.ConstantColor.HasValue) return _definition.ConstantColor.Value;
+
+                return _definition.Resolve(_hue.Evaluate(now, context), _saturation.Evaluate(now, context),
+                    _brightness.Evaluate(now, context));
             }
         }
     }

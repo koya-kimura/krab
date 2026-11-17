@@ -19,7 +19,7 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetDocument
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
 
         /// <summary>Deepest allowed Node, counting the Root Group as 0.</summary>
         public const int MaxDepth = 64;
@@ -236,15 +236,19 @@ namespace Krab.ShapeSynth.Core.Presets
         public PresetParameter Width = new() { Base = 0.2, Reference = ReferenceSource.MinDimension };
         public PresetParameter Height = new() { Base = 0.2, Reference = ReferenceSource.MinDimension };
         public PresetParameter Opacity = new() { Base = 1 };
-        public double Red = 1, Green = 1, Blue = 1, Alpha = 1;
 
-        // Fill = blend(Color, To Color, ColorMix 0–1) with its hue rotated by HueShift degrees.
-        public double ToRed = 1, ToGreen = 1, ToBlue = 1, ToAlpha = 1;
-        public PresetParameter ColorMix = new();
-        public PresetParameter HueShift = new();
+        // Fill and stroke colors are the same HSB form: Hue in degrees, Saturation and Brightness 0–1, and a
+        // constant Alpha. The defaults are white.
         public bool Fill = true, Stroke;
+        public PresetParameter FillHue = new();
+        public PresetParameter FillSaturation = new();
+        public PresetParameter FillBrightness = new() { Base = 1 };
+        public double FillAlpha = 1;
         public double StrokeWidth = 1;
-        public double StrokeRed = 1, StrokeGreen = 1, StrokeBlue = 1, StrokeAlpha = 1;
+        public PresetParameter StrokeHue = new();
+        public PresetParameter StrokeSaturation = new();
+        public PresetParameter StrokeBrightness = new() { Base = 1 };
+        public double StrokeAlpha = 1;
         public List<PresetPoint> Vertices = new();
 
         // Only used by Shapes; Groups keep the default None.
@@ -277,8 +281,12 @@ namespace Krab.ShapeSynth.Core.Presets
             yield return Width;
             yield return Height;
             yield return Opacity;
-            yield return ColorMix;
-            yield return HueShift;
+            yield return FillHue;
+            yield return FillSaturation;
+            yield return FillBrightness;
+            yield return StrokeHue;
+            yield return StrokeSaturation;
+            yield return StrokeBrightness;
             yield return Layout.SpacingX;
             yield return Layout.SpacingY;
             yield return Layout.Radius;

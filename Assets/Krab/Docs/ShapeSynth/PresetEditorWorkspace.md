@@ -223,6 +223,8 @@ DiameterはDepthがReferenceに対する割合になる。例: Ref=MinDimension�
 
 ## 追補: 色のBinding（2026-11-16）
 
+> 2026-11-17に廃止。現在の色の仕様は [HSBによる色](HsbColor.md) を参照。以下は当時の記録。
+
 ShapeのInspectorのStyleに **To Color**、**Color Mix**、**Hue Shift** を追加。塗り色は毎フレーム次の順で決まる。
 
 1. `Color` と `To Color` をRGBAで線形補間する。比率は Color Mix（0=Color、1=To Color、範囲外は0〜1にClamp）。

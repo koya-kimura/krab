@@ -27,10 +27,10 @@ namespace Krab.ShapeSynth.Tests.Editor
 
             Assert.That(items, Has.Count.EqualTo(150));
             Assert.That(items.All(item => item.Kind == ShapeKind.Circle), Is.True);
-            Assert.That(items.Count(item => item.Color.Equals(red)), Is.EqualTo(75));
-            Assert.That(items.Count(item => item.Color.Equals(cyan)), Is.EqualTo(75));
-            Assert.That(items[0].Color, Is.EqualTo(red));
-            Assert.That(items[1].Color, Is.EqualTo(cyan));
+            Assert.That(items.Count(item => item.FillColor.Equals(red)), Is.EqualTo(75));
+            Assert.That(items.Count(item => item.FillColor.Equals(cyan)), Is.EqualTo(75));
+            Assert.That(items[0].FillColor, Is.EqualTo(red));
+            Assert.That(items[1].FillColor, Is.EqualTo(cyan));
         }
 
         [Test]

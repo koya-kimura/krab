@@ -38,4 +38,5 @@ Reports/                   実行結果・ログ・画像（ローカルのみ�
 
 - Phase 10: [Preset Editor Workspace](PresetEditorWorkspace.md) — Hierarchy/Preview/Inspector、選択連動、限定再構築、Zoom/Pan/Fit。
 
+- [HSBによる色](HsbColor.md) — Fill / Strokeとも Hue・Saturation・BrightnessのParameterで色を表す（To Color / Color Mix / Hue Shiftを置き換え）、SchemaVersion 3への移行。
 - [RampとADSRのカーブ](RampAndCurves.md) — signalの種類ごとのクラスの土台（`IModulatorDefinition` / `IReleasable`）、Ramp（Lerpを含む）、ADSRの区間ごとのカーブ。
