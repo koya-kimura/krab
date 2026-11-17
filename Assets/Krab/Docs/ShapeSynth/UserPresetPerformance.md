@@ -32,5 +32,3 @@ Trigger のたびに Seed を1つ進める（初期値1234）。Rand は Trigger
 - Performance：Modulator編集UI、組み込みプリセットのTriggerボタン、キーボード（Q / W / E / A / S）でのTrigger、User seed欄
 - テスト：上記だけを対象にしていたもの（Fx01、ModulatorLibrary、MultiPreset、PerformanceSettingsStore、MultiPresetSettings）
 - `ModulatorKind`（ADSR / LFO / Ramp）は `Krab.ShapeSynth.Core.Presets` に移した。保存JSONの数値は変わらない。
-
-[演奏サンプルとModulator UI](PerformanceAndModulators.md) と [複数プリセットとStroke](MultiPresetPerformance.md) は当時の記録として残す。

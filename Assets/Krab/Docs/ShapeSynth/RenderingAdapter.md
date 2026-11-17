@@ -6,7 +6,7 @@
 
 Coreは階層・Parameter・行列合成を評価する。DrawItemはKind、ローカルGeometry、Color、Opacity、WorldTransformの不変スナップショットで、ShapeDefinitionを公開しない。Core asmdefの `noEngineReferences` は維持する。AdapterはDefinitionを参照せず、Coreへ描画都合のClampを戻さない。
 
-`Krab.ShapeSynth.Unity` asmdefはCoreとUnite.Runtimeだけを参照する。サンプルだけがCommonのDI/BPMを利用する。正式なVoice/Trigger/Timer/ILifetime/Variationは今回実装しない。
+`Krab.ShapeSynth.Unity` asmdefはCoreとUnite.Runtimeだけを参照する。サンプルだけがCommonのDI/BPMを利用する。Voiceと寿命の仕様は [Voiceと寿命](VoiceAndLifetime.md) を参照。
 
 ## APIと座標
 
@@ -47,7 +47,7 @@ OutputTextureProviderがRT生成・再生成・解放を所有する。Preview�
 
 ## Phase 8のStroke拡張
 
-DrawItemに不変ShapeStyleを追加。Fill/Stroke/Stroke Width/任意StrokeColorを公開APIで描画する。Circle/Rectangleはローカル線幅を行列で変形し、Polygonは画面上の線分へ展開されるため面積Scaleの平方根で幅を換算する。等方Scaleでは一致、非等方Scale/shearでは近似。詳細は [複数プリセットとStroke](MultiPresetPerformance.md)。既存Fill-onlyは維持する。
+DrawItemに不変ShapeStyleを追加。Fill/Stroke/Stroke Width/HSB色を公開APIで描画する。Circle/Rectangleはローカル線幅を行列で変形し、Polygonは画面上の線分へ展開されるため面積Scaleの平方根で幅を換算する。等方Scaleでは一致、非等方Scale/shearでは近似。色と線幅は [HSBとStroke Width](HsbColor.md) を参照。既存Fill-onlyは維持する。
 
 ## Play中のスクリプト再読み込み（2026-11-17）
 

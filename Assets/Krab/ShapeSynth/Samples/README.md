@@ -84,27 +84,11 @@ Game View左上にVoice数・現在BPM・最後のTrigger BPMと操作キーを�
 
 旧 `ShapeSynth/Variation` は2026-11-17に削除した。後継のRandom / Delay / Flipは Preset Editor で確認する（`Assets/Krab/Docs/ShapeSynth/Variation.md`）。
 
-## Phase 7：独立したPerformance Scene
+## 演奏とPreset Editor
 
-演奏用は `Assets/Krab/ShapeSynth/Samples/ShapeSynthPerformance.unity`。SmokeTestは回帰検証用として維持する。Play後にGame Viewで **Q** を押すと150個の赤/水色の円をSpawn。連打で別SeedのVoiceが重なり、ADSR完了で消える。初期画面は黒で、自動Triggerはしない。
+`ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → Preset Editorから編集する。操作は [Preset Editor](../../Docs/ShapeSynth/PresetEditorWorkspace.md) を参照。
 
-Settings → **ShapeSynthPerformance** を開き、ModulatorsのADSR/LFOを編集する。**Trigger FX01 (Q)** はキーボードと同じ演奏経路。編集は次のVoiceから反映し、既存Voiceは変化しない。UI編集中はQを抑止するため、演奏時はUI外のGame Viewへフォーカスを戻す。Dで共通UI切替。
-
-**Save ShapeSynth** / **Reload ShapeSynth** が専用JSONの保存/再読込。再Play・再起動でも自動復元する。共通SettingsのSaveとは別。保存先は `Application.persistentDataPath/ShapeSynth/Performance.v1.json`。詳細は `Assets/Krab/Docs/ShapeSynth/PerformanceAndModulators.md`。
-
-## Phase 8：5キー演奏
-
-同じPerformance Sceneで **Q=FX01 / W=Pad01 / E=Snare01 / A=Lead01 / S=Lead03**。異なるプリセットも同じプリセットも重ねてSpawnできる。UI入力中は演奏キーを抑止し、DのUI表示切替は維持する。SettingsのShapeSynthタブ → Performanceカテゴリ → Performanceウィンドウから5つのTriggerボタンと独立したModulator編集を利用できる。
-
-Pad01はオレンジの同心輪郭円、Snare01は緑の放射三角形、Lead01は青い太い星形輪郭、Lead03は茶色の5×5矩形＋赤い円。旧JSONのFX01編集値は保持して新設定を補完する。ファイル名/Versionはv1のまま。Save ShapeSynth / Reload ShapeSynthも従来どおり。Strokeの非等方ScaleはPolygonで近似となる。詳細は `Assets/Krab/Docs/ShapeSynth/MultiPresetPerformance.md`。
-
-## Phase 9: Preset Editor
-
-`ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → Preset Editorを開く。Groupを選択して子を追加し、Inspector / Modulatorsで編集、Preview、Save Preset。Performance SceneのUser PresetsでRefresh後に選択・Triggerする。詳細と検証範囲は `Assets/Krab/Docs/ShapeSynth/PresetEditor.md`。
-
-## Phase 10: Preset Workspace
-
-`ShapeSynthPresetEditor.unity` をPlayすると独立したWorkspaceが開く。Visualタブは左Hierarchy、中央RT Preview（Beatスクラブ付き）、右Inspector（行内Binding）。ValuesタブはModulator一覧・出力グラフ・Signal設定。上部で保存/読込/Previewを操作し、Wheel Zoom・中央ドラッグPan・Fitに対応。1920×1080 / 1280×720で3領域、850px未満では左右を切り替える。詳細は `Assets/Krab/Docs/ShapeSynth/PresetEditorWorkspace.md`。
+保存後、`ShapeSynthPerformance.unity` を開いてPlayする。SettingsのShapeSynth → Performanceから、保存済みプリセットのTriggerまたはMIDIを操作する。一覧は自動更新される。組み込みプリセット、Q/W/E/A/SのTrigger、Performance.v1.jsonは廃止済み。詳細は [ユーザープリセットの演奏UI](../../Docs/ShapeSynth/UserPresetPerformance.md) を参照。
 
 ## ディレクトリ構成
 
