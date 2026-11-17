@@ -15,6 +15,7 @@ namespace Krab.ShapeSynth.Performance
     {
         private const double RefreshIntervalSeconds = 1;
         private const float NameColumnWidth = 180;
+        private const string UngroupedTab = "Ungrouped";
 
         private static readonly Color ErrorColor = new(1f, 0.45f, 0.4f);
 
@@ -26,6 +27,9 @@ namespace Krab.ShapeSynth.Performance
         private int _userPresetRevision;
         private int _seed = 1234;
         private double _nextRefreshCheck;
+
+        // The tab to show again after the list is rebuilt; tabs are rebuilt when presets or names change.
+        private string _selectedTab;
 
         public PresetRepository UserPresetRepository => _presetRepository ??= new PresetRepository();
 
@@ -115,14 +119,44 @@ namespace Krab.ShapeSynth.Performance
                 UI.DynamicElementIf(() => _error != null, () => UI.Label(() => _error).SetColor(ErrorColor)));
         }
 
+        /// <summary>
+        /// One tab per group ("fx" for "fx/sample"), sorted by name with Ungrouped last; each page lists its
+        /// presets by the rest of the path. The previously selected tab stays selected across rebuilds.
+        /// </summary>
         private Element BuildUserPresetRows()
         {
             if (_userPresets.Count == 0) return UI.Label("No presets yet. Save one in the Preset Editor.");
 
-            return UI.Column(_userPresets.Select(document => UI.Row(
-                UI.Label(document.Name).SetWidth(NameColumnWidth),
+            var groups = _userPresets
+                .Select(document => (Path: PresetPath.Parse(document.Name), Document: document))
+                .GroupBy(entry => entry.Path.Group)
+                .OrderBy(group => group.Key.Length == 0)
+                .ThenBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => (Label: group.Key.Length == 0 ? UngroupedTab : group.Key, Entries: group
+                    .OrderBy(entry => entry.Path.Title, StringComparer.Ordinal)
+                    .ThenBy(entry => entry.Document.Id, StringComparer.Ordinal)
+                    .ToList()))
+                .ToList();
+            var labels = groups.Select(group => group.Label).ToList();
+            var tabs = UI.Tabs(groups.Select(group => (group.Label,
+                (Element)UI.Column(group.Entries.Select(entry => PresetRow(entry.Document, entry.Path))))));
+            var selected = labels.IndexOf(_selectedTab);
+            if (selected >= 0) tabs.CurrentTabIndex = selected;
+
+            tabs.RegisterUpdateCallback(_ =>
+            {
+                var index = tabs.CurrentTabIndex;
+                if (index >= 0 && index < labels.Count) _selectedTab = labels[index];
+            });
+            return tabs;
+        }
+
+        private Element PresetRow(PresetDocument document, PresetPath path)
+        {
+            return UI.Row(
+                UI.Label(path.Title).SetWidth(NameColumnWidth),
                 UI.Button("Trigger", () => TriggerUserPreset(document.Id)),
-                MidiTriggerButton(document.Id, document.Name))));
+                MidiTriggerButton(document.Id, path.ToString()));
         }
     }
 }

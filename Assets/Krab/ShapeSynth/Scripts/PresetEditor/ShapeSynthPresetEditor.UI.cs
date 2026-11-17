@@ -73,7 +73,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BuildFileBar()
         {
             return UI.Column(
-                UI.Field("Name", () => Document.Name, value =>
+                // "group/name" files the preset under a Performance tab named after the group.
+                UI.Field("Name (group/name)", () => Document.Name, value =>
                 {
                     Document.Name = value;
                     _dirty = true;
