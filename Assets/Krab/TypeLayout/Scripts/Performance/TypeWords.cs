@@ -97,7 +97,8 @@ namespace Krab.TypeLayout.Performance
         public Element CreateElement()
         {
             return UI.Column(
-                UI.Label("Patterns show these through tokens such as {main}; edit a pattern's text to change which."),
+                UI.Label("Patterns show these through tokens such as {main}.\n" +
+                         "Edit a pattern's text to change which token it uses."),
                 _words.CreateElement("Words"),
                 UI.DynamicElementOnStatusChanged(() => WordsVersion, _ => UI.Column(
                     WordChoice("Main", _mainIndex),

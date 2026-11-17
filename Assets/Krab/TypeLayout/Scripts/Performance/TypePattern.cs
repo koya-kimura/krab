@@ -14,6 +14,9 @@ namespace Krab.TypeLayout.Performance
         private const float WindowWidth = 320f;
         private const float LauncherWidth = 64f;
 
+        // Characters per description line that fit the fixed window width.
+        private const int DescriptionLineLength = 52;
+
         private readonly PrefsBool _enabled;
 
         private string _lettersSource;
@@ -43,7 +46,7 @@ namespace Krab.TypeLayout.Performance
         public Element CreateElement()
         {
             var window = UI.Window(Name, UI.Page(
-                    UI.Label(Description),
+                    UI.Label(UiText.Wrap(Description, DescriptionLineLength)),
                     _enabled.CreateElement("Enabled"),
                     CreateParameters(),
                     UI.DynamicElementIf(() => Error != null,
