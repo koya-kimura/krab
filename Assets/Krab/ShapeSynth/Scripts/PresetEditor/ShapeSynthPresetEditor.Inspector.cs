@@ -35,7 +35,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 }),
                 UI.Fold(
                     "Transform",
-                    ParameterHeader(),
+                    ParameterHeader(copies),
                     ParameterRow("Position X", node.PositionX, PresetQuantity.Length, copies, InitialDepth.Pixels100),
                     ParameterRow("Position Y", node.PositionY, PresetQuantity.Length, copies, InitialDepth.Pixels100),
                     ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle, copies, InitialDepth.Degrees90),
@@ -52,7 +52,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private IEnumerable<Element> ShapeParameters(PresetNode node)
         {
-            yield return ParameterHeader();
+            yield return ParameterHeader(node.Layout);
             if (node.Kind == PresetNodeKind.Circle)
                 yield return ParameterRow("Diameter", node.Width, PresetQuantity.Length, node.Layout);
 
@@ -137,7 +137,7 @@ namespace Krab.ShapeSynth.PresetEditor
             yield return ColorField("Color",
                 () => (node.Red, node.Green, node.Blue, node.Alpha),
                 value => (node.Red, node.Green, node.Blue, node.Alpha) = value);
-            yield return ParameterHeader();
+            yield return ParameterHeader(node.Layout);
             yield return ParameterRow("Color Mix", node.ColorMix, PresetQuantity.Ratio, node.Layout);
             yield return UI.DynamicElementIf(
                 () => node.ColorMix.Base != 0 || node.ColorMix.GetBinding() != null,

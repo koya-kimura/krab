@@ -24,7 +24,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private static readonly string[] FlipNames = Enum.GetNames(typeof(PresetFlip));
 
         /// <summary>Column headings, shown once above a block of Parameter rows.</summary>
-        private static Element ParameterHeader()
+        private static Element ParameterHeader(PresetLayout copies = null)
         {
             Element Heading(string text, float width) =>
                 UI.Label(text).SetWidth(width).SetColor(PresetEditorPalette.Title);
@@ -36,7 +36,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 Heading("Depth", NumberColumnWidth),
                 Heading("Unit", UnitColumnWidth),
                 Heading("Now", NowColumnWidth),
-                Heading("Flip", FlipColumnWidth),
+                UI.DynamicElementIf(() => copies != null && copies.Kind != PresetLayoutKind.None,
+                    () => Heading("Flip", FlipColumnWidth)),
                 Heading("Bind", BindColumnWidth));
         }
 
@@ -62,15 +63,16 @@ namespace Krab.ShapeSynth.PresetEditor
                         : UI.Label("-").SetWidth(NumberColumnWidth).SetColor(PresetEditorPalette.DragSource)),
                 UnitColumn(parameter, quantity).SetWidth(UnitColumnWidth),
                 UI.Label(() => NowText(parameter, quantity, copies)).SetWidth(NowColumnWidth),
-                UI.DynamicElementOnStatusChanged(
-                    () => copies != null && copies.Kind != PresetLayoutKind.None && parameter.GetBinding() != null,
-                    flippable => flippable
-                        ? Choice(null, () => (int)parameter.Flip, value =>
-                        {
-                            parameter.Flip = (PresetFlip)value;
-                            Changed();
-                        }, FlipNames).SetWidth(FlipColumnWidth)
-                        : UI.Label("-").SetWidth(FlipColumnWidth).SetColor(PresetEditorPalette.DragSource)),
+                UI.DynamicElementIf(() => copies != null && copies.Kind != PresetLayoutKind.None,
+                    () => UI.DynamicElementOnStatusChanged(
+                        () => parameter.GetBinding() != null,
+                        bound => bound
+                            ? Choice(null, () => (int)parameter.Flip, value =>
+                            {
+                                parameter.Flip = (PresetFlip)value;
+                                Changed();
+                            }, FlipNames).SetWidth(FlipColumnWidth)
+                            : UI.Label("-").SetWidth(FlipColumnWidth).SetColor(PresetEditorPalette.DragSource))),
                 BindChoice(parameter, initialDepth));
         }
 
