@@ -1,4 +1,5 @@
 using System;
+using Krab.ShapeSynth.Core.Modulation;
 using Krab.ShapeSynth.Core.Runtime;
 
 namespace Krab.ShapeSynth.Core.Definitions
@@ -12,7 +13,7 @@ namespace Krab.ShapeSynth.Core.Definitions
     }
 
     /// <summary>Immutable signal settings. Frequency is cycles/beat; offset is in cycles.</summary>
-    public sealed class LfoDefinition
+    public sealed class LfoDefinition : IModulatorDefinition
     {
         public double CyclesPerBeat { get; }
         public double PhaseOffset { get; }
@@ -31,6 +32,8 @@ namespace Krab.ShapeSynth.Core.Definitions
             PhaseOffset = WrapPhase(phaseOffset);
             Waveform = waveform;
         }
+
+        public IModulator Create(VoiceTime time) => new LfoInstance(this, time);
 
         internal static double WrapPhase(double cycles)
         {

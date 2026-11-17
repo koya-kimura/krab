@@ -103,3 +103,5 @@ Referenceの単位、LFOの波形/位相、Polygonの表現、加算後の描画
 2026-11-11: Phase 9としてランタイムPreset Editorを追加。従来のPhase 9候補だったMIDI/出力/性能はPhase 10へ移動。今回MIDI等は実装していない。
 
 2026-11-12: Phase 10はPreset Editor UI改善。MIDI/出力/性能の後続候補はPhase 11へ移動し、今回は実装していない。
+
+2026-11-17: 計画外の追加として、signalの種類ごとのクラスの土台、Ramp、ADSRの区間ごとのカーブを実装（[RampとADSRのカーブ](RampAndCurves.md)）。ADSRの積分値、Triggerをまたいで積み重なる値は未実装。

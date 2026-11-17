@@ -9,7 +9,7 @@ namespace Krab.ShapeSynth.Core.Runtime
     public sealed class VoiceInstance
     {
         private readonly HierarchyEvaluator _evaluator;
-        private readonly List<AdsrInstance> _envelopes = new();
+        private readonly List<IReleasable> _releasables = new();
         private bool _stopped;
 
         public TriggerTarget Target { get; }
@@ -64,14 +64,15 @@ namespace Krab.ShapeSynth.Core.Runtime
                     releasePolicies.Add(slot.Source, slot.AutoRelease);
                     modulators.Add(signal);
                     if (signal is ILifetime lifetime) lifetimes.Add(lifetime);
-                    if (signal is AdsrInstance envelope) _envelopes.Add(envelope);
+                    if (signal is IReleasable releasable) _releasables.Add(releasable);
                 }
 
                 return Array.AsReadOnly(scope);
             }, voiceSeed);
 
             if (lifetimes.Count == 0)
-                throw new ArgumentException("A triggered Group hierarchy needs at least one ADSR or Timer.", nameof(target));
+                throw new ArgumentException("A triggered Group hierarchy needs at least one ADSR, Ramp or Timer.",
+                    nameof(target));
             Modulators = modulators.AsReadOnly();
             Lifetimes = lifetimes.AsReadOnly();
         }
@@ -96,9 +97,9 @@ namespace Krab.ShapeSynth.Core.Runtime
             Time.ElapsedBeats(nowSeconds);
             if (nowSeconds < Time.StartSeconds) throw new ArgumentOutOfRangeException(nameof(nowSeconds));
 
-            foreach (var envelope in _envelopes)
+            foreach (var releasable in _releasables)
             {
-                envelope.Release(nowSeconds);
+                releasable.Release(nowSeconds);
             }
         }
 

@@ -11,6 +11,7 @@ namespace Krab.ShapeSynth.PresetEditor
     public sealed partial class ShapeSynthPresetEditor
     {
         private static readonly string[] WaveformNames = Enum.GetNames(typeof(LfoWaveform));
+        private static readonly string[] CurveNames = Enum.GetNames(typeof(EasingCurve));
 
         private int _valueNamesRevision;
 
@@ -62,27 +63,50 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Row(
                     UI.Button("+ ADSR", () => AddComponent(value, ModulatorKind.Adsr)),
                     UI.Button("+ LFO", () => AddComponent(value, ModulatorKind.Lfo)),
+                    UI.Button("+ Ramp", () => AddComponent(value, ModulatorKind.Ramp)),
                     remove));
         }
 
         private Element ComponentFold(PresetValue value, PresetComponent component)
         {
-            var adsr = component.Kind == ModulatorKind.Adsr;
-            var header = UI.Label(() => $"{(adsr ? "● ADSR" : "◆ LFO")}  × {component.Weight:0.##}")
-                .SetColor(adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo);
-            return UI.Fold(header, ComponentFields(value, component, adsr)).Open();
+            var header = UI.Label(() => $"{ComponentTitle(component.Kind)}  × {component.Weight:0.##}")
+                .SetColor(PresetEditorPalette.Modulator(component.Kind));
+            return UI.Fold(header, ComponentFields(value, component)).Open();
         }
 
-        private IEnumerable<Element> ComponentFields(PresetValue value, PresetComponent component, bool adsr)
+        private static string ComponentTitle(ModulatorKind kind)
+        {
+            switch (kind)
+            {
+                case ModulatorKind.Adsr:
+                    return "● ADSR";
+                case ModulatorKind.Ramp:
+                    return "▲ Ramp";
+                default:
+                    return "◆ LFO";
+            }
+        }
+
+        private IEnumerable<Element> ComponentFields(PresetValue value, PresetComponent component)
         {
             yield return NumberField("Weight", () => component.Weight, weight => component.Weight = weight);
-            if (adsr)
+            if (component.Kind == ModulatorKind.Adsr)
             {
                 yield return NumberField("Attack", () => component.Attack, beats => component.Attack = beats);
+                yield return CurveField("Attack Curve", () => component.AttackCurve,
+                    curve => component.AttackCurve = curve);
                 yield return NumberField("Decay", () => component.Decay, beats => component.Decay = beats);
+                yield return CurveField("Decay Curve", () => component.DecayCurve, curve => component.DecayCurve = curve);
                 yield return NumberField("Sustain Level", () => component.SustainLevel, level => component.SustainLevel = level);
                 yield return NumberField("Sustain Time", () => component.SustainTime, beats => component.SustainTime = beats);
                 yield return NumberField("Release", () => component.Release, beats => component.Release = beats);
+                yield return CurveField("Release Curve", () => component.ReleaseCurve,
+                    curve => component.ReleaseCurve = curve);
+            }
+            else if (component.Kind == ModulatorKind.Ramp)
+            {
+                yield return CurveField("Curve", () => component.RampCurve, curve => component.RampCurve = curve);
+                yield return NumberField("Duration", () => component.Duration, beats => component.Duration = beats);
             }
             else
             {
@@ -96,6 +120,15 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             yield return UI.Button("Remove Component", () => RemoveComponent(value, component));
+        }
+
+        private Element CurveField(string label, Func<EasingCurve> read, Action<EasingCurve> write)
+        {
+            return Choice(label, () => (int)read(), index =>
+            {
+                write((EasingCurve)index);
+                Changed();
+            }, CurveNames);
         }
 
         private void AddValue()

@@ -14,10 +14,10 @@ namespace Krab.ShapeSynth.Core.Presets
         public static TriggerTarget Compile(PresetDocument document)
         {
             var group = CompileGroup(document);
-            if (!Components(document).Any(component => component.Kind == ModulatorKind.Adsr))
+            if (!Components(document).Any(component => component.Kind is ModulatorKind.Adsr or ModulatorKind.Ramp))
             {
                 throw new ArgumentException(
-                    "Preview/Trigger requires at least one ADSR Lifetime. The draft can still be saved.");
+                    "Preview/Trigger requires at least one ADSR or Ramp Lifetime. The draft can still be saved.");
             }
 
             return new TriggerTarget(group);
@@ -156,19 +156,28 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        private static ModulatorSlotDefinition Slot(PresetComponent model)
+        /// <summary>The Core settings of one component; throws while its values are invalid.</summary>
+        public static IModulatorDefinition ModulatorDefinition(PresetComponent model)
         {
+            if (model == null) throw new ArgumentNullException(nameof(model));
+
             switch (model.Kind)
             {
                 case ModulatorKind.Adsr:
-                    return new ModulatorSlotDefinition(new AdsrDefinition(model.Attack, model.Decay,
-                        model.SustainLevel, model.SustainTime, model.Release));
+                    return new AdsrDefinition(model.Attack, model.Decay, model.SustainLevel, model.SustainTime,
+                        model.Release, model.AttackCurve, model.DecayCurve, model.ReleaseCurve);
                 case ModulatorKind.Lfo:
-                    return new ModulatorSlotDefinition(
-                        new LfoDefinition(model.CyclesPerBeat, model.PhaseOffset, model.Waveform));
+                    return new LfoDefinition(model.CyclesPerBeat, model.PhaseOffset, model.Waveform);
+                case ModulatorKind.Ramp:
+                    return new RampDefinition(model.Duration, model.RampCurve);
                 default:
                     throw new ArgumentException("Unknown Modulator kind.");
             }
+        }
+
+        private static ModulatorSlotDefinition Slot(PresetComponent model)
+        {
+            return new ModulatorSlotDefinition(ModulatorDefinition(model));
         }
 
         // A bound Value becomes one Binding per component, so the runtime sum equals Depth × Σ Weight × signal.

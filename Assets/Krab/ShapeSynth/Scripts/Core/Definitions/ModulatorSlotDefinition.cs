@@ -4,31 +4,35 @@ using Krab.ShapeSynth.Core.Runtime;
 
 namespace Krab.ShapeSynth.Core.Definitions
 {
-    /// <summary>A signal slot's immutable source and ADSR release policy. No runtime state.</summary>
+    /// <summary>One signal slot of a Group scope. AutoRelease applies only to ADSR.</summary>
     public sealed class ModulatorSlotDefinition
     {
-        public AdsrDefinition Adsr { get; }
-        public LfoDefinition Lfo { get; }
+        public IModulatorDefinition Definition { get; }
         public bool AutoRelease { get; }
+
+        public AdsrDefinition Adsr => Definition as AdsrDefinition;
+        public LfoDefinition Lfo => Definition as LfoDefinition;
+        public RampDefinition Ramp => Definition as RampDefinition;
 
         public ModulatorSlotDefinition(AdsrDefinition definition, bool autoRelease = true)
         {
-            Adsr = definition ?? throw new ArgumentNullException(nameof(definition));
+            Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             AutoRelease = autoRelease;
         }
 
-        public ModulatorSlotDefinition(LfoDefinition definition)
+        public ModulatorSlotDefinition(IModulatorDefinition definition)
         {
-            Lfo = definition ?? throw new ArgumentNullException(nameof(definition));
+            Definition = definition ?? throw new ArgumentNullException(nameof(definition));
+            AutoRelease = true;
         }
 
-        internal object Source => (object)Adsr ?? Lfo;
+        internal object Source => Definition;
 
         internal IModulator Create(VoiceTime time)
         {
-            if (Adsr != null) return new AdsrInstance(Adsr, time, AutoRelease);
-
-            return new LfoInstance(Lfo, time);
+            return Definition is AdsrDefinition adsr
+                ? new AdsrInstance(adsr, time, AutoRelease)
+                : Definition.Create(time);
         }
     }
 }

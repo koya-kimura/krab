@@ -37,3 +37,5 @@ Reports/                   実行結果・ログ・画像（ローカルのみ�
 - Phase 9: [Runtime Preset Editor](PresetEditor.md) — Group/Shape/Parameter/Modulator/Bindingの編集、Preview、JSON保存と別Sceneでの演奏。
 
 - Phase 10: [Preset Editor Workspace](PresetEditorWorkspace.md) — Hierarchy/Preview/Inspector、選択連動、限定再構築、Zoom/Pan/Fit。
+
+- [RampとADSRのカーブ](RampAndCurves.md) — signalの種類ごとのクラスの土台（`IModulatorDefinition` / `IReleasable`）、Ramp（Lerpを含む）、ADSRの区間ごとのカーブ。

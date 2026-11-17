@@ -8,7 +8,9 @@ namespace Krab.ShapeSynth.Core.Performance
     public enum ModulatorKind
     {
         Adsr,
-        Lfo
+        Lfo,
+        // Appended: saved JSON stores the enum as its number. Preset Values only; not in PerformanceSettings.
+        Ramp
     }
 
     /// <summary>Mutable serialization DTO. Serialization is owned by the Unity layer.</summary>

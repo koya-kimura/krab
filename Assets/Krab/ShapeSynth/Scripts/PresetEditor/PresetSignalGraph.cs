@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Modulation;
-using Krab.ShapeSynth.Core.Performance;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Core.Runtime;
 using RosettaUI;
@@ -14,7 +12,7 @@ using UnityEngine.UIElements;
 
 namespace Krab.ShapeSynth.PresetEditor
 {
-    /// <summary>Samples authoring settings through the Core ADSR/LFO instances. Seconds equal beats at 60 BPM.</summary>
+    /// <summary>Samples authoring settings through the Core signal instances. Seconds equal beats at 60 BPM.</summary>
     public static class PresetSignalSampler
     {
         public const float GraphBeats = 8;
@@ -29,19 +27,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
             try
             {
-                if (component.Kind == ModulatorKind.Adsr)
-                {
-                    var adsr = new AdsrDefinition(
-                        component.Attack, component.Decay, component.SustainLevel, component.SustainTime,
-                        component.Release);
-                    modulator = new AdsrInstance(adsr, OneBeatPerSecond);
-                }
-                else
-                {
-                    var lfo = new LfoDefinition(component.CyclesPerBeat, component.PhaseOffset, component.Waveform);
-                    modulator = new LfoInstance(lfo, OneBeatPerSecond);
-                }
-
+                modulator = PresetCompiler.ModulatorDefinition(component).Create(OneBeatPerSecond);
                 return true;
             }
             catch (ArgumentException)
@@ -156,7 +142,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 builder.Append('|').Append(c.Kind).Append(c.Weight).Append(',').Append(c.Attack).Append(',')
                     .Append(c.Decay).Append(',').Append(c.SustainLevel).Append(',').Append(c.SustainTime).Append(',')
                     .Append(c.Release).Append(',').Append(c.CyclesPerBeat).Append(',').Append(c.PhaseOffset)
-                    .Append(c.Waveform);
+                    .Append(c.Waveform).Append(',').Append(c.Duration).Append(',').Append(c.RampCurve).Append(',')
+                    .Append(c.AttackCurve).Append(',').Append(c.DecayCurve).Append(',').Append(c.ReleaseCurve);
             }
 
             return builder.ToString();
@@ -176,7 +163,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
             _curves = value.Components.Select(component =>
             {
-                var color = component.Kind == ModulatorKind.Adsr ? PresetEditorPalette.Adsr : PresetEditorPalette.Lfo;
+                var color = PresetEditorPalette.Modulator(component.Kind);
                 var points = PresetSignalSampler.TryCreate(component, out var modulator)
                     ? SampleCurve(beat => component.Weight * modulator.Evaluate(beat))
                     : new double[Samples + 1];

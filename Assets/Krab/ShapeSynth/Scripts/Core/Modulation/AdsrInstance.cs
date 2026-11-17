@@ -5,7 +5,7 @@ using Krab.ShapeSynth.Core.Runtime;
 namespace Krab.ShapeSynth.Core.Modulation
 {
     /// <summary>One trigger's state. Sampling is side-effect free; release events use absolute seconds.</summary>
-    public sealed class AdsrInstance : IDelayableModulator, ILifetime
+    public sealed class AdsrInstance : IDelayableModulator, ILifetime, IReleasable
     {
         private readonly bool _autoRelease;
         private double _externalReleaseBeat = double.PositiveInfinity;
@@ -43,7 +43,8 @@ namespace Krab.ShapeSynth.Core.Modulation
             var releaseBeat = ReleaseBeat;
             if (beat < releaseBeat) return BeforeRelease(beat);
             if (Definition.Release == 0 || beat - releaseBeat >= Definition.Release) return 0;
-            return BeforeRelease(releaseBeat) * (1 - (beat - releaseBeat) / Definition.Release);
+            var progress = EasingFunctions.Evaluate(Definition.ReleaseCurve, (beat - releaseBeat) / Definition.Release);
+            return BeforeRelease(releaseBeat) * (1 - progress);
         }
 
         /// <summary>Reads the envelope delayBeats earlier, at the Voice's start BPM.</summary>
@@ -58,9 +59,15 @@ namespace Krab.ShapeSynth.Core.Modulation
 
         private double BeforeRelease(double beat)
         {
-            if (beat < Definition.Attack) return beat / Definition.Attack;
+            if (beat < Definition.Attack)
+                return EasingFunctions.Evaluate(Definition.AttackCurve, beat / Definition.Attack);
+
             beat -= Definition.Attack;
-            if (beat < Definition.Decay) return 1 + (Definition.SustainLevel - 1) * beat / Definition.Decay;
+            if (beat < Definition.Decay)
+            {
+                var progress = EasingFunctions.Evaluate(Definition.DecayCurve, beat / Definition.Decay);
+                return 1 + (Definition.SustainLevel - 1) * progress;
+            }
 
             return Definition.SustainLevel;
         }

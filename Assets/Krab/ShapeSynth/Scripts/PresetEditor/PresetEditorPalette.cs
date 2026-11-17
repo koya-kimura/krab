@@ -1,3 +1,4 @@
+using Krab.ShapeSynth.Core.Performance;
 using UnityEngine;
 
 namespace Krab.ShapeSynth.PresetEditor
@@ -14,5 +15,19 @@ namespace Krab.ShapeSynth.PresetEditor
         public static readonly Color Error = new(1f, 0.45f, 0.4f);
         public static readonly Color Adsr = new(0.35f, 0.75f, 0.95f);
         public static readonly Color Lfo = new(0.95f, 0.65f, 0.3f);
+        public static readonly Color Ramp = new(0.75f, 0.55f, 0.95f);
+
+        public static Color Modulator(ModulatorKind kind)
+        {
+            switch (kind)
+            {
+                case ModulatorKind.Adsr:
+                    return Adsr;
+                case ModulatorKind.Ramp:
+                    return Ramp;
+                default:
+                    return Lfo;
+            }
+        }
     }
 }
