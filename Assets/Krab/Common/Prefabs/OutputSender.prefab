@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 6528996959683893036}
   - component: {fileID: 1139175272081807055}
   - component: {fileID: 5946192731006507651}
+  - component: {fileID: 213687507213997655}
+  - component: {fileID: 388486446175124768}
   m_Layer: 0
   m_Name: OutputSender
   m_TagString: Untagged
@@ -45,8 +47,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c3cb40cbf3b49129371426d83208785, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Output.SyphonController
-  _syphonServer: {fileID: 5946192731006507651}
-  _camera: {fileID: 0}
 --- !u!114 &5946192731006507651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54,7 +54,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8227670764608287562}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d59ae4f317f9b4f8b8d64f71768aaea6, type: 3}
   m_Name: 
@@ -65,3 +65,33 @@ MonoBehaviour:
   _captureMethod: 2
   _sourceCamera: {fileID: 0}
   _sourceTexture: {fileID: 0}
+--- !u!114 &213687507213997655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8227670764608287562}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45099d624c1e6c14e9514f4e5ea1ed9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Klak.Spout.Runtime::Klak.Spout.SpoutSender
+  _spoutName: krab
+  _keepAlpha: 0
+  _captureMethod: 2
+  _sourceCamera: {fileID: 0}
+  _sourceTexture: {fileID: 0}
+  _resources: {fileID: 11400000, guid: f449ebbe2051c2e4d993eaa773a410de, type: 2}
+--- !u!114 &388486446175124768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8227670764608287562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 273788dbfcfd74e748fd33ba3388cbde, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Output.SpoutController

@@ -27,7 +27,7 @@ Directional Light
 Common                      MIDI入出力、Binding UI、APC Simulator、ParamSampleComponent
   SceneContainer            UnitySimpleContainerのScene DI
   UiBuilder                 RosettaUI / Prefs設定UI
-  OutputSender              SyphonController / SyphonServer
+  OutputSender              SyphonController / SyphonServer（macOS）, SpoutController / SpoutSender（Windows）
   OutputPreview             Preview用Camera / Canvas / RawImage
   [Graphy]                  パフォーマンス表示
   ApplicationFrameSetting

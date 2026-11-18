@@ -22,7 +22,7 @@ public class BPMManager : MonoBehaviour, IBPMManager, IUiTarget
 | --- | --- | --- |
 | Common | Timing | BPM, Tap Tempo |
 | Common | Application | Frame Rate |
-| Common | Output | Output Texture, Syphon |
+| Common | Output | Output Texture, Syphon, Spout |
 | MIDI | Devices | APC mini mk2 Simulator |
 | ShapeSynth | Performance | Performance |
 | TypeLayout | Performance | Type Layout |
