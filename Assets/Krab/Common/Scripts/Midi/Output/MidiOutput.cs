@@ -208,25 +208,23 @@ namespace Krab.Common.Midi.Output
                 }
 
                 var filter = _portNameFilter ?? string.Empty;
-                for (var index = 0; index < port.PortCount; index++)
+                var index = FindPortIndex(port, filter);
+                if (index < 0)
                 {
-                    var name = port.GetPortName(index);
-                    if (string.IsNullOrEmpty(name) ||
-                        name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0) continue;
-
-                    port.OpenPort(index, "Krab MIDI Output");
-                    if (port.IsOk)
-                    {
-                        _portName = name;
-                        return port;
-                    }
-
-                    _lastError = port.Error;
+                    _lastError = $"MIDI output port not found: {filter}";
                     port.Dispose();
                     return null;
                 }
 
-                _lastError = $"MIDI output port not found: {filter}";
+                var name = port.GetPortName(index);
+                port.OpenPort(index, "Krab MIDI Output");
+                if (port.IsOk)
+                {
+                    _portName = name;
+                    return port;
+                }
+
+                _lastError = port.Error;
                 port.Dispose();
                 return null;
             }
@@ -235,6 +233,24 @@ namespace Krab.Common.Midi.Output
                 port.Dispose();
                 throw;
             }
+        }
+
+        // Windows lists extra ports of a multi-port device as "MIDIOUT2 (APC mini mk2)".
+        // Prefer the primary port, which is the one that drives the LEDs.
+        private static int FindPortIndex(MidiOut port, string filter)
+        {
+            var fallback = -1;
+            for (var index = 0; index < port.PortCount; index++)
+            {
+                var name = port.GetPortName(index);
+                if (string.IsNullOrEmpty(name) ||
+                    name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0) continue;
+
+                if (!name.StartsWith("MIDIOUT", StringComparison.OrdinalIgnoreCase)) return index;
+                if (fallback < 0) fallback = index;
+            }
+
+            return fallback;
         }
 
         private sealed class WorkerState : IDisposable
