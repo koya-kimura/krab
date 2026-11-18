@@ -34,7 +34,19 @@ var items = evaluator.Evaluate(nowSeconds, new ReferenceContext(width, height));
 
 CoreのRoot原点はCanvas中央、X右/Y上、正のRotationは反時計回り。Positionは親Groupのローカル座標。角度はAPI上すべて**度**。
 
-`TransformDefinition(positionX?, positionY?, rotationDegrees?, scaleX?, scaleY?)` は5個のParameterDefinitionを持ち、省略時は0,0,0,1,1。
+`TransformDefinition(positionX?, positionY?, rotationDegrees?, scaleX?, scaleY?, directionDegrees?, distance?)` は7個のParameterDefinitionを持ち、省略時は0,0,0,1,1,0,0。
+
+### Direction / Distance（動く方向）
+
+2026-11-18に追加。平行移動は「Position + Distance × (cos Direction, sin Direction)」。
+
+- Directionは度で、右（+X）が0度、反時計回りが正（90度＝上）。RotationやLayout CircleのStart Angleと同じ向き。
+- Positionは置き場所（XY座標）、Direction / Distanceは動き。たとえばDistanceにADSRをBindすると、Directionの方向へ動いて戻る。
+- 移動はRotation・Scaleより外側（親側）で効くため、Shape自体は回らない。Shape自身のRotationも移動方向を変えない。
+- Distanceが負なら逆方向。FlipはDepthの符号を反転するので、Distanceに付けると「逆方向へ動く」になる。DirectionのRandomでコピーごとに散らばる方向を変えられる。
+- Layoutのコピーでは、Position同様にSlot（とFace Outwardの回転）の外側に置く。DirectionはLayoutの角度を足さない（全コピーで同じ向き）。
+- Random keyはDirection 17、Distance 18。
+- 検証（2026-11-18）：Unity Editor経由でコンパイルエラー0、EditModeテスト289件成功・失敗0（`MoveTests` 11件を含む。Ramp廃止に伴い `RampTests` と旧Schema移行テストは削除）。Preset EditorでのDirection / Distanceの操作と見た目は未確認。
 
 `Affine2D` はdoubleの2×3アフィン行列で、列ベクトルに作用する。
 

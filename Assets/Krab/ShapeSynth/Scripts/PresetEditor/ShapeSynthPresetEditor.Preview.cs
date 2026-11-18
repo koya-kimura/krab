@@ -34,16 +34,14 @@ namespace Krab.ShapeSynth.PresetEditor
         public float LoopBeats => _loopBeats;
 
         /// <summary>
-        /// Longest ADSR/Ramp lifetime plus the longest copy Delay, capped to the graph range, so one loop matches
+        /// Longest ADSR lifetime plus the longest copy Delay, capped to the graph range, so one loop matches
         /// one trigger including its last delayed copy.
         /// </summary>
         private float ComputeLoopBeats()
         {
             var lifetime = PresetCompiler.Components(Document)
-                .Where(model => model.Kind is ModulatorKind.Adsr or ModulatorKind.Ramp)
-                .Select(model => model.Kind == ModulatorKind.Ramp
-                    ? model.Duration
-                    : model.Attack + model.Decay + model.SustainTime + model.Release)
+                .Where(model => model.Kind == ModulatorKind.Adsr)
+                .Select(model => model.Attack + model.Decay + model.SustainTime + model.Release)
                 .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
                 .DefaultIfEmpty(PresetSignalSampler.GraphBeats)
                 .Max();

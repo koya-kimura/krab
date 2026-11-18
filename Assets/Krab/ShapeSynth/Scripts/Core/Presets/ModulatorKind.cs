@@ -4,7 +4,6 @@ namespace Krab.ShapeSynth.Core.Presets
     public enum ModulatorKind
     {
         Adsr,
-        Lfo,
-        Ramp
+        Lfo
     }
 }

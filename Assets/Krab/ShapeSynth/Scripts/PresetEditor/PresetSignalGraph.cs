@@ -142,7 +142,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 builder.Append('|').Append(c.Kind).Append(c.Weight).Append(',').Append(c.Attack).Append(',')
                     .Append(c.Decay).Append(',').Append(c.SustainLevel).Append(',').Append(c.SustainTime).Append(',')
                     .Append(c.Release).Append(',').Append(c.CyclesPerBeat).Append(',').Append(c.PhaseOffset)
-                    .Append(c.Waveform).Append(',').Append(c.Duration).Append(',').Append(c.RampCurve).Append(',')
+                    .Append(c.Waveform).Append(',')
                     .Append(c.AttackCurve).Append(',').Append(c.DecayCurve).Append(',').Append(c.ReleaseCurve);
             }
 

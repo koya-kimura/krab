@@ -13,10 +13,10 @@ namespace Krab.ShapeSynth.Core.Presets
         public static TriggerTarget Compile(PresetDocument document)
         {
             var group = CompileGroup(document);
-            if (!Components(document).Any(component => component.Kind is ModulatorKind.Adsr or ModulatorKind.Ramp))
+            if (!Components(document).Any(component => component.Kind == ModulatorKind.Adsr))
             {
                 throw new ArgumentException(
-                    "Preview/Trigger requires at least one ADSR or Ramp Lifetime. The draft can still be saved.");
+                    "Preview/Trigger requires at least one ADSR Lifetime. The draft can still be saved.");
             }
 
             return new TriggerTarget(group);
@@ -167,8 +167,6 @@ namespace Krab.ShapeSynth.Core.Presets
                         model.Release, model.AttackCurve, model.DecayCurve, model.ReleaseCurve);
                 case ModulatorKind.Lfo:
                     return new LfoDefinition(model.CyclesPerBeat, model.PhaseOffset, model.Waveform);
-                case ModulatorKind.Ramp:
-                    return new RampDefinition(model.Duration, model.RampCurve);
                 default:
                     throw new ArgumentException("Unknown Modulator kind.");
             }
@@ -209,7 +207,8 @@ namespace Krab.ShapeSynth.Core.Presets
             {
                 var transform = new TransformDefinition(Parameter(node.PositionX, indices),
                     Parameter(node.PositionY, indices), Parameter(node.Rotation, indices),
-                    Parameter(node.ScaleX, indices), Parameter(node.ScaleY, indices));
+                    Parameter(node.ScaleX, indices), Parameter(node.ScaleY, indices),
+                    Parameter(node.Direction, indices), Parameter(node.Distance, indices));
                 return new GroupDefinition(transform, runtime,
                     node.Children.Select(child => CompileNode(child, indices)).ToArray());
             }
@@ -218,14 +217,17 @@ namespace Krab.ShapeSynth.Core.Presets
             if (layout.Kind == PresetLayoutKind.None)
                 return CompileShape(node, indices, new CopyModifier(layout, 0, 1));
 
-            // Each copy has its own Flip sign and Delay. Position stays outside the slot (and its Face Outward
-            // rotation), so it moves the copy in the Shape's parent space, as for the whole arrangement.
+            // Each copy has its own Flip sign and Delay. Position, Direction and Distance stay outside the slot (and
+            // its Face Outward rotation), so they move the copy in the Shape's parent space, as for the whole
+            // arrangement.
             var copies = new INodeDefinition[layout.Count];
             for (var i = 0; i < copies.Length; i++)
             {
                 var copy = new CopyModifier(layout, i, copies.Length);
-                var position = new TransformDefinition(Parameter(node.PositionX, indices, copy: copy),
-                    Parameter(node.PositionY, indices, copy: copy));
+                ParameterDefinition P(PresetParameter model) => Parameter(model, indices, copy: copy);
+
+                var position = new TransformDefinition(P(node.PositionX), P(node.PositionY),
+                    directionDegrees: P(node.Direction), distance: P(node.Distance));
                 var slot = Slot(layout, i, copies.Length, CompileShape(node, indices, copy, false), indices);
                 copies[i] = new GroupDefinition(position, slot);
             }
@@ -233,14 +235,15 @@ namespace Krab.ShapeSynth.Core.Presets
             return new GroupDefinition(null, copies);
         }
 
-        /// <summary>The Shape with Rotation/Scale and, unless a copy wrapper owns it, its Position.</summary>
+        /// <summary>The Shape with Rotation/Scale and, unless a copy wrapper owns it, its Position and Move.</summary>
         private static INodeDefinition CompileShape(PresetNode node, ValueIndices indices, CopyModifier copy,
             bool withPosition = true)
         {
             ParameterDefinition P(PresetParameter model) => Parameter(model, indices, copy: copy);
 
             var transform = new TransformDefinition(withPosition ? P(node.PositionX) : null,
-                withPosition ? P(node.PositionY) : null, P(node.Rotation), P(node.ScaleX), P(node.ScaleY));
+                withPosition ? P(node.PositionY) : null, P(node.Rotation), P(node.ScaleX), P(node.ScaleY),
+                withPosition ? P(node.Direction) : null, withPosition ? P(node.Distance) : null);
             var fill = new ColorDefinition(P(node.FillHue), P(node.FillSaturation), P(node.FillBrightness),
                 node.FillAlpha);
             var stroke = new ColorDefinition(P(node.StrokeHue), P(node.StrokeSaturation), P(node.StrokeBrightness),

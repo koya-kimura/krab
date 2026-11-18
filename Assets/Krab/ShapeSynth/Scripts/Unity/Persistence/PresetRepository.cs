@@ -58,8 +58,6 @@ namespace Krab.ShapeSynth.Unity.Persistence
                         throw new ArgumentException("Preset JSON requires an integer SchemaVersion.");
                     }
 
-                    PresetJsonMigration.Upgrade(token);
-
                     document = token.ToObject<PresetDocument>(JsonSerializer.Create(JsonSettings()));
                 }
             }

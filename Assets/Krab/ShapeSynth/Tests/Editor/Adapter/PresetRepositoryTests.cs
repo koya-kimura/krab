@@ -6,7 +6,6 @@ using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Unity.Persistence;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace Krab.ShapeSynth.Tests.Editor.Adapter
@@ -138,120 +137,6 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             Assert.That(loaded.RootGroup.Children[0].Rotation.Multiplier, Is.EqualTo(0.5));
             Assert.That(loaded.RootGroup.Children[0].Rotation.AbsoluteValue, Is.EqualTo(37.5));
             Assert.That(loaded.RootGroup.Children[0].Rotation.Base, Is.EqualTo(12.25));
-        }
-
-        [Test]
-        public void LoadUpgradesSchemaV1ModulatorsToSingleComponentValues()
-        {
-            var repository = new PresetRepository(_directory);
-            var current = PresetDocument.CreateNew();
-            var v1 = JObject.FromObject(current);
-            var value = (JObject)v1["Values"][0];
-            var component = (JObject)value["Components"][0];
-            component.Remove("Weight");
-            component["Id"] = value["Id"];
-            component["Name"] = value["Name"];
-            component["Attack"] = 0.33;
-            v1.Remove("Values");
-            v1["Modulators"] = new JArray(component);
-            v1["SchemaVersion"] = 1;
-            foreach (var binding in v1.Descendants().OfType<JObject>().Where(token => token["ValueId"] != null).ToArray())
-            {
-                binding["ModulatorId"] = binding["ValueId"];
-                binding.Remove("ValueId");
-            }
-
-            Directory.CreateDirectory(_directory);
-            File.WriteAllText(FilePath(current.Id + ".json"), v1.ToString());
-
-            var loaded = repository.Load(current.Id);
-
-            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
-            Assert.That(loaded.Values.Single().Id, Is.EqualTo(current.Values[0].Id));
-            Assert.That(loaded.Values.Single().Name, Is.EqualTo(current.Values[0].Name));
-            Assert.That(loaded.Values.Single().Components.Single().Weight, Is.EqualTo(1));
-            Assert.That(loaded.Values.Single().Components.Single().Attack, Is.EqualTo(0.33));
-            Assert.That(loaded.RootGroup.Children[0].Opacity.GetBinding().ValueId, Is.EqualTo(current.Values[0].Id));
-        }
-
-        [Test]
-        public void LoadUpgradesSchemaV2ColorsToHsbParameters()
-        {
-            var repository = new PresetRepository(_directory);
-            var current = PresetDocument.CreateNew();
-            var envelopeId = current.Values[0].Id;
-            var v2 = JObject.FromObject(current);
-            v2["SchemaVersion"] = 2;
-            var node = (JObject)v2["RootGroup"]["Children"][0];
-            foreach (var field in new[]
-                     {
-                         "FillHue", "FillSaturation", "FillBrightness", "FillAlpha", "StrokeHue", "StrokeSaturation",
-                         "StrokeBrightness", "StrokeAlpha"
-                     })
-            {
-                node.Remove(field);
-            }
-
-            // Red blended halfway to blue (alpha 0.5 → 1), hue-shifted by 30° plus a bound 360° sweep.
-            node["Red"] = 1;
-            node["Green"] = 0;
-            node["Blue"] = 0;
-            node["Alpha"] = 0.5;
-            node["ToRed"] = 0;
-            node["ToGreen"] = 0;
-            node["ToBlue"] = 1;
-            node["ToAlpha"] = 1;
-            node["ColorMix"] = new JObject { ["Base"] = 0.5 };
-            node["HueShift"] = new JObject
-            {
-                ["Base"] = 30, ["Random"] = 5,
-                ["Bindings"] = new JArray(new JObject { ["ValueId"] = envelopeId, ["Depth"] = 360 })
-            };
-            node["StrokeRed"] = 0;
-            node["StrokeGreen"] = 1;
-            node["StrokeBlue"] = 0;
-            node["StrokeAlpha"] = 0.25;
-            Directory.CreateDirectory(_directory);
-            File.WriteAllText(FilePath(current.Id + ".json"), v2.ToString());
-
-            var loaded = repository.Load(current.Id);
-            var shape = loaded.RootGroup.Children[0];
-
-            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
-            // The resting fill (0.5, 0, 0.5) is hue 300°, saturation 1, brightness 0.5; the shift adds 30°.
-            Assert.That(shape.FillHue.Base, Is.EqualTo(330).Within(1e-9));
-            Assert.That(shape.FillHue.Random, Is.EqualTo(5));
-            Assert.That(shape.FillHue.GetBinding().ValueId, Is.EqualTo(envelopeId));
-            Assert.That(shape.FillHue.GetBinding().Depth, Is.EqualTo(360));
-            Assert.That(shape.FillSaturation.Base, Is.EqualTo(1).Within(1e-9));
-            Assert.That(shape.FillBrightness.Base, Is.EqualTo(0.5).Within(1e-9));
-            Assert.That(shape.FillAlpha, Is.EqualTo(0.75).Within(1e-9));
-            Assert.That(shape.StrokeHue.Base, Is.EqualTo(120).Within(1e-9));
-            Assert.That(shape.StrokeSaturation.Base, Is.EqualTo(1).Within(1e-9));
-            Assert.That(shape.StrokeBrightness.Base, Is.EqualTo(1).Within(1e-9));
-            Assert.That(shape.StrokeAlpha, Is.EqualTo(0.25));
-            Assert.DoesNotThrow(() => PresetCompiler.Compile(loaded));
-        }
-
-        [Test]
-        public void LoadUpgradesSchemaV3StrokeWidthNumbersToParameters()
-        {
-            var repository = new PresetRepository(_directory);
-            var current = PresetDocument.CreateNew();
-            var v3 = JObject.FromObject(current);
-            v3["SchemaVersion"] = 3;
-            v3["RootGroup"]["StrokeWidth"] = 1;
-            v3["RootGroup"]["Children"][0]["StrokeWidth"] = 2.5;
-            Directory.CreateDirectory(_directory);
-            File.WriteAllText(FilePath(current.Id + ".json"), v3.ToString());
-
-            var loaded = repository.Load(current.Id);
-
-            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
-            Assert.That(loaded.RootGroup.StrokeWidth.Base, Is.EqualTo(1));
-            Assert.That(loaded.RootGroup.Children[0].StrokeWidth.Base, Is.EqualTo(2.5));
-            Assert.That(loaded.RootGroup.Children[0].StrokeWidth.GetBinding(), Is.Null);
-            Assert.DoesNotThrow(() => PresetCompiler.Compile(loaded));
         }
 
         [Test]

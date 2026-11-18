@@ -12,7 +12,6 @@ namespace Krab.ShapeSynth.Core.Definitions
 
         public AdsrDefinition Adsr => Definition as AdsrDefinition;
         public LfoDefinition Lfo => Definition as LfoDefinition;
-        public RampDefinition Ramp => Definition as RampDefinition;
 
         public ModulatorSlotDefinition(AdsrDefinition definition, bool autoRelease = true)
         {

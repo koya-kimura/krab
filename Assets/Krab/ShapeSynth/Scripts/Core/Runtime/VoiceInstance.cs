@@ -71,7 +71,7 @@ namespace Krab.ShapeSynth.Core.Runtime
             }, voiceSeed);
 
             if (lifetimes.Count == 0)
-                throw new ArgumentException("A triggered Group hierarchy needs at least one ADSR, Ramp or Timer.",
+                throw new ArgumentException("A triggered Group hierarchy needs at least one ADSR or Timer.",
                     nameof(target));
             Modulators = modulators.AsReadOnly();
             Lifetimes = lifetimes.AsReadOnly();

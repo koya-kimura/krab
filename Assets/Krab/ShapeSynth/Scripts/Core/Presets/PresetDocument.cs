@@ -18,7 +18,7 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetDocument
     {
-        public const int CurrentSchemaVersion = 4;
+        public const int CurrentSchemaVersion = 5;
 
         /// <summary>Deepest allowed Node, counting the Root Group as 0.</summary>
         public const int MaxDepth = 64;
@@ -229,6 +229,10 @@ namespace Krab.ShapeSynth.Core.Presets
         public List<PresetNode> Children = new();
         public PresetParameter PositionX = new();
         public PresetParameter PositionY = new();
+
+        // Distance moves the node along Direction (degrees, 0 = right, counterclockwise) on top of Position.
+        public PresetParameter Direction = new();
+        public PresetParameter Distance = new();
         public PresetParameter Rotation = new();
         public PresetParameter ScaleX = new() { Base = 1 };
         public PresetParameter ScaleY = new() { Base = 1 };
@@ -274,6 +278,8 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             yield return PositionX;
             yield return PositionY;
+            yield return Direction;
+            yield return Distance;
             yield return Rotation;
             yield return ScaleX;
             yield return ScaleY;

@@ -40,6 +40,8 @@ namespace Krab.ShapeSynth.PresetEditor
                     ParameterHeader(copies),
                     ParameterRow("Position X", node.PositionX, PresetQuantity.Length, copies, InitialDepth.Pixels100),
                     ParameterRow("Position Y", node.PositionY, PresetQuantity.Length, copies, InitialDepth.Pixels100),
+                    ParameterRow("Direction", node.Direction, PresetQuantity.Angle, copies, InitialDepth.Degrees90),
+                    ParameterRow("Distance", node.Distance, PresetQuantity.Length, copies, InitialDepth.Pixels100),
                     ParameterRow("Rotation", node.Rotation, PresetQuantity.Angle, copies, InitialDepth.Degrees90),
                     ParameterRow("Scale X", node.ScaleX, PresetQuantity.Scale, copies),
                     ParameterRow("Scale Y", node.ScaleY, PresetQuantity.Scale, copies)).Open()

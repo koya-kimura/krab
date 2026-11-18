@@ -34,7 +34,7 @@
 - `FillHue` / `FillSaturation` / `FillBrightness`（Parameter）、`FillAlpha`
 - `StrokeHue` / `StrokeSaturation` / `StrokeBrightness`（Parameter）、`StrokeAlpha`
 
-v2のJSONは読み込み時に `PresetJsonMigration` がv3へ変換する。
+v2のJSONは読み込み時に `PresetJsonMigration` がv3へ変換していた（SchemaVersion 5で移行処理ごと削除）。
 
 - 静止時のFill色を求める：Color と To Color を、Color Mix の Base（0〜1にClamp）で補間する。Alphaも補間する。これをHSBに変換する。
 - Hue Shift は、Binding・Random・Flip・単位ごと Fill Hue に引き継ぐ。Baseには元の色の色相を足す。そのため、Hue Shiftを含めた色相は以前と同じになる。

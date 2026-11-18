@@ -104,7 +104,9 @@ namespace Krab.ShapeSynth.Core.Evaluation
                     new ParameterEvaluator(transform.PositionY, modulators, context, 2),
                     new ParameterEvaluator(transform.RotationDegrees, modulators, context, 3),
                     new ParameterEvaluator(transform.ScaleX, modulators, context, 4),
-                    new ParameterEvaluator(transform.ScaleY, modulators, context, 5)
+                    new ParameterEvaluator(transform.ScaleY, modulators, context, 5),
+                    new ParameterEvaluator(transform.DirectionDegrees, modulators, context, 17),
+                    new ParameterEvaluator(transform.Distance, modulators, context, 18)
                 };
                 _children = children;
                 MaxDelayBeats = MaxDelay(_transform);
@@ -120,7 +122,8 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 _height = new ParameterEvaluator(_shape.Height, modulators, context,
                     _shape.Kind == ShapeKind.Circle ? 6UL : 7UL);
                 _opacity = new ParameterEvaluator(_shape.Opacity, modulators, context, 8);
-                // Random keys: fill hue keeps 10 (the former Hue Shift); 9 (the former Color Mix) is retired; 16 is stroke width.
+                // Random keys: fill hue keeps 10 (the former Hue Shift); 9 (the former Color Mix) is retired; 16 is stroke
+                // width; 17 and 18 are Direction and Distance.
                 _fillColor = new ColorEvaluator(_shape.FillColor, modulators, context, 10, 11, 12);
                 _strokeColor = ReferenceEquals(_shape.StrokeColor, _shape.FillColor)
                     ? _fillColor
@@ -129,6 +132,15 @@ namespace Krab.ShapeSynth.Core.Evaluation
                 MaxDelayBeats = Math.Max(MaxDelayBeats, MaxDelay(_width, _height, _opacity, _strokeWidth));
                 MaxDelayBeats = Math.Max(MaxDelayBeats, _fillColor.MaxDelayBeats);
                 MaxDelayBeats = Math.Max(MaxDelayBeats, _strokeColor.MaxDelayBeats);
+            }
+
+            /// <summary>Distance along Direction (degrees, 0 = +X, counterclockwise); skips trig when not moving.</summary>
+            private static (double X, double Y) Move(double directionDegrees, double distance)
+            {
+                if (distance == 0) return (0, 0);
+
+                var radians = (directionDegrees % 360) * (Math.PI / 180);
+                return (distance * Math.Cos(radians), distance * Math.Sin(radians));
             }
 
             private static double MaxDelay(params ParameterEvaluator[] evaluators)
@@ -144,9 +156,10 @@ namespace Krab.ShapeSynth.Core.Evaluation
 
             public void Append(double now, ReferenceContext context, Affine2D parent, List<DrawItem> output)
             {
-                var local = Affine2D.Trs(_transform[0].Evaluate(now, context), _transform[1].Evaluate(now, context),
-                    _transform[2].Evaluate(now, context), _transform[3].Evaluate(now, context),
-                    _transform[4].Evaluate(now, context));
+                var (moveX, moveY) = Move(_transform[5].Evaluate(now, context), _transform[6].Evaluate(now, context));
+                var local = Affine2D.Trs(_transform[0].Evaluate(now, context) + moveX,
+                    _transform[1].Evaluate(now, context) + moveY, _transform[2].Evaluate(now, context),
+                    _transform[3].Evaluate(now, context), _transform[4].Evaluate(now, context));
                 var world = parent * local;
                 if (_shape != null)
                 {

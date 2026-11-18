@@ -3,7 +3,7 @@ using Krab.ShapeSynth.Core.Definitions;
 
 namespace Krab.ShapeSynth.Core.Presets
 {
-    /// <summary>One ADSR, LFO or Ramp inside a Value. Only the fields of its Kind are used.</summary>
+    /// <summary>One ADSR or LFO inside a Value. Only the fields of its Kind are used.</summary>
     [Serializable]
     public sealed class PresetComponent
     {
@@ -20,8 +20,6 @@ namespace Krab.ShapeSynth.Core.Presets
         public double CyclesPerBeat = 0.5;
         public double PhaseOffset;
         public LfoWaveform Waveform;
-        public double Duration = 1;
-        public EasingCurve RampCurve;
 
         public static PresetComponent Create(ModulatorKind kind)
         {

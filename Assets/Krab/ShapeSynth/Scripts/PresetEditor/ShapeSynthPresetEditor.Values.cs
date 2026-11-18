@@ -58,7 +58,6 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Row(
                     UI.Button("+ ADSR", () => AddComponent(value, ModulatorKind.Adsr)),
                     UI.Button("+ LFO", () => AddComponent(value, ModulatorKind.Lfo)),
-                    UI.Button("+ Ramp", () => AddComponent(value, ModulatorKind.Ramp)),
                     remove));
         }
 
@@ -75,8 +74,6 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 case ModulatorKind.Adsr:
                     return "● ADSR";
-                case ModulatorKind.Ramp:
-                    return "▲ Ramp";
                 default:
                     return "◆ LFO";
             }

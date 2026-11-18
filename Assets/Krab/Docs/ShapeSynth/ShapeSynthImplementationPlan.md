@@ -4,11 +4,15 @@
 
 ## 実装済み
 
-- Unity非依存のCore：VoiceTime、ADSR、LFO、Ramp、Parameter / Binding、Shape / Group / Transform、VoiceとLifetime、Random / Delay / Flip。
+- Unity非依存のCore：VoiceTime、ADSR、LFO、Parameter / Binding、Shape / Group / Transform、VoiceとLifetime、Random / Delay / Flip。
 - p5.Unite描画Adapter、指定Cameraへの描画と既存Camera → RenderTexture → Preview / Syphonの接続。
-- PresetDocument / PresetCompiler / PresetRepositoryによる編集・コンパイル・JSON保存。現行SchemaVersionは4。色はHSB Parameter、Stroke WidthもBinding可能。
+- PresetDocument / PresetCompiler / PresetRepositoryによる編集・コンパイル・JSON保存。現行SchemaVersionは5。色はHSB Parameter、Stroke WidthもBinding可能。Transformは Position に加えて Direction / Distance で動く方向を持つ。
 - RosettaUIのPreset Editor。現在の操作は [Preset Editor](PresetEditorWorkspace.md) を参照。
 - ユーザープリセットの演奏UIとMIDI Trigger。保存済みプリセットを自動検出し、Trigger時に読み直してCompileする。[演奏UI](UserPresetPerformance.md) を参照。
+
+## 保存データの互換性
+
+2026-11-18のSchemaVersion 5で、旧版（1〜4）からの移行処理 `PresetJsonMigration` を削除した。旧版のJSONは読み込めず、一覧の下にエラーとして表示される。Rampの廃止とDirection / Distanceの追加に合わせた破壊的変更で、本番用の保存済みプリセットはない前提。
 
 ## 既存基盤との接続
 

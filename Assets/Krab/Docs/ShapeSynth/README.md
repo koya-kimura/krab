@@ -14,7 +14,7 @@
 - [Shape / Group / Transform](ShapeGroupTransform.md)
 - [Voiceと寿命](VoiceAndLifetime.md)
 - [Random / Delay / Flip](Variation.md)
-- [RampとADSRのカーブ](RampAndCurves.md)
+- [ADSRのカーブ（Ramp廃止）](AdsrCurves.md)
 - [HSBとStroke Width](HsbColor.md)
 - [p5.Unite描画Adapter](RenderingAdapter.md)
 

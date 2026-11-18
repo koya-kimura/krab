@@ -8,7 +8,7 @@ namespace Krab.ShapeSynth.PresetEditor
 {
     /// <summary>
     /// A Value component's settings as a small table, like the Inspector's Parameter rows: one heading row, then one
-    /// row per stage. ADSR: Stage | Beats | Level | Curve. Ramp: Beats | Curve. LFO: Wave | Cycles / Beat | Phase.
+    /// row per stage. ADSR: Stage | Beats | Level | Curve. LFO: Wave | Cycles / Beat | Phase.
     /// </summary>
     public sealed partial class ShapeSynthPresetEditor
     {
@@ -48,13 +48,6 @@ namespace Krab.ShapeSynth.PresetEditor
                         BeatsCell(() => component.Release, beats => component.Release = beats),
                         EmptyCell(NumberColumnWidth),
                         CurveCell(() => component.ReleaseCurve, curve => component.ReleaseCurve = curve));
-                    break;
-                case ModulatorKind.Ramp:
-                    yield return TableHeader(("Stage", StageColumnWidth), ("Beats", NumberColumnWidth),
-                        ("Curve", CurveColumnWidth));
-                    yield return StageRow("Rise",
-                        BeatsCell(() => component.Duration, beats => component.Duration = beats),
-                        CurveCell(() => component.RampCurve, curve => component.RampCurve = curve));
                     break;
                 default:
                     yield return TableHeader(("Wave", WaveColumnWidth), ("Cycles / Beat", CyclesColumnWidth),
