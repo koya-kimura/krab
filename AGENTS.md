@@ -4,7 +4,7 @@
 
 ## プロジェクト概要
 
-KrabはUnity製の映像制作・ライブパフォーマンス用プロジェクト。MIDI操作、BPM同期、設定UI、RenderTextureとSyphonによる映像出力を共通基盤として持ち、図形シンセ（ShapeSynth）を段階的に開発している。
+KrabはUnity製の映像制作・ライブパフォーマンス用プロジェクト。MIDI操作、BPM同期、設定UI、RenderTextureとSyphon / Spoutによる映像出力を共通基盤として持ち、図形シンセ（ShapeSynth）を段階的に開発している。
 
 - Unityのバージョンは `ProjectSettings/ProjectVersion.txt` を正とする（現在 `6000.3.12f1`）。
 - パッケージは `Packages/manifest.json` と `Packages/packages-lock.json` を確認する。現在URP `17.3.0`、Unity Pipeline `0.9.0-exp.1`、Test Framework `1.6.0` を使用。
@@ -17,7 +17,7 @@ KrabはUnity製の映像制作・ライブパフォーマンス用プロジェ�
 | `Assets/Krab/Common/Scripts/Timing/` | `IBPMManager` / `BPMManager`、Tap Tempo、フレームレート設定 |
 | `Assets/Krab/Common/Scripts/Midi/` | MIDI入出力、Action、Binding、APC Mini MK2対応 |
 | `Assets/Krab/Common/Scripts/Views/` | `IUiTarget` と `UiBuilder` による設定UIの集約 |
-| `Assets/Krab/Common/Scripts/Output/` | Camera→RenderTexture、プレビュー、Syphon出力 |
+| `Assets/Krab/Common/Scripts/Output/` | Camera→RenderTexture、プレビュー、Syphon（macOS）/ Spout（Windows）出力 |
 | `Assets/Krab/Common/Prefabs/` | 共通コンポーネントとSceneContainerなどのPrefab |
 | `Assets/Krab/Resources/ProjectContainer.prefab` | プロジェクト共通のDI構成 |
 | `Assets/Krab/Scenes/` / `Assets/Krab/Performances/` | Sceneと公演ごとの資産 |
@@ -30,7 +30,7 @@ KrabはUnity製の映像制作・ライブパフォーマンス用プロジェ�
 
 - DIはUnitySimpleContainerを使用。既存のContainer・`[Inject]` による注入方式を確認して接続する。
 - UIはRosettaUI、設定保存はPrefsGUIを使用。`IUiTarget.CreateElement()` を `UiBuilder` が集約する。
-- MIDI関連はMinis、映像出力はKlak Syphon、描画にはp5.Uniteが利用可能。実装前に実際の利用箇所とAPIを確認する。
+- MIDI関連はMinis、映像出力はKlak Syphon（macOS）とKlak Spout（Windows）（`Assets/Krab/Docs/WindowsSupport.md`）、描画にはp5.Uniteが利用可能。実装前に実際の利用箇所とAPIを確認する。
 - 出力は `OutputTextureProvider` / `IOutputTextureContainer` を再利用し、`TextureChanged` の通知と購読解除を維持する。
 - 設計資料の計画と実装済み機能を区別する。ShapeSynthの後続フェーズは `Assets/Krab/Docs/ShapeSynth/ShapeSynthImplementationPlan.md` を参照し、今回の依頼範囲を越えて実装しない。
 
