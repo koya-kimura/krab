@@ -64,6 +64,13 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 - `UniteGuideRenderer`：矩形・パス・基準点のガイド線。検証用。
 - `RectPerimeterPath` の `cornerGap`：各辺を角の手前で止め、2辺の文字帯が角で重ならないようにする。
 
+### 検証（2026-11-21、Flicker）
+
+- EditModeテスト：`Common/Tests/Editor/RhythmTests` 21件成功。`Rhythm.GetPhase` が `2×周期番号+進み` を返していた不具合、`GetIndex` が1未満の間隔を使えなかった点、長さ0での0除算を修正した（修正前は呼び出し元なし）。
+- Performance SceneをPlayし、Flickerだけを表示した出力RT（1920×1080）を時間をずらして3枚保存し、各ブロックがずれた段階で現れ・消えること、ハイライトとマーカーが描かれることを確認した。Console Error・パターンのErrorなし。確認後にパターンのON/OFFを元に戻した。
+- 重なり回避の追加後、出力RTを時間をずらして4枚保存し、ブロック同士が重ならないことを確認した。既定の18ブロックのうち、位置が見つかって表示されたのは15〜16個だった。
+- 未確認：最終的な見た目の評価、Prefs保存。
+
 ### 検証（2026-11-17）
 
 - EditModeテスト：TypeLayout 37件成功。
@@ -82,7 +89,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 
 `Assets/Krab/TypeLayout/Samples/TypeLayoutPerformance.unity` を開いてPlayする。設定UIの「TypeLayout」タブ → Performance → Type Layout から操作し、Saveボタン（⌘S）でPrefsに保存する。
 
-配置と動きはパターンごとにコードで書く（`Scripts/Performance/Patterns/`、16種類）。UIから変えられるのは各パターンのON/OFFとパラメータ（文字列・サイズ・速さなど）だけで、配置そのものは変えない。新しいパターンは `TypePattern` を継承し、`CreateParameters()` と `DrawPattern()` を書いて `TypeLayoutPerformance` の一覧に加える。
+配置と動きはパターンごとにコードで書く（`Scripts/Performance/Patterns/`、17種類）。UIから変えられるのは各パターンのON/OFFとパラメータ（文字列・サイズ・速さなど）だけで、配置そのものは変えない。新しいパターンは `TypePattern` を継承し、`CreateParameters()` と `DrawPattern()` を書いて `TypeLayoutPerformance` の一覧に加える。
 
 | パターン | 配置と動き | パラメータ |
 |---|---|---|
@@ -102,6 +109,7 @@ CoreとUnityの層は `Krab.Common` やShapeSynthを参照しない。BPM・DI�
 | Dial | 円周上に等間隔の正立した文字（時計の文字盤）。ステップごとに1つずつ回る | Text, Size, Radius, Beats Per Step |
 | Scatter | 単語を4×8のセルへ重複なくランダムに置く（正立か逆さ）。拍で選び直す | Text (words), Size, Count, Beats Per Change, Seed |
 | Tunnel | セーフエリア内の入れ子の矩形。隣の輪と逆向きに回る | Text, Size, Rings, Gap, Speed |
+| Flicker | 複数行（`\|` 区切り）のブロックを散らし、各ブロックが1文字ずつ現れ・保持し・先頭から消える。ブロックごとの開始のずれは `Rhythm.GetPhase` にseed付きオフセットを足して作る。単語の背景色は `Rhythm.GetIndex` のステップごとにランダムに切り替わる。背景は5段階のグレー（白・80%・60%・40%・20%）、文字色はグレースケール（通常は設定色のグレー、明るい背景では黒、暗い背景では白）。周期が変わったブロックだけ位置を選び直し、他のブロックが使っている位置と重ならない場所をseed付きで探す（`FlickerPlacer`）。空きがなければその周期は表示しない | Text (lines), Size, Blocks, Beats Per Cycle, Hold, Flicker Beats, Highlight Chance, Seed |
 
 UIは「Patterns」「Words」「Display」の3タブに分けた。Patternsタブには、全OFFボタン・ON数の表示と、パターンごとに1行（ON/OFFのトグルとEditボタン）を並べる。Editを押すと、そのパターン専用の小ウインドウ（説明、Enabled、パラメータ、警告）が開く。値が範囲外で描画できないときは、Editボタンが「Edit !」になる。Displayタブには、表示、色、セーフエリアの余白、ガイド線を置く。範囲外の値でレイアウトが作れない場合は、そのパターンだけ描画を省き、ウインドウ内に警告を出す。速さはすべて拍基準で、BPM（Common/Timing）に同期する。
 
@@ -130,6 +138,7 @@ UIは「Patterns」「Words」「Display」の3タブに分けた。Patternsタ�
 | Corners | `{event}` / `{time}` / `{date}` / `{bpm} BPM  {position}` |
 | Scatter | `{list:upper}` |
 | Dial | `0123456789AB` |
+| Flicker | `{main:upper} * {sub:upper}\|{bpm} BPM * {time}\|{date}` |
 
 ### 検証（2026-11-17）
 

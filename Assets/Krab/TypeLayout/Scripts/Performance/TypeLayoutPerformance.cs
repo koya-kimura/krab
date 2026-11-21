@@ -51,7 +51,8 @@ namespace Krab.TypeLayout.Performance
             new RadialPattern(),
             new DialPattern(),
             new ScatterPattern(),
-            new TunnelPattern()
+            new TunnelPattern(),
+            new FlickerPattern()
         };
 
         private readonly TypeWords _words = new();

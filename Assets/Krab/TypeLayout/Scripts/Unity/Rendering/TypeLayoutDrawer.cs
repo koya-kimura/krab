@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Krab.TypeLayout.Core.Distribution;
+using Krab.TypeLayout.Core.Geometry;
 using Krab.TypeLayout.Core.Paths;
 using Krab.TypeLayout.Core.Placement;
 using Krab.TypeLayout.Core.Text;
@@ -99,6 +100,22 @@ namespace Krab.TypeLayout.Unity.Rendering
             }
 
             DrawPlaced(_slots, placement, color);
+        }
+
+        /// <summary>A filled rectangle without outline, such as a highlight behind text.</summary>
+        public void FillRect(Rect2 rect, Color color)
+        {
+            _canvas.Push();
+            try
+            {
+                _canvas.NoStroke();
+                _canvas.Fill(color);
+                _canvas.Rect((float)rect.X, (float)rect.Y, (float)rect.Width, (float)rect.Height);
+            }
+            finally
+            {
+                _canvas.Pop();
+            }
         }
 
         public void DrawPathGuide(ILayoutPath path)
