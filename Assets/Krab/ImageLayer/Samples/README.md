@@ -1,5 +1,21 @@
 # ImageLayer Samples
 
+## ImageLayerPerformance.unity（演奏用）
+
+開いてPlayする。`StreamingAssets/Krab/ImageLayer/Maltine20` を読み込み、画像のパターンを描く。その手前のCameraにTypeLayoutの文字を重ねる。設定UIの「ImageLayer」タブ → Performance → Image Layer から操作し、Saveボタン（⌘S）でPrefsに保存する。
+
+- Patterns：8パターンのON/OFFとEdit（Set、Look、Frames Per Beat、各パターンのパラメータ）。既定ではMarchだけがON。
+- Library：ライブラリの選択、圧縮のON/OFF、Reload、読み込み状況（セット数・フレーム数・メモリ・時間）、問題の一覧。
+- Display：表示、パレット（Dark／Light）、Thresholdの明度。
+
+| Camera | Order | 内容 |
+|---|---|---|
+| Main Camera（出力、Base） | — | 背景（黒）。将来の背景パターン用 |
+| Image Layer Camera（Overlay） | 0 | `ImageLayerPerformance` の画像 |
+| Foreground Camera（Overlay） | 10 | `TypeLayoutPerformance` の文字 |
+
+再構築：メニュー Krab > Image Layer > Create Performance Scene（既存のSceneを削除してから）。
+
 ## ImageLayerSmokeTest.unity
 
 開いてPlayする。`StreamingAssets/Krab/ImageLayer/Maltine20` を読み込み（約11秒、中央にプログレスバー）、次の3層を重ねて描く。

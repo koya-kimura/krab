@@ -10,6 +10,7 @@ namespace Krab.ImageLayer.Unity.Rendering
     /// </summary>
     [RequireComponent(typeof(Camera))]
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-1000)]
     public sealed class OverlayLayerCamera : MonoBehaviour
     {
         [SerializeField] private Camera _baseCamera;
@@ -24,6 +25,13 @@ namespace Krab.ImageLayer.Unity.Rendering
             _camera.GetUniversalAdditionalCameraData().renderType = CameraRenderType.Overlay;
         }
 
+        // Runs before the drawing scripts. An overlay renders into the base camera's target, but without a target of
+        // its own its pixelWidth/Height report the Game view, so drawings sized from it would not match the output.
+        private void Update()
+        {
+            SyncTarget();
+        }
+
         private void OnEnable()
         {
             if (!_baseCamera)
@@ -32,6 +40,7 @@ namespace Krab.ImageLayer.Unity.Rendering
                 return;
             }
 
+            SyncTarget();
             var stack = _baseCamera.GetUniversalAdditionalCameraData().cameraStack;
             if (stack.Contains(_camera)) return;
 
@@ -54,6 +63,7 @@ namespace Krab.ImageLayer.Unity.Rendering
             if (!_baseCamera) return;
 
             _baseCamera.GetUniversalAdditionalCameraData().cameraStack.Remove(_camera);
+            _camera.targetTexture = null;
         }
 
         public Camera BaseCamera
@@ -69,5 +79,12 @@ namespace Krab.ImageLayer.Unity.Rendering
         }
 
         public Camera Camera => _camera;
+
+        private void SyncTarget()
+        {
+            if (!_baseCamera || _camera.targetTexture == _baseCamera.targetTexture) return;
+
+            _camera.targetTexture = _baseCamera.targetTexture;
+        }
     }
 }

@@ -88,7 +88,7 @@ Assets/Krab/ImageLayer/
 | 0 | 重ね順の方式（Camera Stack／Render Queue）の検証。旧VJ素材の一部で読み込み時間とメモリを実測 | 完了 |
 | 1 | Core：自然順、セット/クリップ、切り出し矩形→元座標、フィット、コマ選択。EditModeテスト | 完了 |
 | 2 | Unity層：走査と非同期読み込み、トリミング、検証結果の一覧、`ImageCanvas`、Duotoneシェーダー、検証Scene | 完了 |
-| 3 | 演奏用パターン（列で行進、敷き詰め、散らす、中央に大きく、パスに沿う）、UI/Prefs/BPM | 未着手 |
+| 3 | 演奏用パターン（列で行進、敷き詰め、散らす、中央に大きく、パスに沿う）、UI/Prefs/BPM | 完了 |
 | 4 | 共通パレット、背景パターンとの統合 | 未着手 |
 | 5 | MIDI割り当て、クロマキー | 未着手 |
 
@@ -185,3 +185,34 @@ p5.Uniteのスクリーン描画は、出力テクスチャ上で「y=0が上」
 - 向き：Orientation Checkで、背景・画像・前景の目印が同じ左上に出る。
 - Consoleのエラー・警告0件。出力の画像を `Reports/ImageLayerSmoke.png` に保存した。
 - 未確認：見た目の最終評価、DXT5圧縮による画質（目視）、Syphon/Spoutの受信側。
+
+## 演奏用コンポーネント（Phase 3、2026-11-22）
+
+`Assets/Krab/ImageLayer/Samples/ImageLayerPerformance.unity` を開いてPlayする（操作はSamplesのREADME）。`ImageLayerPerformance`（Assembly-CSharp、`Scripts/Performance`）はTypeLayoutPerformanceと同じ作りで、配置と動きはパターンごとにコードで書き、UIからはON/OFFとパラメータだけを変える。BPM（Common/Timing）に同期し、注入がなければ120BPMで動く。
+
+全パターン共通のパラメータ：Set（読み込んだライブラリのセットから選ぶドロップダウン。再読み込みで選択肢を作り直す）、Look（Original／Duotone／Threshold。色はDisplayタブのパレット）、Frames Per Beat（連番の再生速度。拍に同期）。Setが見つからない、または値が範囲外の場合は、そのパターンだけを描かずにEditウインドウへ理由を出す。
+
+| パターン | 既定のセット | 配置と動き | パラメータ |
+|---|---|---|---|
+| March（既定でON） | animal | 1つのクリップを横に並べた列が行進する。列ごとに向きを交互にできる | Clip, Size, Rows, Cells Per Beat, Position, Alternate |
+| Lineup | walk | セットのクリップを横に並べ、1本の基準線に立たせて連番を再生する | Count, Size, Baseline, Stagger |
+| Tile | noface | グリッドのセルごとにseed付きでランダムなクリップ。拍で選び直す | Columns, Rows, Beats Per Change, Fill, Seed |
+| Scatter | life | ランダムな位置と角度に散らす。拍で選び直す | Count, Size, Beats Per Change, Spin, Seed |
+| Fall | life | 回転しながら落ちる（または昇る）。通過ごとに位置とクリップを選び直す | Count, Size, Speed, Spin, Rise, Seed |
+| Center | human | 中央に大きく1つ。足元を支点に揺れ、拍で次のクリップへ | Size, Beats Per Change, Swing, Beats Per Swing |
+| Mirror | animal | 中央線をはさんで鏡像と向かい合う。拍で呼吸する | Clip, Size, Gap, Breathe |
+| Orbit | life | 中心の周りの円に等間隔で並べ、拍で回る（画像は正立） | Count, Radius, Size, Degrees Per Beat |
+
+乱数はTypeLayoutの `TextPicker.Hash`（seed・スロット・ステップ）を、ステップは `BeatSteps.Step` を使う。
+
+### Overlay Cameraのサイズ
+
+Overlay Cameraは自分の出力先を持たないため、`pixelWidth/Height` がGame Viewのサイズ（Retinaでは出力の2倍）を返していた。描画はRTのサイズで行われるので、Overlay Cameraからサイズを取るTypeLayoutや画像が、左上だけを拡大した絵になった。`OverlayLayerCamera` は出力Cameraの `targetTexture` を毎フレーム（`DefaultExecutionOrder(-1000)`）自分にも設定し、サイズを出力に揃える。描画先はStackのBaseのまま。
+
+### 検証（2026-11-22）
+
+- 8パターンを1つずつONにして出力を保存した（`Reports/ImageLayerPattern-*.png`）。全パターンでError無し、Consoleのエラー・警告0件。
+- 画像（Order 0）の手前にTypeLayoutの文字（Order 10）が重なる。
+- 修正後、Overlay CameraとMain Cameraのサイズがともに1920×1080になることを確認した。SmokeTestのOrientation Checkも引き続き一致する。
+- 検証後、パターンのON/OFFを既定（MarchだけON）に戻した。
+- 未確認：UIの操作感（ドロップダウンの作り直し、Editウインドウ）、Prefsの保存と復元、MIDIでの操作、見た目の最終評価。

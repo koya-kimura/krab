@@ -1,7 +1,10 @@
 using System;
 using System.IO;
 using Krab.Common.Output;
+using Krab.ImageLayer.Performance;
 using Krab.ImageLayer.Unity.Rendering;
+using Krab.TypeLayout.Performance;
+using Krab.TypeLayout.Unity.Fonts;
 using Krab.TypeLayout.Unity.Rendering;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,6 +20,7 @@ namespace Krab.ImageLayer.Samples.Editor
     public static class ImageLayerSceneBuilder
     {
         public const string SmokeTestScenePath = "Assets/Krab/ImageLayer/Samples/ImageLayerSmokeTest.unity";
+        public const string PerformanceScenePath = "Assets/Krab/ImageLayer/Samples/ImageLayerPerformance.unity";
         public const string ShaderPath = "Assets/Krab/ImageLayer/Scripts/Unity/Shaders/ImageLayerImage.shader";
 
         private static readonly string[] CommonPrefabs =
@@ -33,6 +37,12 @@ namespace Krab.ImageLayer.Samples.Editor
         public static void CreateSmokeTest()
         {
             Create(SmokeTestScenePath, BuildSmokeTest);
+        }
+
+        [MenuItem("Krab/Image Layer/Create Performance Scene")]
+        public static void CreatePerformance()
+        {
+            Create(PerformanceScenePath, BuildPerformance);
         }
 
         /// <summary>Creates a Scene with the shared rig, lets <paramref name="build"/> add the content, saves it.</summary>
@@ -63,14 +73,33 @@ namespace Krab.ImageLayer.Samples.Editor
 
         private static void BuildSmokeTest(Rig rig)
         {
+            var background = CreateCanvasObject("Background Canvas", rig.OutputCamera);
+            var foreground = CreateCanvasObject("Foreground Canvas", rig.ForegroundCamera);
             var sample = new GameObject("Image Layer Smoke Test");
             var smokeTest = sample.AddComponent<ImageLayerSmokeTest>();
             var serialized = new SerializedObject(smokeTest);
             serialized.FindProperty("_outputCamera").objectReferenceValue = rig.OutputCamera;
-            serialized.FindProperty("_background").objectReferenceValue = rig.Background;
+            serialized.FindProperty("_background").objectReferenceValue = background;
             serialized.FindProperty("_images").objectReferenceValue = rig.Images;
-            serialized.FindProperty("_foreground").objectReferenceValue = rig.Foreground;
+            serialized.FindProperty("_foreground").objectReferenceValue = foreground;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // Images under the TypeLayout text: the two performance layers together, each on its own camera.
+        private static void BuildPerformance(Rig rig)
+        {
+            var images = new GameObject("Image Layer Performance");
+            var performance = images.AddComponent<ImageLayerPerformance>();
+            var serializedImages = new SerializedObject(performance);
+            serializedImages.FindProperty("_images").objectReferenceValue = rig.Images;
+            serializedImages.ApplyModifiedPropertiesWithoutUndo();
+
+            var typeLayout = new GameObject("Type Layout", typeof(TypeLayoutCanvas), typeof(TypeLayoutFont),
+                typeof(TypeLayoutPerformance));
+            typeLayout.GetComponent<TypeLayoutCanvas>().TargetCamera = rig.ForegroundCamera;
+            var serializedText = new SerializedObject(typeLayout.GetComponent<TypeLayoutPerformance>());
+            serializedText.FindProperty("_outputCamera").objectReferenceValue = rig.ForegroundCamera;
+            serializedText.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Rig CreateRig()
@@ -83,16 +112,13 @@ namespace Krab.ImageLayer.Samples.Editor
             outputCamera.GetUniversalAdditionalCameraData();
             outputObject.AddComponent<OutputTextureProvider>();
 
-            var background = CreateCanvasObject("Background Canvas", outputCamera);
-
             var imageCamera = CreateOverlayCamera("Image Layer Camera", outputCamera, 0);
             var images = imageCamera.gameObject.AddComponent<ImageLayerCanvas>();
             images.Shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
             if (!images.Shader) throw new FileNotFoundException("ImageLayer shader is missing.", ShaderPath);
 
             var foregroundCamera = CreateOverlayCamera("Foreground Camera", outputCamera, 10);
-            var foreground = CreateCanvasObject("Foreground Canvas", foregroundCamera);
-            return new Rig(outputCamera, background, images, foreground);
+            return new Rig(outputCamera, images, foregroundCamera);
         }
 
         private static Camera CreateOverlayCamera(string name, Camera outputCamera, int order)
@@ -137,22 +163,21 @@ namespace Krab.ImageLayer.Samples.Editor
 
         public readonly struct Rig
         {
-            public Rig(Camera outputCamera, TypeLayoutCanvas background, ImageLayerCanvas images,
-                TypeLayoutCanvas foreground)
+            public Rig(Camera outputCamera, ImageLayerCanvas images, Camera foregroundCamera)
             {
                 OutputCamera = outputCamera;
-                Background = background;
                 Images = images;
-                Foreground = foreground;
+                ForegroundCamera = foregroundCamera;
             }
 
+            /// <summary>Base camera rendering into the output texture; background drawings go here.</summary>
             public Camera OutputCamera { get; }
 
-            public TypeLayoutCanvas Background { get; }
-
+            /// <summary>Image layer on its own overlay camera (order 0).</summary>
             public ImageLayerCanvas Images { get; }
 
-            public TypeLayoutCanvas Foreground { get; }
+            /// <summary>Overlay camera above the images (order 10), for text or shapes in front.</summary>
+            public Camera ForegroundCamera { get; }
         }
     }
 }
