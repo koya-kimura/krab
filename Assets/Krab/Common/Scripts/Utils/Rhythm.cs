@@ -6,34 +6,37 @@ namespace Krab.Common.Utils
     
     public static class Rhythm
     {
+        // Keeps zero or negative lengths from dividing by zero; fractional beats such as 0.25 stay usable.
+        private const float MinLength = 1e-4f;
+
         public static int GetIndex(float t, float interval)
         {
-            return Mathf.FloorToInt(Mathf.Max(0f, t) / Mathf.Max(1f, interval));
+            return Mathf.FloorToInt(Mathf.Max(0f, t) / Mathf.Max(MinLength, interval));
         }
 
+        /// <summary>
+        /// Cycle count that holds, then eases to the next whole number over the last <paramref name="easeDuration"/>
+        /// of each cycle. An ease as long as the cycle gives a continuous count.
+        /// </summary>
         public static float GetPhase(
             float t,
             float cycleLength,
             float easeDuration,
             EasingFn easingFn = null)
         {
+            cycleLength = Mathf.Max(MinLength, cycleLength);
             var currentCycle = Mathf.Floor(t / cycleLength);
             var nextCycle = currentCycle + 1f;
 
             var localTime = t - currentCycle * cycleLength;
-            var easeStartTime = cycleLength - easeDuration;
-
-            var easeProgress = Mathf.Clamp01(
-                (localTime - easeStartTime) / easeDuration
-            );
+            var easeProgress = EaseProgress(localTime, cycleLength, easeDuration);
             var easing = easingFn ?? Easing.EaseInOutSine;
 
-            return currentCycle +
-                   Mathf.Lerp(
-                       currentCycle,
-                       nextCycle,
-                       easing(easeProgress)
-                   );
+            return Mathf.Lerp(
+                currentCycle,
+                nextCycle,
+                easing(easeProgress)
+            );
         }
 
         public static float GetLerpNoise(
@@ -43,15 +46,12 @@ namespace Krab.Common.Utils
             uint seed = 0,
             EasingFn easingFn = null)
         {
+            cycleLength = Mathf.Max(MinLength, cycleLength);
             var currentCycle = Mathf.Floor(t / cycleLength);
             var nextCycle = currentCycle + 1f;
 
             var localTime = t - currentCycle * cycleLength;
-            var easeStartTime = cycleLength - easeDuration;
-
-            var easeProgress = Mathf.Clamp01(
-                (localTime - easeStartTime) / easeDuration
-            );
+            var easeProgress = EaseProgress(localTime, cycleLength, easeDuration);
             var easing = easingFn ?? Easing.EaseInOutSine;
 
             var currentNoise = Pcg.Pcg01(
@@ -107,6 +107,16 @@ namespace Krab.Common.Utils
                     easingFn
                 ) * 2f - 1f
             );
+        }
+
+        private static float EaseProgress(float localTime, float cycleLength, float easeDuration)
+        {
+            // No ease: jump at the cycle boundary instead of dividing by zero.
+            if (easeDuration <= 0f) return 0f;
+
+            easeDuration = Mathf.Min(easeDuration, cycleLength);
+            var easeStartTime = cycleLength - easeDuration;
+            return Mathf.Clamp01((localTime - easeStartTime) / easeDuration);
         }
     }
 }
