@@ -239,3 +239,12 @@ TypeLayoutの文字色はパレットに連動させていない。既存モジ�
 - EditModeテスト342件成功。
 - 検証後、Style＝Grid、パレット＝Lemon、MarchだけONに戻した。
 - 未確認：UIの操作、Prefsの保存と復元、パレット切り替えの見え方、見た目の最終評価。
+
+設定UIへの登録：Performance SceneのPlay中に、`UiBuilder` の対象に `BackgroundPerformance`、`ImageLayerPerformance`、`PaletteController` が含まれ、全10対象の `CreateElement()` が例外なく作られることを確認した（画面上の操作は未確認）。
+
+## 確認・相談事項（2026-11-22時点）
+
+1. p5.Uniteの色が明るく出る問題（Phase 4の節）。TypeLayout・ShapeSynthも同じ挙動。p5.Unite側で直すか、各Adapterで `color.linear` を渡すか。既存の見た目で色を調整済みなら、直すと見え方が変わる。
+2. TypeLayoutの文字色を共通パレットに連動させるか（TypeLayoutPerformanceの `Color` をパレットのDark/Light/Accentから選べるようにする案）。
+3. 起動時の読み込み（Maltine20で約11秒）。今は全セットを起動時に読む。セット単位の遅延読み込みや、切り出し・圧縮結果のキャッシュは未実装。
+4. Phase 5（MIDI割り当て）はTypeLayoutのPhase 6と同じ横断的な仕組みにする想定で未着手。クロマキーも未着手（2026-11-22の方針どおり）。
