@@ -1,0 +1,2 @@
+# Image sets for ImageLayer (PNG stills and sequences).
+Assets/StreamingAssets/Krab/ImageLayer/**/*.png filter=lfs diff=lfs merge=lfs -text
