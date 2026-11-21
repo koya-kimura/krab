@@ -89,7 +89,7 @@ Assets/Krab/ImageLayer/
 | 1 | Core：自然順、セット/クリップ、切り出し矩形→元座標、フィット、コマ選択。EditModeテスト | 完了 |
 | 2 | Unity層：走査と非同期読み込み、トリミング、検証結果の一覧、`ImageCanvas`、Duotoneシェーダー、検証Scene | 完了 |
 | 3 | 演奏用パターン（列で行進、敷き詰め、散らす、中央に大きく、パスに沿う）、UI/Prefs/BPM | 完了 |
-| 4 | 共通パレット、背景パターンとの統合 | 未着手 |
+| 4 | 共通パレット、背景パターンとの統合 | 完了（TypeLayoutの文字色との連動は未実施） |
 | 5 | MIDI割り当て、クロマキー | 未着手 |
 
 ## Phase 0の記録（2026-11-22）
@@ -216,3 +216,26 @@ Overlay Cameraは自分の出力先を持たないため、`pixelWidth/Height` �
 - 修正後、Overlay CameraとMain Cameraのサイズがともに1920×1080になることを確認した。SmokeTestのOrientation Checkも引き続き一致する。
 - 検証後、パターンのON/OFFを既定（MarchだけON）に戻した。
 - 未確認：UIの操作感（ドロップダウンの作り直し、Editウインドウ）、Prefsの保存と復元、MIDIでの操作、見た目の最終評価。
+
+## パレットと背景（Phase 4、2026-11-22）
+
+`PaletteController`（「ImageLayer」タブ → Palette）が、背景と画像のLookで共有する色を持つ。`ColorPalette` は Background／Line／Dark／Light／Accent の5色。プリセット6種（Lemon、Sticker、Tomato、Pool、Paper、Night）とCustom（Prefsで編集）を選べ、`Beats Per Change` を0より大きくすると、拍ごとにプリセットを順に切り替える。
+
+`BackgroundPerformance`（「ImageLayer」タブ → Background）は、出力Camera（Base）にp5.Uniteで背景を描く。Style：None／Solid／Grid／WarpGrid（波で曲がる格子）／Stripes／Checker。Cell Size、Line Width、Cells Per Beat（スクロール）、Warp。色はすべてパレットから取る。
+
+`ImageLayerPerformance` は `_palette` が設定され、Use Palette（既定ON）のとき、Dark／LightをパレットのDark／Lightから取る。
+
+TypeLayoutの文字色はパレットに連動させていない。既存モジュールの仕様を変えるため、ユーザーの確認後に行う。
+
+### p5.Uniteの色が明るく出る問題
+
+プロジェクトはLinear色空間で、出力RTはsRGB（`R8G8B8A8_SRGB`）。p5.Uniteは `Fill` / `Stroke` の色をリニアへ変換せずに書き込むため、出力では指定よりも明るくなる（例：(0.85, 0.22, 0.20) が (0.93, 0.51, 0.49) になる。sRGBで2回エンコードしたのと同じ値）。画像のシェーダーは `MaterialPropertyBlock.SetColor` 経由でUnityが変換するので、指定どおりの値になる。
+
+`BackgroundPerformance` は `color.linear` を渡して補正し、指定どおりの値（(0.85, 0.22, 0.20) → (0.851, 0.22, 0.20)）になることを読み戻しで確認した。TypeLayout・ShapeSynth・検証Sceneの背景は既存の挙動のまま（明るく出る）。p5.Unite側で直すか、各Adapterで補正するかは要相談。
+
+### 検証（2026-11-22）
+
+- Performance Sceneを作り直し、Style×パレットを6通り撮影した（`Reports/ImageLayerBackground-*.png`）。March＋Lineupを重ねた状態で、背景→画像→文字の順に重なる。Consoleのエラー・警告0件。
+- EditModeテスト342件成功。
+- 検証後、Style＝Grid、パレット＝Lemon、MarchだけONに戻した。
+- 未確認：UIの操作、Prefsの保存と復元、パレット切り替えの見え方、見た目の最終評価。
