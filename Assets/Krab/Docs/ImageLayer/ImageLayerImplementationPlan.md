@@ -87,7 +87,7 @@ Assets/Krab/ImageLayer/
 |---|---|---|
 | 0 | 重ね順の方式（Camera Stack／Render Queue）の検証。旧VJ素材の一部で読み込み時間とメモリを実測 | 完了 |
 | 1 | Core：自然順、セット/クリップ、切り出し矩形→元座標、フィット、コマ選択。EditModeテスト | 完了 |
-| 2 | Unity層：走査と非同期読み込み、トリミング、検証結果の一覧、`ImageCanvas`、Duotoneシェーダー、検証Scene | 未着手 |
+| 2 | Unity層：走査と非同期読み込み、トリミング、検証結果の一覧、`ImageCanvas`、Duotoneシェーダー、検証Scene | 完了 |
 | 3 | 演奏用パターン（列で行進、敷き詰め、散らす、中央に大きく、パスに沿う）、UI/Prefs/BPM | 未着手 |
 | 4 | 共通パレット、背景パターンとの統合 | 未着手 |
 | 5 | MIDI割り当て、クロマキー | 未着手 |
@@ -142,3 +142,46 @@ Editor（Metal、Apple Silicon）で `ImageConversion.LoadImage` → 不透明�
 ゼロ詰めでない名前（1, 2, 10）も自然順で読む。セットの構成判断（静止画か連番か）はフォルダの深さだけで決める。
 
 検証：EditModeテスト342件成功（ImageLayer 32件）。境界（Clamp・Loop・PingPongの負の位置と端、1フレームのクリップ、完全透明・完全不透明の画像、行順の反転、空の参照範囲）を含む。
+
+## Unity層（Phase 2、2026-11-22）
+
+`Krab.ImageLayer.Unity`（Core＋URP Runtime）。
+
+### 読み込み
+
+`ImageLibraryLoader.LoadAsync(libraryName, options, onProgress, cancellationToken)`（`Awaitable`）。`StreamingAssets/Krab/ImageLayer/<libraryName>` を走査し、`ManifestBuilder` で構成を作り、1フレームずつデコードする。`FrameBudgetMilliseconds`（既定12ms）を使い切るたびに次のUnityフレームへ譲るので、読み込み中も出力は止まらない。
+
+1フレームの処理（`FrameDecoder`）：PNGを読み、不透明範囲を探し、その範囲だけを4の倍数に揃えたテクスチャへ写す。このとき色をアルファで乗算済みにする（拡大縮小時に透明部分の黒がにじまないように）。既定でミップマップを作り、DXT5に圧縮する。完全に透明なフレームはテクスチャを持たず、描画もしない。
+
+読めないPNGはError、クリップ内でサイズが異なるフレームはWarningとして `ImageLibrary.Issues` に加え、読み込みは続ける。キャンセル時は読み込み済みのテクスチャを破棄する。
+
+| 型 | 役割 |
+|---|---|
+| `ImageLibrary` | セットの一覧と問題、メモリ量、読み込み時間。`Get(name)` は無い名前で例外（準備時に気づくため）、`TryGet` もある。`Dispose` で全テクスチャを破棄 |
+| `ImageSet` | `ClipCount`、添字、`Wrap(index)`（範囲外も折り返す。カウンターや乱数でそのまま選べる） |
+| `ImageClip` | `Frames`、`ContentBounds`（全フレームの外接矩形）、`AtProgress(progress, wrap)`、`AtPosition(frames, wrap)` |
+| `ImageFrame` | テクスチャと `TrimmedFrame`、UVの範囲 |
+
+### 描画
+
+`ImageCanvas`（p5風、出力ピクセル・左上原点・Y下、角度は度で時計回り）。毎フレームUpdateから呼ぶ。
+
+- 状態：`Push` / `Pop` / `Reset`、`Translate` / `Rotate` / `Scale`、`Mode`（`ImageMode`）、`Tint`、`Duotone(dark, light, amount)`、`Threshold(level, softness)`（Duotoneの2色を明度で切り分ける）。
+- 描画：`Image(frame, x, y)`（元のサイズ）、`Image(frame, a, b, c, d)`（Modeに従う矩形に元キャンバス全体を描く）、`ImageFit(clip, frame, a, b, c, d, fit, alignX, alignY)`（クリップの外接矩形を箱に収める。コマで大きさが揺れない）。
+- 呼んだ順に重なる。Transparentのソートは描画の境界で決まるため、p5.Uniteと同じく呼び出しごとに少しずつCameraへ近づける。
+
+`ImageLayerCanvas`（Cameraに付けるComponent）が `ImageCanvas` を持つ。シェーダー参照をシリアライズしてビルドに含める。`OverlayLayerCamera` は自分のCameraを出力CameraのStackに `Order` 順で挿入する（GameObjectのOnEnable順に依存しない）。
+
+### 向き
+
+p5.Uniteのスクリーン描画は、出力テクスチャ上で「y=0が上」になる。画像のシェーダーもこれに合わせ、ピクセル座標（Y下）をそのままクリップ座標へ写す（反転しない）。検証Sceneの `Orientation Check` で、3つの層の目印が同じ左上に重なることを読み戻しで確認した。
+
+### 検証（2026-11-22）
+
+`Assets/Krab/ImageLayer/Samples/ImageLayerSmokeTest.unity` をPlay（構成はSamplesのREADME）。
+
+- Maltine20：11セット、754フレーム、問題0件、テクスチャ約331MB（DXT5＋ミップマップ）、読み込み約11秒。読み込み中も60fpsで描画が続く。
+- 重ね順：背景（p5.Unite）→画像→前景（p5.Unite）の順で重なる。
+- 向き：Orientation Checkで、背景・画像・前景の目印が同じ左上に出る。
+- Consoleのエラー・警告0件。出力の画像を `Reports/ImageLayerSmoke.png` に保存した。
+- 未確認：見た目の最終評価、DXT5圧縮による画質（目視）、Syphon/Spoutの受信側。

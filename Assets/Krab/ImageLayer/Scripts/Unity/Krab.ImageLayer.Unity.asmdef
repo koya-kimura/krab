@@ -1,0 +1,17 @@
+{
+  "name": "Krab.ImageLayer.Unity",
+  "rootNamespace": "Krab.ImageLayer.Unity",
+  "references": [
+    "Krab.ImageLayer.Core",
+    "Unity.RenderPipelines.Universal.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
