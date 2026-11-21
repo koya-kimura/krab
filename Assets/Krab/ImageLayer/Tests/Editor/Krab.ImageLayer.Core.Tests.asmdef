@@ -1,0 +1,8 @@
+{
+  "name": "Krab.ImageLayer.Core.Tests",
+  "rootNamespace": "Krab.ImageLayer.Tests.Editor",
+  "references": ["Krab.ImageLayer.Core"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": true
+}

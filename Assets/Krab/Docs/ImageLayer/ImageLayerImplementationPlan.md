@@ -86,7 +86,7 @@ Assets/Krab/ImageLayer/
 | Phase | 内容 | 状態 |
 |---|---|---|
 | 0 | 重ね順の方式（Camera Stack／Render Queue）の検証。旧VJ素材の一部で読み込み時間とメモリを実測 | 完了 |
-| 1 | Core：自然順、セット/クリップ、切り出し矩形→元座標、フィット、コマ選択。EditModeテスト | 未着手 |
+| 1 | Core：自然順、セット/クリップ、切り出し矩形→元座標、フィット、コマ選択。EditModeテスト | 完了 |
 | 2 | Unity層：走査と非同期読み込み、トリミング、検証結果の一覧、`ImageCanvas`、Duotoneシェーダー、検証Scene | 未着手 |
 | 3 | 演奏用パターン（列で行進、敷き詰め、散らす、中央に大きく、パスに沿う）、UI/Prefs/BPM | 未着手 |
 | 4 | 共通パレット、背景パターンとの統合 | 未着手 |
@@ -121,3 +121,24 @@ Editor（Metal、Apple Silicon）で `ImageConversion.LoadImage` → 不透明�
 | image/human（5枚、1920×1080） | 0.4ms | 15.8ms | 3.4ms | 3.6ms | 11MB | 3MB |
 
 1フレーム約10msで、754枚では8秒前後の見込み。圧縮後は切り出し時の約1/4（全体で約0.25GBの見込み）。デコードはメインスレッドで行うため、Phase 2では複数フレームに分けて読み込み、進み具合を表示する。DXT5圧縮による画質の劣化は目視未確認。圧縮のON/OFFをセット単位で選べるようにする。
+
+## Core API（Phase 1、2026-11-22）
+
+`Krab.ImageLayer.Core`（`noEngineReferences`）。座標は、元画像では左上原点のピクセル（`PixelRect`、int）、出力では左上原点のピクセル（`DrawRect`、double）。
+
+| 型 | 役割 |
+|---|---|
+| `NaturalOrder` | 数字の並びを値で比べる（2 < 10）。値が同じならゼロ詰めの多い方を後にし、全順序にする |
+| `ManifestBuilder.Build(name, relativePaths)` | ライブラリ直下からの相対パス一覧から `LibraryManifest` を作る。ファイルの走査はUnity層が行い、Coreはパスだけを扱う |
+| `LibraryManifest` / `SetManifest` / `ClipManifest` | セット（`SetKind.Stills`／`Sequences`）とクリップ、フレームのパス。`TryGetSet(name)` は大文字小文字を区別する |
+| `ManifestIssue` | 読み込み時の問題。`Warning`：読み込むが意図と違いそう（PNG以外、置き場所の誤り、番号の欠け・重複）。`Error`：その部分を読み込まない（1つのセットに静止画とクリップが混在） |
+| `AlphaBounds.TryFind(rgba32, w, h, rowsBottomUp, out rect, threshold)` | 不透明範囲を探す。Unityの下から上の行順は `rowsBottomUp` で左上原点へ直す |
+| `TrimmedFrame` | 元のキャンバスサイズと切り出し範囲。空なら描画しない |
+| `ImagePlacement.Resolve(mode, a, b, c, d)` | p5の `imageMode`（Corner／Center／Corners）で、元キャンバス全体の描画矩形を求める |
+| `ImagePlacement.MapContent(canvasRect, frame)` | 元キャンバスを canvasRect に描いたときの、切り出し部分の矩形 |
+| `ImagePlacement.Fit(box, srcW, srcH, reference, Contain/Cover, alignX, alignY)` | reference（元キャンバス全体か、クリップの外接矩形）を box に収める元キャンバスの矩形。外接矩形を渡すと、コマごとに大きさが揺れない |
+| `FrameSelector.FromPosition(frames, count, wrap)` / `FromProgress(progress, count, wrap)` | コマ番号。`Clamp`／`Loop`／`PingPong`（両端を繰り返さない）。progressは1で1往路。拍に合わせるときは beat × framesPerBeat を位置として渡す |
+
+ゼロ詰めでない名前（1, 2, 10）も自然順で読む。セットの構成判断（静止画か連番か）はフォルダの深さだけで決める。
+
+検証：EditModeテスト342件成功（ImageLayer 32件）。境界（Clamp・Loop・PingPongの負の位置と端、1フレームのクリップ、完全透明・完全不透明の画像、行順の反転、空の参照範囲）を含む。
