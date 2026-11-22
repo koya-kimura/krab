@@ -202,6 +202,18 @@ p5.Uniteのスクリーン描画は、出力テクスチャ上で「y=0が上」
 | Center | human | 中央に大きく1つ。足元を支点に揺れ、拍で次のクリップへ | Size, Beats Per Change, Swing, Beats Per Swing |
 | Mirror | animal | 中央線をはさんで鏡像と向かい合う。拍で呼吸する | Clip, Size, Gap, Breathe |
 | Orbit | life | 中心の周りの円に等間隔で並べ、拍で回る（画像は正立） | Count, Radius, Size, Degrees Per Beat |
+| Trail | hand | 1つのクリップが8の字を描き、遅れたコピーが小さく薄くなりながら後を追う | Clip, Size, Copies, Lag, Beats Per Loop, Fade |
+| Tunnel | noface | 中心から入れ子に並べたコピーが外へズームし続ける。層ごとにクリップは保たれる | Layers, Size, Ratio, Beats Per Layer, Twist, Seed |
+| Wave | dance | 横一列のクリップが順番に上下し、ウェーブになる | Count, Size, Amplitude, Beats Per Wave, Phase Step, Position |
+| Spiral | animal | ひまわりの種の配置（黄金角）で中心から並べ、外ほど大きく、拍で回る | Count, Size, Spread, Degrees Between, Degrees Per Beat, Grow |
+| Flash | hand | ステップごとに位置・大きさ・クリップ・左右反転が切り替わる。短くするとストロボ | Count, Size, Size Spread, Beats Per Change, Random Flip, Seed |
+| Pile | life | ステップごとに1つずつランダムな位置と角度で積み重なり、満杯で消えて最初から | Max Count, Size, Beats Per Item, Tilt, Seed |
+| Columns | building | 縦の列が交互に上下へスクロールする。セルごとにクリップは保たれる | Columns, Cell Height, Cells Per Beat, Fill, Seed |
+| Bounce | human | 横一列のクリップが拍で跳ね、着地でつぶれる。Staggerで跳ねるタイミングをずらす | Count, Size, Jump, Beats Per Bounce, Stagger, Floor |
+| Radial | dothand | 1つのクリップを中心の周りに外向きに並べる。輪が回り、拍で膨らむ | Clip, Count, Radius, Size, Degrees Per Beat, Pulse |
+| Parade | walk | 奥行きの違う群衆が横切る。遠いほど小さく高く遅い。左右両方向に歩ける | Count, Size, Speed, Horizon, Both Ways, Clips Face Left, Seed |
+
+2026-11-22に10パターン（Trail〜Parade）を追加し、計18パターン。Performance SceneのPlay中に18パターンを1つずつONにして出力を保存し（`Reports/ImageLayerPattern-*.png`）、全パターンでError無し、Consoleのエラー・警告0件を確認した。見た目の評価と各パラメータの操作感は未確認。
 
 乱数はTypeLayoutの `TextPicker.Hash`（seed・スロット・ステップ）を、ステップは `BeatSteps.Step` を使う。
 

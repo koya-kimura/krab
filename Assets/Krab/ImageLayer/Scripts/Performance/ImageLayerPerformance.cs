@@ -44,7 +44,17 @@ namespace Krab.ImageLayer.Performance
             new FallPattern(),
             new CenterPattern(),
             new MirrorPattern(),
-            new OrbitPattern()
+            new OrbitPattern(),
+            new TrailPattern(),
+            new TunnelPattern(),
+            new WavePattern(),
+            new SpiralPattern(),
+            new FlashPattern(),
+            new PilePattern(),
+            new ColumnsPattern(),
+            new BouncePattern(),
+            new RadialPattern(),
+            new ParadePattern()
         };
 
         private readonly List<string> _setNames = new();
