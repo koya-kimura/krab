@@ -2,8 +2,6 @@ using System;
 using System.IO;
 using Krab.Common.Output;
 using Krab.ImageLayer.Performance;
-using Krab.ImageLayer.Performance.Background;
-using Krab.ImageLayer.Performance.Palette;
 using Krab.ImageLayer.Unity.Rendering;
 using Krab.TypeLayout.Performance;
 using Krab.TypeLayout.Unity.Fonts;
@@ -87,23 +85,13 @@ namespace Krab.ImageLayer.Samples.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        // Background, images and TypeLayout text, each on its own camera, sharing one palette for the backdrop and looks.
+        // Images and TypeLayout text, each on its own overlay camera above the output camera's clear color.
         private static void BuildPerformance(Rig rig)
         {
-            var palette = new GameObject("Palette").AddComponent<PaletteController>();
-
-            var background = new GameObject("Background", typeof(TypeLayoutCanvas), typeof(BackgroundPerformance));
-            background.GetComponent<TypeLayoutCanvas>().TargetCamera = rig.OutputCamera;
-            var serializedBackground = new SerializedObject(background.GetComponent<BackgroundPerformance>());
-            serializedBackground.FindProperty("_outputCamera").objectReferenceValue = rig.OutputCamera;
-            serializedBackground.FindProperty("_palette").objectReferenceValue = palette;
-            serializedBackground.ApplyModifiedPropertiesWithoutUndo();
-
             var images = new GameObject("Image Layer Performance");
             var performance = images.AddComponent<ImageLayerPerformance>();
             var serializedImages = new SerializedObject(performance);
             serializedImages.FindProperty("_images").objectReferenceValue = rig.Images;
-            serializedImages.FindProperty("_palette").objectReferenceValue = palette;
             serializedImages.ApplyModifiedPropertiesWithoutUndo();
 
             var typeLayout = new GameObject("Type Layout", typeof(TypeLayoutCanvas), typeof(TypeLayoutFont),

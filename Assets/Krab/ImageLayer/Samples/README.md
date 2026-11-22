@@ -6,13 +6,11 @@
 
 - Patterns：8パターンのON/OFFとEdit（Set、Look、Frames Per Beat、各パターンのパラメータ）。既定ではMarchだけがON。
 - Library：ライブラリの選択、圧縮のON/OFF、Reload、読み込み状況（セット数・フレーム数・メモリ・時間）、問題の一覧。
-- Display：表示、パレットを使うか（既定ON）、Thresholdの明度。
-- 「ImageLayer」タブ → Palette：6種のプリセットとCustom、拍ごとの切り替え（Beats Per Change、0で固定）。
-- 「ImageLayer」タブ → Background：Style（None／Solid／Grid／WarpGrid／Stripes／Checker）、Cell Size、Line Width、スクロール、Warp。
+- Display：表示、Duotone／Thresholdで使うDark／Lightの色、Thresholdの明度。
 
 | Camera | Order | 内容 |
 |---|---|---|
-| Main Camera（出力、Base） | — | `BackgroundPerformance` の背景（p5.Unite） |
+| Main Camera（出力、Base） | — | 黒でクリアするだけ（背景はImageLayerの対象外） |
 | Image Layer Camera（Overlay） | 0 | `ImageLayerPerformance` の画像 |
 | Foreground Camera（Overlay） | 10 | `TypeLayoutPerformance` の文字 |
 

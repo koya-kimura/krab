@@ -36,7 +36,7 @@ namespace Krab.ImageLayer.Performance
 
         public float Bpm { get; }
 
-        /// <summary>Palette colors for the Duotone and Threshold looks.</summary>
+        /// <summary>Dark and light ends of the Duotone and Threshold looks.</summary>
         public Color Dark { get; }
 
         public Color Light { get; }

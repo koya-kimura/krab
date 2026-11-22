@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading;
 using Krab.Common.Timing;
 using Krab.Common.Views;
-using Krab.ImageLayer.Performance.Palette;
 using Krab.ImageLayer.Performance.Patterns;
 using Krab.ImageLayer.Unity.Library;
 using Krab.ImageLayer.Unity.Loading;
@@ -28,13 +27,10 @@ namespace Krab.ImageLayer.Performance
         private const float FallbackBpm = 120;
 
         [SerializeField] private ImageLayerCanvas _images;
-        [Tooltip("Optional. When set and Use Palette is on, Dark/Light come from the shared palette.")]
-        [SerializeField] private PaletteController _palette;
 
         private readonly PrefsBool _visible = new("ImageLayer Visible", true);
         private readonly PrefsString _libraryName = new("ImageLayer Library", "Maltine20");
         private readonly PrefsBool _compress = new("ImageLayer Compress", true);
-        private readonly PrefsBool _usePalette = new("ImageLayer Use Palette", true);
         private readonly PrefsColor _dark = new("ImageLayer Dark", new Color(0.12f, 0.12f, 0.14f));
         private readonly PrefsColor _light = new("ImageLayer Light", Color.white);
         private readonly PrefsFloat _thresholdLevel = new("ImageLayer Threshold", 0.45f);
@@ -81,11 +77,8 @@ namespace Krab.ImageLayer.Performance
             var camera = canvas.Camera;
             var beats = _bpmManager?.Beat ?? Time.timeAsDouble * FallbackBpm / 60;
             var bpm = _bpmManager?.CurrentBpm ?? FallbackBpm;
-            bool usePalette = _palette && _usePalette.Get();
-            var dark = usePalette ? _palette.Current.Dark : _dark.Get();
-            var light = usePalette ? _palette.Current.Light : _light.Get();
             var context = new ImagePatternContext(canvas, _library, camera.pixelWidth, camera.pixelHeight, beats, bpm,
-                dark, light, Mathf.Clamp01(_thresholdLevel.Get()));
+                _dark.Get(), _light.Get(), Mathf.Clamp01(_thresholdLevel.Get()));
             foreach (var pattern in _patterns)
                 pattern.Draw(context);
         }
@@ -225,10 +218,8 @@ namespace Krab.ImageLayer.Performance
         {
             return UI.Column(
                 _visible.CreateElement("Visible"),
-                _usePalette.CreateElement("Use Palette (Dark / Light from the Palette tab)"),
-                UI.DynamicElementIf(() => !_palette || !_usePalette.Get(), () => UI.Column(
-                    _dark.CreateElement("Dark"),
-                    _light.CreateElement("Light"))),
+                _dark.CreateElement("Dark"),
+                _light.CreateElement("Light"),
                 _thresholdLevel.CreateSlider("Threshold", 0f, 1f),
                 UI.Label("Dark / Light / Threshold color the Duotone and Threshold looks of every pattern."));
         }
