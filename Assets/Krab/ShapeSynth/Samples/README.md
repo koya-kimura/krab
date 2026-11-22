@@ -90,6 +90,10 @@ Game View左上にVoice数・現在BPM・最後のTrigger BPMと操作キーを�
 
 保存後、`ShapeSynthPerformance.unity` を開いてPlayする。SettingsのShapeSynth → Performanceから、保存済みプリセットのTriggerまたはMIDIを操作する。一覧は自動更新される。組み込みプリセット、Q/W/E/A/SのTrigger、Performance.v1.jsonは廃止済み。詳細は [ユーザープリセットの演奏UI](../../Docs/ShapeSynth/UserPresetPerformance.md) を参照。
 
+## 8スロットルーパー
+
+`ShapeSynthLooper.unity` を開いてPlayする。Settings → ShapeSynth → Performance → PerformanceのLoopersを展開し、Record → プリセットをTrigger → Recording → Playで録音を反復する。次の状態ボタン操作かClearで消去。8スロット独立、秒数固定（BPM変更に追従しない）、クオンタイズなし。詳細は [ルーパー](../../Docs/ShapeSynth/Looper.md)。
+
 ## ディレクトリ構成
 
 Commonと同様にC#コードを`Scripts/`へ集約する。名前空間には`Scripts`を含めない。

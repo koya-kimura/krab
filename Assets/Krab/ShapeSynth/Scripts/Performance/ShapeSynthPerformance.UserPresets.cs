@@ -66,6 +66,13 @@ namespace Krab.ShapeSynth.Performance
 
         public VoiceInstance TriggerUserPreset(string id)
         {
+            var voice = SpawnUserPreset(id);
+            if (voice != null) RecordManualTrigger(id);
+            return voice;
+        }
+
+        private VoiceInstance SpawnUserPreset(string id)
+        {
             try
             {
                 // Reload and compile at Trigger, so the Preset Editor's saved edits apply only to a new Voice.

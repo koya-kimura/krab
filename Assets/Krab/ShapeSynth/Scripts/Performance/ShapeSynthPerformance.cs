@@ -33,12 +33,14 @@ namespace Krab.ShapeSynth.Performance
             }
 
             // Load the saved presets now so their MIDI triggers work before the UI is opened.
+            InitializeLoopers();
             RefreshUserPresets();
         }
 
         private void Update()
         {
             RefreshWhenFilesChange();
+            UpdateLoopers();
         }
 
         public VoiceInstance LastVoice { get; private set; }
@@ -55,7 +57,8 @@ namespace Krab.ShapeSynth.Performance
 
         public Element CreateElement()
         {
-            return BuildUserPresets();
+            return UI.ScrollViewVerticalAndHorizontal(null, null,
+                UI.Column(BuildLoopers(), BuildUserPresets()).SetWidth(700).SetFlexShrink(0));
         }
     }
 }

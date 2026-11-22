@@ -3,6 +3,7 @@
 ## 操作と仕様
 
 - [ユーザープリセットの演奏UI](UserPresetPerformance.md)
+- [8スロットルーパー](Looper.md)
 - [Preset Editor](PresetEditorWorkspace.md)
 - [検証Sceneの操作手順](../../ShapeSynth/Samples/README.md)
 - [実装状況と今後の検討](ShapeSynthImplementationPlan.md)

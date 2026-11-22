@@ -1,0 +1,5 @@
+{
+  "name": "Krab.Common.Looping.Core",
+  "rootNamespace": "Krab.Common.Looping.Core",
+  "noEngineReferences": true
+}

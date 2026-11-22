@@ -1,0 +1,8 @@
+{
+  "name": "Krab.Common.Looping.Core.Tests",
+  "rootNamespace": "Krab.Common.Tests.Editor.Looping",
+  "references": ["Krab.Common.Looping.Core"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": true
+}

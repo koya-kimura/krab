@@ -2,6 +2,10 @@
 
 Performanceでは、Preset Editorで作って保存したプリセット（ユーザープリセット）だけを使う。コードで定義していた組み込みプリセット（FX01、Pad01など5種）と、その設定・保存の仕組みは削除した。
 
+## ルーパー
+
+2026-11-22に8スロットのルーパーを追加した。Performance上部のLoopersからRecord → Play → Clearを操作できる。記録・再生CoreはCommonに置き、ShapeSynthはプリセットIDの発火だけを接続する。使い方と検証Sceneは [ルーパー](Looper.md)。
+
 ## UI
 
 保存済みプリセットが、名前順に1行ずつ縦に並ぶ。
