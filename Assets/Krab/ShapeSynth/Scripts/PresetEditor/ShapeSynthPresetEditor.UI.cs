@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Linq;
 using System.Reflection;
 using Krab.ShapeSynth.Core.Presets;
@@ -18,6 +20,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private string _listWarning;
         private int _savedRevision;
         private int _openIndex;
+        private string _presetFilesSignature;
+        private double _nextPresetCheck;
 
         /// <summary>
         /// Two windows over the same document, opened from the shared Settings window. Visual owns the file bar and
@@ -115,7 +119,32 @@ namespace Krab.ShapeSynth.PresetEditor
                 _savedPresets = Repository.List(out errors);
                 _savedRevision++;
             });
+            _presetFilesSignature = PresetFilesSignature();
             _listWarning = errors.Count > 0 ? "Some presets could not be read: " + string.Join("; ", errors) : null;
+        }
+
+        private void RefreshSavedPresetsWhenFilesChange()
+        {
+            var now = Time.unscaledTimeAsDouble;
+            if (now < _nextPresetCheck) return;
+
+            _nextPresetCheck = now + 1;
+            if (PresetFilesSignature() != _presetFilesSignature) RefreshSavedPresets();
+        }
+
+        private string PresetFilesSignature()
+        {
+            if (!Directory.Exists(Repository.DirectoryPath)) return string.Empty;
+
+            var files = Directory.GetFiles(Repository.DirectoryPath, "*.json");
+            Array.Sort(files, StringComparer.Ordinal);
+            var signature = new StringBuilder();
+            foreach (var file in files)
+            {
+                signature.Append(file).Append('|').Append(File.GetLastWriteTimeUtc(file).Ticks).Append('\n');
+            }
+
+            return signature.ToString();
         }
 
         // RosettaUI's custom dropdown menu uses a Unity internal interface removed in this Unity version.

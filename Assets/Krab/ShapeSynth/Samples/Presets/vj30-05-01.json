@@ -1,0 +1,671 @@
+{
+  "SchemaVersion": 5,
+  "Id": "vj30-05-01",
+  "Name": "05_Organic/01 Floating Ellipse",
+  "Values": [
+    {
+      "Id": "9a481644e169434fa29463b04eef2f73",
+      "Name": "Sine 0.5 phase 0",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "a09b00c81e14492581e12016688e3d0a",
+      "Name": "Swell",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.5,
+          "Decay": 0.25,
+          "SustainLevel": 0.65,
+          "SustainTime": 0.75,
+          "Release": 0.75,
+          "AttackCurve": 3,
+          "DecayCurve": 2,
+          "ReleaseCurve": 3,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    }
+  ],
+  "RootGroup": {
+    "Id": "1c5b475b486f4aa6a16542111a19042d",
+    "Name": "Root",
+    "Kind": 0,
+    "Children": [
+      {
+        "Id": "0d039d91084141698c3ec6199e48493b",
+        "Name": "Ellipse Aspect",
+        "Kind": 0,
+        "Children": [
+          {
+            "Id": "c90ce71cef7c44acb072174fe32bd490",
+            "Name": "Floating Ellipse",
+            "Kind": 1,
+            "Children": [],
+            "PositionX": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "PositionY": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "Direction": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "Distance": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "Rotation": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "ScaleX": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 1.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": [
+                {
+                  "ValueId": "9a481644e169434fa29463b04eef2f73",
+                  "Depth": 0.12
+                }
+              ]
+            },
+            "ScaleY": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 1.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": [
+                {
+                  "ValueId": "9a481644e169434fa29463b04eef2f73",
+                  "Depth": -0.12
+                }
+              ]
+            },
+            "Width": {
+              "Reference": 3,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.18,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "Height": {
+              "Reference": 3,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.18,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "Opacity": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": [
+                {
+                  "ValueId": "a09b00c81e14492581e12016688e3d0a",
+                  "Depth": 1.0
+                }
+              ]
+            },
+            "Fill": true,
+            "Stroke": false,
+            "FillHue": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 185.55554151535034,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "FillSaturation": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.69827580451965332,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "FillBrightness": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.90980392694473267,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "FillAlpha": 1.0,
+            "StrokeWidth": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 3.0,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "StrokeHue": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 185.55554151535034,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "StrokeSaturation": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.69827580451965332,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "StrokeBrightness": {
+              "Reference": 0,
+              "Multiplier": 1.0,
+              "AbsoluteValue": 1.0,
+              "Base": 0.90980392694473267,
+              "Random": 0.0,
+              "Flip": 0,
+              "Bindings": []
+            },
+            "StrokeAlpha": 1.0,
+            "Vertices": [],
+            "Layout": {
+              "Kind": 0,
+              "Count": 4,
+              "Columns": 3,
+              "SpacingX": {
+                "Reference": 3,
+                "Multiplier": 1.0,
+                "AbsoluteValue": 1.0,
+                "Base": 0.25,
+                "Random": 0.0,
+                "Flip": 0,
+                "Bindings": []
+              },
+              "SpacingY": {
+                "Reference": 3,
+                "Multiplier": 1.0,
+                "AbsoluteValue": 1.0,
+                "Base": 0.25,
+                "Random": 0.0,
+                "Flip": 0,
+                "Bindings": []
+              },
+              "Radius": {
+                "Reference": 3,
+                "Multiplier": 1.0,
+                "AbsoluteValue": 1.0,
+                "Base": 0.3,
+                "Random": 0.0,
+                "Flip": 0,
+                "Bindings": []
+              },
+              "StartAngle": 90.0,
+              "FaceOutward": false,
+              "Delay": 0.0,
+              "DelayOrder": 0
+            }
+          }
+        ],
+        "PositionX": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "PositionY": {
+          "Reference": 2,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": [
+            {
+              "ValueId": "9a481644e169434fa29463b04eef2f73",
+              "Depth": 0.06
+            }
+          ]
+        },
+        "Direction": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "Distance": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "Rotation": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "ScaleX": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 1.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "ScaleY": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 1.3888888888888888,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "Width": {
+          "Reference": 3,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.2,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "Height": {
+          "Reference": 3,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.2,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "Opacity": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 1.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "Fill": true,
+        "Stroke": false,
+        "FillHue": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "FillSaturation": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "FillBrightness": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 1.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "FillAlpha": 1.0,
+        "StrokeWidth": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 1.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "StrokeHue": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "StrokeSaturation": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 0.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "StrokeBrightness": {
+          "Reference": 0,
+          "Multiplier": 1.0,
+          "AbsoluteValue": 1.0,
+          "Base": 1.0,
+          "Random": 0.0,
+          "Flip": 0,
+          "Bindings": []
+        },
+        "StrokeAlpha": 1.0,
+        "Vertices": [],
+        "Layout": {
+          "Kind": 0,
+          "Count": 4,
+          "Columns": 3,
+          "SpacingX": {
+            "Reference": 3,
+            "Multiplier": 1.0,
+            "AbsoluteValue": 1.0,
+            "Base": 0.25,
+            "Random": 0.0,
+            "Flip": 0,
+            "Bindings": []
+          },
+          "SpacingY": {
+            "Reference": 3,
+            "Multiplier": 1.0,
+            "AbsoluteValue": 1.0,
+            "Base": 0.25,
+            "Random": 0.0,
+            "Flip": 0,
+            "Bindings": []
+          },
+          "Radius": {
+            "Reference": 3,
+            "Multiplier": 1.0,
+            "AbsoluteValue": 1.0,
+            "Base": 0.3,
+            "Random": 0.0,
+            "Flip": 0,
+            "Bindings": []
+          },
+          "StartAngle": 90.0,
+          "FaceOutward": false,
+          "Delay": 0.0,
+          "DelayOrder": 0
+        }
+      }
+    ],
+    "PositionX": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "PositionY": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Direction": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Distance": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Rotation": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "ScaleX": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 1.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "ScaleY": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 1.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Width": {
+      "Reference": 3,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.2,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Height": {
+      "Reference": 3,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.2,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Opacity": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 1.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "Fill": true,
+    "Stroke": false,
+    "FillHue": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "FillSaturation": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "FillBrightness": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 1.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "FillAlpha": 1.0,
+    "StrokeWidth": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 1.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "StrokeHue": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "StrokeSaturation": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 0.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "StrokeBrightness": {
+      "Reference": 0,
+      "Multiplier": 1.0,
+      "AbsoluteValue": 1.0,
+      "Base": 1.0,
+      "Random": 0.0,
+      "Flip": 0,
+      "Bindings": []
+    },
+    "StrokeAlpha": 1.0,
+    "Vertices": [],
+    "Layout": {
+      "Kind": 0,
+      "Count": 4,
+      "Columns": 3,
+      "SpacingX": {
+        "Reference": 3,
+        "Multiplier": 1.0,
+        "AbsoluteValue": 1.0,
+        "Base": 0.25,
+        "Random": 0.0,
+        "Flip": 0,
+        "Bindings": []
+      },
+      "SpacingY": {
+        "Reference": 3,
+        "Multiplier": 1.0,
+        "AbsoluteValue": 1.0,
+        "Base": 0.25,
+        "Random": 0.0,
+        "Flip": 0,
+        "Bindings": []
+      },
+      "Radius": {
+        "Reference": 3,
+        "Multiplier": 1.0,
+        "AbsoluteValue": 1.0,
+        "Base": 0.3,
+        "Random": 0.0,
+        "Flip": 0,
+        "Bindings": []
+      },
+      "StartAngle": 90.0,
+      "FaceOutward": false,
+      "Delay": 0.0,
+      "DelayOrder": 0
+    }
+  }
+}

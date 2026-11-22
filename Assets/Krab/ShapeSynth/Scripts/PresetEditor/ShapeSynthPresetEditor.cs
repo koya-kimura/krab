@@ -47,6 +47,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 _error = "Script reload cleared the open preset.";
             }
 
+            RefreshSavedPresetsWhenFilesChange();
             AdvancePlayback(Time.unscaledDeltaTime);
             if (_refreshPreview && Time.realtimeSinceStartupAsDouble >= _previewDue) Preview();
         }
