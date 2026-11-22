@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Krab.Common.Looping.Core;
-using Krab.Common.Midi.Core;
+using Krab.Common.Looping.Midi;
+using Krab.Common.Looping.Views;
 using RosettaUI;
 using UnityEngine;
 
@@ -11,231 +12,119 @@ namespace Krab.ShapeSynth.Performance
     {
         public const int LooperCount = 8;
 
-        private readonly EventLooper<string>[] _loopers = new EventLooper<string>[LooperCount];
-        private readonly Param<int>[] _looperStates = new Param<int>[LooperCount];
-        private readonly Param<bool>[] _looperClear = new Param<bool>[LooperCount];
-        private readonly Action<int>[] _looperStateHandlers = new Action<int>[LooperCount];
+        private const string LooperActionPrefix = "ShapeSynth.Looper";
+
         private readonly List<LoopPlaybackEvent<string>> _loopEvents = new();
-        private readonly List<string> _looperActionIds = new();
-        private bool _loopersInitialized;
-        private bool _syncingLooperState;
+        private readonly LooperBank<string> _loopers = new(LooperCount, () => LooperClock);
+        private LooperBankMidi _looperMidi;
+        private bool _loopersStarted;
         private string _looperError;
 
-        private static readonly Color[] LooperColors = { Color.gray, Color.red, Color.green };
+        private void OnEnable()
+        {
+            if (_loopersStarted) AttachLooperMidi();
+        }
 
-        public IReadOnlyList<EventLooper<string>> Loopers => _loopers;
+        private void OnDisable()
+        {
+            if (!_loopersStarted) return;
+
+            _loopers.ClearAll();
+            DetachLooperMidi();
+        }
+
+        public LooperBank<string> Loopers => _loopers;
 
         public string LooperError => _looperError;
 
         // Like the p5 looper, loops keep their recorded length in real seconds and ignore BPM changes.
         private static double LooperClock => Time.unscaledTimeAsDouble;
 
-        private void OnEnable()
-        {
-            if (_loopersInitialized) RegisterLooperMidi();
-        }
-
-        private void OnDisable()
-        {
-            if (!_loopersInitialized) return;
-
-            for (var index = 0; index < LooperCount; index++) ClearLooper(index);
-            UnregisterLooperMidi();
-        }
-
-        private void InitializeLoopers()
-        {
-            for (var index = 0; index < LooperCount; index++)
-            {
-                _loopers[index] = new EventLooper<string>();
-                _looperStates[index] = new Param<int>(0);
-                _looperClear[index] = new Param<bool>(false);
-            }
-
-            _loopersInitialized = true;
-            for (var index = 0; index < LooperCount; index++)
-            {
-                var slot = index;
-                _looperStateHandlers[index] = state => ChangeLooperState(slot, state);
-                _looperStates[index].Changed += _looperStateHandlers[index];
-                _looperClear[index].Changed += pressed =>
-                {
-                    if (pressed && isActiveAndEnabled) ClearLooper(slot);
-                };
-            }
-
-            RegisterLooperMidi();
-        }
-
         public void AdvanceLooper(int index)
         {
-            RequireLooper(index);
             if (!isActiveAndEnabled) return;
 
-            _looperStates[index].SetValue(((int)_loopers[index].State + 1) % 3);
+            _loopers.Cycle(index);
         }
 
         public void ClearLooper(int index)
         {
-            RequireLooper(index);
-            _loopers[index].Clear();
-            SyncLooperState(index);
+            _loopers.Clear(index);
         }
 
-        private void ChangeLooperState(int index, int state)
+        private void InitializeLoopers()
         {
-            if (_syncingLooperState || !isActiveAndEnabled) return;
-
-            var looper = _loopers[index];
-            switch (state)
-            {
-                case 0:
-                    looper.Clear();
-                    break;
-                case 1:
-                    looper.StartRecording(LooperClock);
-                    _looperError = null;
-                    break;
-                case 2:
-                    looper.FinishRecording(LooperClock);
-                    break;
-            }
-
-            SyncLooperState(index);
+            _loopersStarted = true;
+            _loopers.StateChanged += OnLooperStateChanged;
+            AttachLooperMidi();
         }
 
-        private void SyncLooperState(int index)
+        private void OnLooperStateChanged(int index)
         {
-            _syncingLooperState = true;
-            try
-            {
-                _looperStates[index].SetValue((int)_loopers[index].State);
-            }
-            finally
-            {
-                _syncingLooperState = false;
-            }
+            if (_loopers.GetState(index) == EventLooperState.Recording) _looperError = null;
         }
 
         private void RecordManualTrigger(string presetId)
         {
-            if (!_loopersInitialized || !isActiveAndEnabled) return;
+            if (!_loopersStarted || !isActiveAndEnabled) return;
 
-            foreach (var looper in _loopers)
-            {
-                if (looper.State == EventLooperState.Recording) looper.Record(presetId, LooperClock);
-            }
+            _loopers.Record(presetId);
         }
 
         private void UpdateLoopers()
         {
-            if (!_loopersInitialized) return;
+            if (!_loopersStarted) return;
 
             for (var index = 0; index < LooperCount; index++)
             {
-                var looper = _loopers[index];
-                var dropped = looper.DroppedEventCount;
+                var dropped = _loopers[index].DroppedEventCount;
                 _loopEvents.Clear();
-                looper.Advance(LooperClock, _loopEvents);
-                if (looper.DroppedEventCount != dropped)
+                _loopers.Advance(index, _loopEvents);
+                if (_loopers[index].DroppedEventCount != dropped)
                     _looperError = $"Loop {index + 1}: skipped overdue events after a long frame.";
 
                 foreach (var loopEvent in _loopEvents)
                 {
+                    // Playback spawns without recording, so a replay never feeds another recording slot.
                     if (SpawnUserPreset(loopEvent.Payload) != null) continue;
 
                     // A missing or invalid preset stops only the affected loop, not the other performers.
                     _looperError = $"Loop {index + 1} stopped: {_error}";
-                    ClearLooper(index);
+                    _loopers.Clear(index);
                     break;
                 }
             }
         }
 
-        private void RegisterLooperMidi()
+        private void AttachLooperMidi()
         {
-            if (_midiBindings == null || _looperActionIds.Count != 0) return;
+            if (_midiBindings == null || _looperMidi != null) return;
 
-            _syncingLooperState = true;
-            try
-            {
-                for (var index = 0; index < LooperCount; index++)
-                {
-                    var cycleId = LooperActionId(index, "Cycle");
-                    var clearId = LooperActionId(index, "Clear");
-                    _looperStates[index].Changed -= _looperStateHandlers[index];
-                    _midiBindings.RegisterState(cycleId, _looperStates[index], 3, LooperColors);
-                    // Loop content is session-only, so a persisted MIDI state must not restore recording/playback.
-                    _looperStates[index].SetValue((int)_loopers[index].State);
-                    _looperStates[index].Changed += _looperStateHandlers[index];
-                    _midiBindings.RegisterMomentary(clearId, _looperClear[index]);
-                    _looperActionIds.Add(cycleId);
-                    _looperActionIds.Add(clearId);
-                }
-            }
-            finally
-            {
-                _syncingLooperState = false;
-            }
+            _looperMidi = new LooperBankMidi(_midiBindings, _loopers, LooperActionPrefix);
         }
 
-        private void UnregisterLooperMidi()
+        private void DetachLooperMidi()
         {
-            if (_midiBindings == null) return;
-
-            foreach (var id in _looperActionIds) _midiBindings.UnregisterAction(id);
-            _looperActionIds.Clear();
-        }
-
-        private static string LooperActionId(int index, string action) => $"ShapeSynth.Looper.{index + 1}.{action}";
-
-        private void RequireLooper(int index)
-        {
-            if (!_loopersInitialized) throw new InvalidOperationException("Loopers are not initialized.");
-            if (index < 0 || index >= LooperCount) throw new ArgumentOutOfRangeException(nameof(index));
+            _looperMidi?.Dispose();
+            _looperMidi = null;
         }
 
         private Element BuildLoopers()
         {
-            var rows = new List<Element>();
-            for (var index = 0; index < LooperCount; index++)
+            Func<int, Element> cycleMidi = null;
+            Func<int, Element> clearMidi = null;
+            if (_midiUi != null)
             {
-                var slot = index;
-                rows.Add(UI.Row(
-                    UI.Label($"Loop {slot + 1}").SetWidth(50),
-                    UI.Button(UI.Label(() => LooperButtonTitle(slot)), () => AdvanceLooper(slot)).SetWidth(150),
-                    _midiUi == null ? UI.Space() : _midiUi.CreateButton(LooperActionId(slot, "Cycle"), $"Loop {slot + 1}"),
-                    UI.Button("Clear", () => ClearLooper(slot)),
-                    _midiUi == null ? UI.Space() : _midiUi.CreateButton(LooperActionId(slot, "Clear"), $"Clear Loop {slot + 1}"),
-                    UI.Label(() => LooperStatus(slot)).SetWidth(190)));
+                cycleMidi = slot => _midiUi.CreateButton(
+                    LooperBankMidi.CycleActionId(LooperActionPrefix, slot), $"Loop {slot + 1}");
+                clearMidi = slot => _midiUi.CreateButton(
+                    LooperBankMidi.ClearActionId(LooperActionPrefix, slot), $"Clear Loop {slot + 1}");
             }
 
             return UI.Column(
-                UI.Fold("Loopers", rows),
+                LooperBankUi.Create(_loopers, "s", cycleMidi, clearMidi),
                 UI.DynamicElementIf(() => _looperError != null,
                     () => UI.Label(() => _looperError).SetColor(ErrorColor)));
-        }
-
-        private string LooperButtonTitle(int index)
-        {
-            if (!_loopersInitialized) return "Record";
-
-            return _loopers[index].State switch
-            {
-                EventLooperState.Recording => "Recording → Play",
-                EventLooperState.Playing => "Playing → Clear",
-                _ => "Record"
-            };
-        }
-
-        private string LooperStatus(int index)
-        {
-            if (!_loopersInitialized) return "Empty";
-
-            var loop = _loopers[index];
-            return loop.State == EventLooperState.Recording
-                ? $"{loop.EventCount} events · recording"
-                : $"{loop.EventCount} events · {loop.Duration:0.###} s";
         }
     }
 }

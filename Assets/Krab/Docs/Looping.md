@@ -18,6 +18,15 @@ Common.Looping.Core  ←  ShapeSynth.Performance
 
 将来、文字や画像等にも適用する場合は、それぞれがPayloadと発火処理を用意する。共通Coreへ描画種別を追加しない。現段階では共通の汎用イベントバスや永続化まで広げない。
 
+## 8スロットのバンクとUI・MIDI
+
+- `LooperBank<T>`（Core）：同じ時計を共有する複数のEventLooper。`Cycle(slot)` で Idle → Recording → Playing → Idle（p5版の1ボタン操作）、`Clear(slot)`、`Record(payload)` は録音中の全スロットへ記録、`Advance(slot, output)` で再生。時計は `Func<double>` で受け取る。状態が変わると `StateChanged(slot)`。
+- `ILooperBank`（Core）：Payloadに依存しない操作面。UIやMIDIなどの入力部品はこれだけを見る。
+- `LooperBankUi`（`Views/`、namespace `Krab.Common.Looping.Views`）：RosettaUIの行。MIDI学習ボタンなど入力系の部品は `Func<int, Element>` で外から差し込むため、MIDIを参照しない。
+- `LooperBankMidi`（`Midi/`、namespace `Krab.Common.Looping.Midi`）：任意。`MidiBindingManager` に、スロットごとの3状態Cycle（LED：灰／赤／緑）とClearのActionを `{接頭辞}.{番号}.Cycle|Clear` で登録する。保存されたState値は復元せず、常に実際のスロット状態へ揃える。Disposeで登録を解除する。
+
+CommonのMidiはasmdefを持たないため、Coreのasmdef（`noEngineReferences`）でMIDI非依存を保証し、ViewsとMidiはフォルダとnamespaceで分ける。MIDIを使わない利用側は `LooperBankMidi` を生成しなければよい。
+
 ## 操作とAPI
 
 - `StartRecording(position)`：旧内容を消して録音開始。

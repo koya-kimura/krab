@@ -23,7 +23,7 @@ namespace Krab.ShapeSynth.Performance
 
         private void OnDestroy()
         {
-            UnregisterLooperMidi();
+            DetachLooperMidi();
             if (_midiBindings == null) return;
 
             foreach (var presetId in _midiTriggers.Keys)

@@ -4,7 +4,16 @@
 
 ## 設計
 
-記録・再生のCoreは [CommonのEventLooper](../Looping.md) に置く。ShapeSynth側は、時計、プリセットID、Trigger、8スロットのUI／MIDIだけを接続する。共通CoreからShapeSynthへの依存はない。
+ルーパーはCommonの3層に分かれ、MIDIは任意の追加部品にしている（詳細は [Commonのルーパー](../Looping.md)）。
+
+```text
+Common/Scripts/Looping/
+  Core/   EventLooper・LooperBank（8スロットの録音→再生→クリア）  ← Unity・MIDIに非依存
+  Views/  LooperBankUi（RosettaUIの行）                          ← MIDIに非依存
+  Midi/   LooperBankMidi（Cycle/ClearのMIDI Action・LED）        ← CommonのMidiを使う唯一の部分
+```
+
+ShapeSynth側は `LooperBank<string>`（PayloadはプリセットID）を持ち、時計とプリセットの発火を接続する。MIDIが注入されている場合だけ `LooperBankMidi` を付け、UIにはMIDI学習ボタンを外から差し込む。MIDIを使わない別の利用側は、CoreとViewsだけで同じルーパーを使える。
 
 p5版と同じく秒数固定で記録する。時計は `Time.unscaledTimeAsDouble`（実時間の秒、timeScaleの影響なし）。録音開始から停止までの実時間をそのままループ長とし、BPMを変えてもループの長さとリズムは変わらない。BPMは各Voiceの生成時に使うだけで、ルーパーの時計には使わない。
 
@@ -35,7 +44,7 @@ p5版と同じく秒数固定で記録する。時計は `Time.unscaledTimeAsDou
 - 状態ボタンの横のMIDI：1回でRecord → もう1回でPlay → もう1回でClear。既存の3状態MIDI Actionを使い、対応LEDではIdle=灰、Recording=赤、Playing=緑。
 - Clear横のMIDI：そのスロットだけをクリア。
 
-Action IDは `ShapeSynth.Looper.1.Cycle` / `ShapeSynth.Looper.1.Clear` から8まで。既存のMIDI学習・保存を利用する。機器への既定割り当ては追加しないので、既存のプリセット操作やフェーダーを奪わない。
+Action IDは `ShapeSynth.Looper.1.Cycle` / `ShapeSynth.Looper.1.Clear` から8まで（`LooperBankMidi` に渡す接頭辞 `ShapeSynth.Looper` から生成）。既存のMIDI学習・保存を利用し、構造変更前に学習した割り当てもそのまま使える。機器への既定割り当ては追加しないので、既存のプリセット操作やフェーダーを奪わない。
 
 ループ内容はセッション中のみ保持する。MIDIの割り当ては保存できるが、次のPlayで録音・再生状態だけが復活しないよう、状態はIdleへ揃える。Component無効化・Play終了時は録音内容をクリアし、ルーパーのMIDI Actionを解除する。
 
@@ -56,6 +65,7 @@ Action IDは `ShapeSynth.Looper.1.Cycle` / `ShapeSynth.Looper.1.Clear` から8�
 - Unityコンパイル成功。共通CoreのEditModeテスト9件成功。
 - 専用SceneでUI操作・既存MIDI Actionからの録音／再生／クリアを確認。
 - 0.999拍の録音が丸められないこと、同じ更新時刻で二重発火しないことを確認（拍数基準の初版で実施）。
+- 3層への分割後：コンパイル成功、Core 15件成功（LooperBank 6件を追加）。Play Modeで8スロット分のMIDI Actionの登録、MIDIからの録音／再生／クリア、再生が別スロットの録音に混ざらないこと、空録音のIdle復帰、無効化時のクリアとAction解除、再有効化後の再登録を確認（`Reports/ShapeSynthLooper/VerifyMidi.cs`）。秒数固定の確認も再実行して成功。
 - 秒数固定への変更後：コンパイル成功、Core 9件成功。Play Modeで拍の時計を止めた状態でも録音・再生でき、ループ長が実録音時間（1.67秒）と一致、再生中にBPMを変えても3周で約6回（実測7回）の発火で長さが変わらないことを確認（`Reports/ShapeSynthLooper/VerifySeconds.cs`）。
 - 別スロットの録音中に再生イベントが混入しないこと、空録音のIdle復帰を確認。
 - 欠損プリセットで当該スロットだけが停止すること、無効化時のクリア／MIDI解除、再有効化時の再登録を確認。
