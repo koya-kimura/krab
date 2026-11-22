@@ -1,6 +1,24 @@
 # Phase 10: Preset Editor Workspace
 
-## 現在のUI（2026-11-14、素のRosettaUI）
+## Gallery（2026-11-22追加）
+
+`Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → **Preset Editor - Gallery** を開く。Visual／Valuesと同じSceneから利用できる。Sceneへの追加設定は不要。
+
+- 保存済みプリセットを名前順で6列に並べ、各セルで同時に動かす。現在の30個は5行。セルの下にプリセット名を表示する。
+- Playで進行／停止、Loopで各プリセットの長さ（ADSR＋最大Delay、既存Previewと同じ上限）で反復。Restartは経過Beatを0に戻す。Beat欄への数値入力で任意位置を確認できる。
+- BPMはVisual側と共通。Galleryの再生位置・Play／LoopはVisualとは独立。SeedでRandの比較条件を変えられる。
+- 比較対象は保存済みデータ。Visual／Valuesで編集中の未保存Documentを置き換えたり、自動保存したりしない。Saveすると一覧の変更が反映される。
+- 保存先を約1秒ごとに確認し、追加・変更・削除をOpen一覧とGalleryへ反映する。旧ファイルを削除した後に残っていた赤い読込警告も更新される。
+- Galleryを開いている間だけ、320×180のセル用Camera／RenderTextureを生成して描画する。全体のatlasをUIで表示し、各セルの画は別RTへクリップされる。閉じる／Component無効化でイベント購読と描画リソースを解放する。
+- 基準1920×1080で既存Coreを評価し、固定pxのPolygonも含めてサムネイルへ縮小する。出力用Camera／RenderTextureと編集プレビューの描画先は変更しない。縮小により細いStrokeの見え方は本出力と異なる場合がある。
+
+確認：Unityでコンパイル成功。全30セルに描画が現れること、停止時の画像一致、再生の進行、開閉時のリソース解放と再生成、31個目の追加／削除への追従、未保存Document保持をPlay中に確認した。現在の保存先は30個すべて読込成功、旧Schema警告なし。実行画像・検証結果は `Reports/ShapeSynthGallery/`。
+
+既存の数値Coreは変更していない。実機MIDI、長時間の公演運用、Windowsでの描画・性能は未検証。Galleryの見た目の最終評価はユーザーが行う。
+
+## 従来UIの記録（2026-11-14、素のRosettaUI）
+
+以下は当時の記録。現行のVisual／Valuesは別ウィンドウで、さらにGalleryが追加されている。
 
 独自テーマ・3ペインの可変レイアウト・UI倍率・Zoom/Panなどを削除し、RosettaUI標準のWindow / Tabs / Fold / Field / Dropdown / Buttonだけで組み直した（PresetEditorのスクリプトは約3200行から約1300行）。説明文・ヒント・ステータスバーは置かない。表示するのは処理に失敗したときのエラー文だけ。
 

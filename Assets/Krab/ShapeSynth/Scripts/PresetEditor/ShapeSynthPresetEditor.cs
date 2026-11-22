@@ -48,6 +48,7 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             RefreshSavedPresetsWhenFilesChange();
+            UpdateGallery();
             AdvancePlayback(Time.unscaledDeltaTime);
             if (_refreshPreview && Time.realtimeSinceStartupAsDouble >= _previewDue) Preview();
         }
@@ -55,6 +56,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private void OnDisable()
         {
             StopPreview();
+            DisposeGallery();
         }
 
         // The node tree is recursive; keep Unity's reload serialization from walking it. Files are the source of truth.

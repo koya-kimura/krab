@@ -24,14 +24,19 @@ namespace Krab.ShapeSynth.PresetEditor
         private double _nextPresetCheck;
 
         /// <summary>
-        /// Two windows over the same document, opened from the shared Settings window. Visual owns the file bar and
-        /// playback; Values only edits signals. The preset is drawn in the background output, so neither window has
-        /// a preview image of its own. Each window scrolls both ways when it is made smaller than its content.
+        /// Authoring and gallery windows opened from the shared Settings window. Visual owns the document and
+        /// playback, Values edits its signals, and Gallery compares saved presets without replacing the draft.
+        /// The edited preset stays in the background output. Each window can scroll in both directions.
         /// </summary>
         public IReadOnlyList<(string Name, Element Content)> CreateWindows()
         {
             EnsureDocument();
-            return new[] { ("Visual", BuildVisualWindow()), ("Values", BuildValuesWindow()) };
+            return new[]
+            {
+                ("Visual", BuildVisualWindow()),
+                ("Values", BuildValuesWindow()),
+                ("Gallery", BuildGalleryWindow())
+            };
         }
 
         /// <summary>Single-window form for hosts that do not use CreateWindows: the Visual window.</summary>
@@ -120,6 +125,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 _savedRevision++;
             });
             _presetFilesSignature = PresetFilesSignature();
+            _galleryNeedsReload = true;
             _listWarning = errors.Count > 0 ? "Some presets could not be read: " + string.Join("; ", errors) : null;
         }
 
