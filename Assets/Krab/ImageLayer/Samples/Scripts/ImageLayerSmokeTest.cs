@@ -26,7 +26,7 @@ namespace Krab.ImageLayer.Samples
         private static readonly Color Pink = new(0.95f, 0.3f, 0.75f);
         private static readonly Color Navy = new(0.16f, 0.2f, 0.55f);
 
-        [SerializeField] private string _libraryName = "Maltine20";
+        [SerializeField] private string _libraryName = "Sequences";
         [SerializeField] private ImageLoadOptions _loadOptions = ImageLoadOptions.Default;
         [SerializeField] private Camera _outputCamera;
         [SerializeField] private TypeLayoutCanvas _background;

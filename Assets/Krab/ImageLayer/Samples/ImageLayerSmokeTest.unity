@@ -319,7 +319,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2da4ba285a9544eb8ad41cef034d412, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Krab.ImageLayer.Samples.ImageLayerSmokeTest
-  _libraryName: Maltine20
+  _libraryName: Sequences
   _loadOptions:
     Compress: 1
     Mipmaps: 1
