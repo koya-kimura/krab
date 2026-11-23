@@ -1,9 +1,7 @@
 using System;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
 using Krab.TypeLayout.Core.Motion;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -11,54 +9,42 @@ namespace Krab.ImageLayer.Performance.Patterns
     {
         private const int MaxCount = 12;
 
-        private readonly PrefsInt _count;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _sizeSpread;
-        private readonly PrefsFloat _beatsPerChange;
-        private readonly PrefsBool _flip;
-        private readonly PrefsInt _seed;
+        private readonly PatternParameter _count;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _sizeSpread;
+        private readonly PatternParameter _beatsPerChange;
+        private readonly PatternParameter _flip;
+        private readonly PatternParameter _seed;
 
         public FlashPattern() : base("Flash",
-            "Hard cuts: on every step the clips jump to a new place, size and clip. Short steps make a strobe.",
-            "hand", ImageLook.Threshold)
+            "Hard cuts: on every step the clips jump to a new place, size and clip. Short steps make a strobe.")
         {
-            _count = new PrefsInt(Key("Count"), 2);
-            _size = new PrefsFloat(Key("Size"), 600);
-            _sizeSpread = new PrefsFloat(Key("Size Spread"), 0.5f);
-            _beatsPerChange = new PrefsFloat(Key("Beats Per Change"), 0.5f);
-            _flip = new PrefsBool(Key("Random Flip"), true);
-            _seed = new PrefsInt(Key("Seed"), 5);
+            _count = Int("Count", 2, 1, MaxCount);
+            _size = Float("Size", 600, 40, 1500);
+            _sizeSpread = Float("Size Spread", 0.5, 0, 1);
+            _beatsPerChange = Float("Beats Per Change", 0.5, 0.125, 8);
+            _flip = Bool("Random Flip", true);
+            _seed = Seed(5);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _count.CreateSlider("Count", 1, MaxCount),
-                _size.CreateSlider("Size", 40f, 1500f),
-                _sizeSpread.CreateSlider("Size Spread", 0f, 1f),
-                _beatsPerChange.CreateSlider("Beats Per Change", 0.125f, 8f),
-                _flip.CreateElement("Random Flip"),
-                _seed.CreateElement("Seed"));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
-            float beatsPerChange = _beatsPerChange.Get();
+            float beatsPerChange = values.GetFloat(_beatsPerChange);
             RequirePositive(beatsPerChange, "Beats Per Change");
 
-            int seed = _seed.Get();
+            int seed = values.GetInt(_seed);
             long step = BeatSteps.Step(context.Beats, beatsPerChange);
-            int count = Math.Clamp(_count.Get(), 1, MaxCount);
+            int count = Math.Clamp(values.GetInt(_count), 1, MaxCount);
             var canvas = context.Canvas;
             for (int index = 0; index < count; index++)
             {
-                float scale = 1f - _sizeSpread.Get() * (float)Random01(seed, index, step);
+                float scale = 1f - values.GetFloat(_sizeSpread) * (float)Random01(seed, index, step);
                 float itemSize = size * scale;
                 float x = (float)Random01(seed, index + 100, step) * context.Width;
                 float y = (float)Random01(seed, index + 200, step) * context.Height;
-                bool flip = _flip.Get() && Random01(seed, index + 300, step) < 0.5;
+                bool flip = values.GetBool(_flip) && Random01(seed, index + 300, step) < 0.5;
                 var clip = set.Wrap(RandomIndex(seed, index + 400, step, set.ClipCount));
 
                 canvas.Push();

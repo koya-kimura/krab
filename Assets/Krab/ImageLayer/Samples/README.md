@@ -2,11 +2,15 @@
 
 ## ImageLayerPerformance.unity（演奏用）
 
-開いてPlayする。`StreamingAssets/Krab/ImageLayer/Maltine20` を読み込み、画像のパターンを描く。その手前のCameraにTypeLayoutの文字を重ねる。設定UIの「ImageLayer」タブ → Performance → Image Layer から操作し、Saveボタン（⌘S）でPrefsに保存する。
+開いてPlayする。`StreamingAssets/Krab/ImageLayer/Sequences` を読み込み、Deck A・Bの画像を描く。その手前のCameraにTypeLayoutの文字を重ねる。設定UIの「ImageLayer」タブ → Performance → Image Layer から操作する（仕組みは `Assets/Krab/Docs/ImageLayer/LayoutPresets.md`）。
 
-- Patterns：18パターンのON/OFFとEdit（Set、Look、Frames Per Beat、各パターンのパラメータ）。既定ではMarchだけがON。
-- Library：ライブラリの選択、圧縮のON/OFF、Reload、読み込み状況（セット数・フレーム数・メモリ・時間）、問題の一覧。
+- Decks：Deck A・Bそれぞれで、Layout（先頭はOff）とImageをラジオで選ぶ。各行のMIDIボタンでパッドを割り当てる（割り当てと選択の保存はPrefs、Cmd+S）。BがAの手前。All Offで両方を消す。
+- Layouts：Layoutプリセットの追加（種類を選んでAdd）、Edit（名前とパラメータ）、Copy、↑↓、Delete。Saveで `StreamingAssets/Krab/ImageLayerPresets/Layouts.json` に保存、Revertで戻す。
+- Images：Imageエントリ（Set、Clip、Look、Frames Per Beat）の追加・編集。Add Missing Setsで、エントリの無いSetを補う。Saveで `ImageLayerPresets/Images/<ライブラリ名>.json` に保存。
+- Library：ライブラリの選択、圧縮のON/OFF、Reload、読み込み状況、問題の一覧。
 - Display：表示、Duotone／Thresholdで使うDark／Lightの色、Thresholdの明度。
+
+MIDIの部品（`MIDI` GameObject：MidiOutput、MidiInputManager、ApcMiniMk2Simulator、MidiBindingUi）はShapeSynthのSceneと同じ構成。APC mini mk2が無くても、設定UIのシミュレーターで操作できる。
 
 | Camera | Order | 内容 |
 |---|---|---|
@@ -18,7 +22,7 @@
 
 ## ImageLayerSmokeTest.unity
 
-開いてPlayする。`StreamingAssets/Krab/ImageLayer/Maltine20` を読み込み（約11秒、中央にプログレスバー）、次の3層を重ねて描く。
+開いてPlayする。`StreamingAssets/Krab/ImageLayer/Sequences` を読み込み（約21秒、中央にプログレスバー）、次の3層を重ねて描く。
 
 | 層 | Camera | 内容 |
 |---|---|---|

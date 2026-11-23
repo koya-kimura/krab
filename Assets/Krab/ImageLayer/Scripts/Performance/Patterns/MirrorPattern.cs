@@ -1,47 +1,35 @@
 using Krab.ImageLayer.Core.Placement;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
     public sealed class MirrorPattern : ImagePattern
     {
-        private readonly PrefsInt _clip;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _gap;
-        private readonly PrefsFloat _breathe;
+        private readonly PatternParameter _clip;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _gap;
+        private readonly PatternParameter _breathe;
 
         public MirrorPattern() : base("Mirror",
-            "One clip and its mirror image facing each other across the center line, breathing on the beat.",
-            "animal", ImageLook.Duotone)
+            "One clip and its mirror image facing each other across the center line, breathing on the beat.")
         {
-            _clip = new PrefsInt(Key("Clip"), 1);
-            _size = new PrefsFloat(Key("Size"), 0.8f);
-            _gap = new PrefsFloat(Key("Gap"), 0);
-            _breathe = new PrefsFloat(Key("Breathe"), 0.05f);
+            _clip = Int("Clip", 1, 0, 20);
+            _size = Float("Size", 0.8, 0.1, 1.5, "Size (screen height)");
+            _gap = Float("Gap", 0, -400, 800);
+            _breathe = Float("Breathe", 0.05, 0, 0.5);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _clip.CreateSlider("Clip", 0, 20),
-                _size.CreateSlider("Size (screen height)", 0.1f, 1.5f),
-                _gap.CreateSlider("Gap", -400f, 800f),
-                _breathe.CreateSlider("Breathe", 0f, 0.5f));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float boxHeight = context.Height * _size.Get();
+            float boxHeight = context.Height * values.GetFloat(_size);
             RequirePositive(boxHeight, "Size");
 
-            var clip = set.Wrap(_clip.Get());
+            var clip = set.Wrap(values.GetInt(_clip));
             var frame = Frame(clip, context);
             float boxWidth = context.Width * 0.45f;
-            float gap = context.Px(_gap.Get());
-            float scale = 1f + _breathe.Get() * Zigzag(context.Beats, 1);
+            float gap = context.Px(values.GetFloat(_gap));
+            float scale = 1f + values.GetFloat(_breathe) * Zigzag(context.Beats, 1);
             var canvas = context.Canvas;
 
             // Left copy; the right copy is the same drawing reflected across the vertical center line.

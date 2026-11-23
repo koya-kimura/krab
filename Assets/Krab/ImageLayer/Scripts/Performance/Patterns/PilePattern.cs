@@ -1,8 +1,6 @@
 using System;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -11,43 +9,32 @@ namespace Krab.ImageLayer.Performance.Patterns
         private const int MaxCount = 60;
         private const float PopScale = 0.35f;
 
-        private readonly PrefsInt _maxCount;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _beatsPerItem;
-        private readonly PrefsFloat _tilt;
-        private readonly PrefsInt _seed;
+        private readonly PatternParameter _maxCount;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _beatsPerItem;
+        private readonly PatternParameter _tilt;
+        private readonly PatternParameter _seed;
 
         public PilePattern() : base("Pile",
             "One clip lands per step at a random place and angle, piling up until the pile is full, then " +
-            "the screen clears and it starts again.",
-            "life", ImageLook.Original)
+            "the screen clears and it starts again.")
         {
-            _maxCount = new PrefsInt(Key("Max Count"), 16);
-            _size = new PrefsFloat(Key("Size"), 320);
-            _beatsPerItem = new PrefsFloat(Key("Beats Per Item"), 1);
-            _tilt = new PrefsFloat(Key("Tilt"), 30);
-            _seed = new PrefsInt(Key("Seed"), 8);
+            _maxCount = Int("Max Count", 16, 1, MaxCount);
+            _size = Float("Size", 320, 40, 1000);
+            _beatsPerItem = Float("Beats Per Item", 1, 0.125, 8);
+            _tilt = Float("Tilt", 30, 0, 180, "Tilt (max degrees)");
+            _seed = Seed(8);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _maxCount.CreateSlider("Max Count", 1, MaxCount),
-                _size.CreateSlider("Size", 40f, 1000f),
-                _beatsPerItem.CreateSlider("Beats Per Item", 0.125f, 8f),
-                _tilt.CreateSlider("Tilt (max degrees)", 0f, 180f),
-                _seed.CreateElement("Seed"));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
-            float beatsPerItem = _beatsPerItem.Get();
+            float beatsPerItem = values.GetFloat(_beatsPerItem);
             RequirePositive(beatsPerItem, "Beats Per Item");
 
-            int seed = _seed.Get();
-            int maxCount = Math.Clamp(_maxCount.Get(), 1, MaxCount);
+            int seed = values.GetInt(_seed);
+            int maxCount = Math.Clamp(values.GetInt(_maxCount), 1, MaxCount);
             double position = context.Beats / beatsPerItem;
             long step = (long)Math.Floor(position);
             float progress = (float)(position - step);
@@ -63,7 +50,7 @@ namespace Krab.ImageLayer.Performance.Patterns
             {
                 float x = (float)(0.1 + 0.8 * Random01(seed, index, round)) * context.Width;
                 float y = (float)(0.1 + 0.8 * Random01(seed, index + 100, round)) * context.Height;
-                float angle = (float)((Random01(seed, index + 200, round) * 2 - 1) * _tilt.Get());
+                float angle = (float)((Random01(seed, index + 200, round) * 2 - 1) * values.GetFloat(_tilt));
                 var clip = set.Wrap(RandomIndex(seed, index + 300, round, set.ClipCount));
 
                 // The newest item drops in from slightly larger, easing out over its step.

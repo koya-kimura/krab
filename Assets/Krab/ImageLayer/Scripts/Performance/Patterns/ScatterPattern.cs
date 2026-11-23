@@ -1,9 +1,7 @@
 using System;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
 using Krab.TypeLayout.Core.Motion;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -11,50 +9,39 @@ namespace Krab.ImageLayer.Performance.Patterns
     {
         private const int MaxCount = 40;
 
-        private readonly PrefsInt _count;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _beatsPerChange;
-        private readonly PrefsFloat _spin;
-        private readonly PrefsInt _seed;
+        private readonly PatternParameter _count;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _beatsPerChange;
+        private readonly PatternParameter _spin;
+        private readonly PatternParameter _seed;
 
         public ScatterPattern() : base("Scatter",
-            "Clips dropped at seeded random places and angles across the screen, re-rolled on the beat.",
-            "life", ImageLook.Original)
+            "Clips dropped at seeded random places and angles across the screen, re-rolled on the beat.")
         {
-            _count = new PrefsInt(Key("Count"), 8);
-            _size = new PrefsFloat(Key("Size"), 320);
-            _beatsPerChange = new PrefsFloat(Key("Beats Per Change"), 2);
-            _spin = new PrefsFloat(Key("Spin"), 30);
-            _seed = new PrefsInt(Key("Seed"), 2);
+            _count = Int("Count", 8, 1, MaxCount);
+            _size = Float("Size", 320, 20, 1080);
+            _beatsPerChange = Float("Beats Per Change", 2, 0.25, 16);
+            _spin = Float("Spin", 30, 0, 180, "Spin (± degrees)");
+            _seed = Seed(2);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _count.CreateSlider("Count", 1, MaxCount),
-                _size.CreateSlider("Size", 20f, 1080f),
-                _beatsPerChange.CreateSlider("Beats Per Change", 0.25f, 16f),
-                _spin.CreateSlider("Spin (± degrees)", 0f, 180f),
-                _seed.CreateElement("Seed"));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
-            float beatsPerChange = _beatsPerChange.Get();
+            float beatsPerChange = values.GetFloat(_beatsPerChange);
             RequirePositive(beatsPerChange, "Beats Per Change");
 
-            int seed = _seed.Get();
+            int seed = values.GetInt(_seed);
             long step = BeatSteps.Step(context.Beats, beatsPerChange);
-            int count = Math.Clamp(_count.Get(), 1, MaxCount);
+            int count = Math.Clamp(values.GetInt(_count), 1, MaxCount);
             var canvas = context.Canvas;
             for (int index = 0; index < count; index++)
             {
                 int slot = index * 4;
                 float x = (float)Random01(seed, slot, step) * context.Width;
                 float y = (float)Random01(seed, slot + 1, step) * context.Height;
-                float angle = (float)(Random01(seed, slot + 2, step) * 2 - 1) * _spin.Get();
+                float angle = (float)(Random01(seed, slot + 2, step) * 2 - 1) * values.GetFloat(_spin);
                 var clip = set.Wrap(RandomIndex(seed, slot + 3, step, set.ClipCount));
 
                 canvas.Push();

@@ -1,9 +1,7 @@
 using System;
 using Krab.ImageLayer.Core.Placement;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -11,53 +9,41 @@ namespace Krab.ImageLayer.Performance.Patterns
     {
         private const int MaxCount = 24;
 
-        private readonly PrefsInt _count;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _amplitude;
-        private readonly PrefsFloat _beatsPerWave;
-        private readonly PrefsFloat _phaseStep;
-        private readonly PrefsFloat _position;
+        private readonly PatternParameter _count;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _amplitude;
+        private readonly PatternParameter _beatsPerWave;
+        private readonly PatternParameter _phaseStep;
+        private readonly PatternParameter _position;
 
         public WavePattern() : base("Wave",
-            "A row of clips across the screen that rise and fall one after another, like a stadium wave.",
-            "dance", ImageLook.Original)
+            "A row of clips across the screen that rise and fall one after another, like a stadium wave.")
         {
-            _count = new PrefsInt(Key("Count"), 8);
-            _size = new PrefsFloat(Key("Size"), 300);
-            _amplitude = new PrefsFloat(Key("Amplitude"), 160);
-            _beatsPerWave = new PrefsFloat(Key("Beats Per Wave"), 2);
-            _phaseStep = new PrefsFloat(Key("Phase Step"), 40);
-            _position = new PrefsFloat(Key("Position"), 0.55f);
+            _count = Int("Count", 8, 1, MaxCount);
+            _size = Float("Size", 300, 40, 800);
+            _amplitude = Float("Amplitude", 160, 0, 500);
+            _beatsPerWave = Float("Beats Per Wave", 2, 0.25, 16);
+            _phaseStep = Float("Phase Step", 40, -180, 180, "Phase Step (degrees between neighbors)");
+            _position = Float("Position", 0.55, 0, 1, "Position (0 top .. 1 bottom)");
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _count.CreateSlider("Count", 1, MaxCount),
-                _size.CreateSlider("Size", 40f, 800f),
-                _amplitude.CreateSlider("Amplitude", 0f, 500f),
-                _beatsPerWave.CreateSlider("Beats Per Wave", 0.25f, 16f),
-                _phaseStep.CreateSlider("Phase Step (degrees between neighbors)", -180f, 180f),
-                _position.CreateSlider("Position (0 top .. 1 bottom)", 0f, 1f));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
-            float beatsPerWave = _beatsPerWave.Get();
+            float beatsPerWave = values.GetFloat(_beatsPerWave);
             RequirePositive(beatsPerWave, "Beats Per Wave");
 
-            int count = Math.Clamp(_count.Get(), 1, MaxCount);
+            int count = Math.Clamp(values.GetInt(_count), 1, MaxCount);
             float cellWidth = context.Width / count;
-            float amplitude = context.Px(_amplitude.Get());
+            float amplitude = context.Px(values.GetFloat(_amplitude));
             double phase = context.Beats / beatsPerWave * Math.PI * 2;
-            double step = _phaseStep.Get() * Math.PI / 180;
+            double step = values.GetFloat(_phaseStep) * Math.PI / 180;
             for (int index = 0; index < count; index++)
             {
                 var clip = set.Wrap(index);
                 float lift = amplitude * (float)Math.Sin(phase - index * step);
-                float top = context.Height * _position.Get() - size / 2 - lift;
+                float top = context.Height * values.GetFloat(_position) - size / 2 - lift;
                 context.Canvas.ImageFit(clip, Frame(clip, context, index * 4), cellWidth * index, top, cellWidth, size,
                     FitMode.Contain, 0.5f, 1f);
             }

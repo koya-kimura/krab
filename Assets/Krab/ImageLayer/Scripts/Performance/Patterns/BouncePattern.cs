@@ -1,9 +1,7 @@
 using System;
 using Krab.ImageLayer.Core.Placement;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -12,51 +10,39 @@ namespace Krab.ImageLayer.Performance.Patterns
         private const int MaxCount = 16;
         private const float Squash = 0.2f;
 
-        private readonly PrefsInt _count;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _jump;
-        private readonly PrefsFloat _beatsPerBounce;
-        private readonly PrefsFloat _stagger;
-        private readonly PrefsFloat _floor;
+        private readonly PatternParameter _count;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _jump;
+        private readonly PatternParameter _beatsPerBounce;
+        private readonly PatternParameter _stagger;
+        private readonly PatternParameter _floor;
 
         public BouncePattern() : base("Bounce",
-            "A row of clips hopping on the beat, squashing as they land. Stagger spreads the hops along the row.",
-            "human", ImageLook.Original)
+            "A row of clips hopping on the beat, squashing as they land. Stagger spreads the hops along the row.")
         {
-            _count = new PrefsInt(Key("Count"), 6);
-            _size = new PrefsFloat(Key("Size"), 320);
-            _jump = new PrefsFloat(Key("Jump"), 260);
-            _beatsPerBounce = new PrefsFloat(Key("Beats Per Bounce"), 1);
-            _stagger = new PrefsFloat(Key("Stagger"), 0.25f);
-            _floor = new PrefsFloat(Key("Floor"), 0.9f);
+            _count = Int("Count", 6, 1, MaxCount);
+            _size = Float("Size", 320, 40, 800);
+            _jump = Float("Jump", 260, 0, 800);
+            _beatsPerBounce = Float("Beats Per Bounce", 1, 0.25, 8);
+            _stagger = Float("Stagger", 0.25, 0, 1, "Stagger (bounces between neighbors)");
+            _floor = Float("Floor", 0.9, 0, 1, "Floor (0 top .. 1 bottom)");
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _count.CreateSlider("Count", 1, MaxCount),
-                _size.CreateSlider("Size", 40f, 800f),
-                _jump.CreateSlider("Jump", 0f, 800f),
-                _beatsPerBounce.CreateSlider("Beats Per Bounce", 0.25f, 8f),
-                _stagger.CreateSlider("Stagger (bounces between neighbors)", 0f, 1f),
-                _floor.CreateSlider("Floor (0 top .. 1 bottom)", 0f, 1f));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
-            float beatsPerBounce = _beatsPerBounce.Get();
+            float beatsPerBounce = values.GetFloat(_beatsPerBounce);
             RequirePositive(beatsPerBounce, "Beats Per Bounce");
 
-            int count = Math.Clamp(_count.Get(), 1, MaxCount);
+            int count = Math.Clamp(values.GetInt(_count), 1, MaxCount);
             float cellWidth = context.Width / count;
-            float floor = context.Height * _floor.Get();
-            float jump = context.Px(_jump.Get());
+            float floor = context.Height * values.GetFloat(_floor);
+            float jump = context.Px(values.GetFloat(_jump));
             var canvas = context.Canvas;
             for (int index = 0; index < count; index++)
             {
-                double position = context.Beats / beatsPerBounce - index * _stagger.Get();
+                double position = context.Beats / beatsPerBounce - index * values.GetFloat(_stagger);
                 float phase = (float)(position - Math.Floor(position));
 
                 // Parabola: on the floor at the beat, highest halfway; squashed for a moment around landing.

@@ -1,0 +1,101 @@
+{
+  "SchemaVersion": 1,
+  "Images": [
+    {
+      "Id": "animal",
+      "Name": "animal",
+      "Set": "animal",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "building",
+      "Name": "building",
+      "Set": "building",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "car",
+      "Name": "car",
+      "Set": "car",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "dance",
+      "Name": "dance",
+      "Set": "dance",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "dothand",
+      "Name": "dothand",
+      "Set": "dothand",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "hand",
+      "Name": "hand",
+      "Set": "hand",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "human",
+      "Name": "human",
+      "Set": "human",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "life",
+      "Name": "life",
+      "Set": "life",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "noface",
+      "Name": "noface",
+      "Set": "noface",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "shirt",
+      "Name": "shirt",
+      "Set": "shirt",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "step",
+      "Name": "step",
+      "Set": "step",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    },
+    {
+      "Id": "walk",
+      "Name": "walk",
+      "Set": "walk",
+      "Clip": -1,
+      "Look": "Original",
+      "FramesPerBeat": 8.0
+    }
+  ]
+}

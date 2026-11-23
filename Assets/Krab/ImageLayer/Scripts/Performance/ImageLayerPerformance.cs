@@ -2,34 +2,37 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Krab.Common.Midi.Bindings;
+using Krab.Common.Midi.Views;
 using Krab.Common.Timing;
 using Krab.Common.Views;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Performance.Patterns;
 using Krab.ImageLayer.Unity.Library;
 using Krab.ImageLayer.Unity.Loading;
 using Krab.ImageLayer.Unity.Rendering;
 using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 using UnityEngine;
 using UnitySimpleContainer;
 
 namespace Krab.ImageLayer.Performance
 {
     /// <summary>
-    /// Cut-out images for performances: script-written patterns drawn on the image layer camera, switched and
-    /// tuned from the settings UI and moving with the BPM clock. Loads one library from StreamingAssets.
+    /// Cut-out images for performances. Two decks each draw one layout preset (how images are arranged) with one
+    /// image entry (which images), both picked on radio groups that MIDI pads can switch live. Loads one library
+    /// from StreamingAssets; presets live in JSON beside it.
     /// </summary>
     [UiTarget("ImageLayer/Performance", "Image Layer", 0)]
-    public sealed class ImageLayerPerformance : MonoBehaviour, IUiTarget, IImageSetCatalog
+    public sealed partial class ImageLayerPerformance : MonoBehaviour, IUiTarget
     {
         // Used only when no tempo clock is injected, so patterns still move in a bare Scene.
         private const float FallbackBpm = 120;
+        private const float ThresholdSoftness = 0.03f;
 
         [SerializeField] private ImageLayerCanvas _images;
 
         private readonly PrefsBool _visible = new("ImageLayer Visible", true);
-        private readonly PrefsString _libraryName = new("ImageLayer Library", "Maltine20");
+        private readonly PrefsString _libraryName = new("ImageLayer Library", "Sequences");
         private readonly PrefsBool _compress = new("ImageLayer Compress", true);
         private readonly PrefsColor _dark = new("ImageLayer Dark", new Color(0.12f, 0.12f, 0.14f));
         private readonly PrefsColor _light = new("ImageLayer Light", Color.white);
@@ -57,19 +60,24 @@ namespace Krab.ImageLayer.Performance
             new ParadePattern()
         };
 
+        private readonly ImageDeck[] _decks = { new("A"), new("B") };
+        private readonly Dictionary<(ImageSet, int), ImageSet> _singleClipSets = new();
         private readonly List<string> _setNames = new();
 
         private ImageLibrary _library;
         private CancellationTokenSource _loading;
         private IBPMManager _bpmManager;
+        private MidiBindingManager _midiBindings;
+        private IMidiBindingUi _midiUi;
         private float _progress;
         private string _loadError;
         private string _issuesText = string.Empty;
 
         private void Start()
         {
-            foreach (var pattern in _patterns)
-                pattern.Bind(this);
+            LoadLayouts();
+            foreach (var deck in _decks)
+                deck.AttachMidi(_midiBindings);
 
             Reload();
         }
@@ -84,25 +92,19 @@ namespace Krab.ImageLayer.Performance
             canvas.Reset();
             if (!_visible.Get() || _library == null) return;
 
-            var camera = canvas.Camera;
-            var beats = _bpmManager?.Beat ?? Time.timeAsDouble * FallbackBpm / 60;
-            var bpm = _bpmManager?.CurrentBpm ?? FallbackBpm;
-            var context = new ImagePatternContext(canvas, _library, camera.pixelWidth, camera.pixelHeight, beats, bpm,
-                _dark.Get(), _light.Get(), Mathf.Clamp01(_thresholdLevel.Get()));
-            foreach (var pattern in _patterns)
-                pattern.Draw(context);
+            foreach (var deck in _decks)
+                DrawDeck(deck, canvas);
         }
 
         private void OnDestroy()
         {
+            foreach (var deck in _decks)
+                deck.Dispose();
+
             CancelLoading();
             _library?.Dispose();
             _library = null;
         }
-
-        public IReadOnlyList<string> SetNames => _setNames;
-
-        public int Version { get; private set; }
 
         public ImageLibrary Library => _library;
 
@@ -110,7 +112,7 @@ namespace Krab.ImageLayer.Performance
 
         public float Progress => _progress;
 
-        public IReadOnlyList<ImagePattern> Patterns => _patterns;
+        public IReadOnlyList<ImageDeck> Decks => _decks;
 
         public bool Visible
         {
@@ -118,18 +120,13 @@ namespace Krab.ImageLayer.Performance
             set => _visible.Set(value);
         }
 
-        public Element CreateElement()
-        {
-            return UI.Tabs(
-                ("Patterns", CreatePatternsTab),
-                ("Library", CreateLibraryTab),
-                ("Display", CreateDisplayTab));
-        }
-
         [Inject]
-        public void Construct(IBPMManager bpmManager)
+        public void Construct(IBPMManager bpmManager, [Nullable] IMidiBindingProvider midi,
+            [Nullable] IMidiBindingUi midiUi)
         {
             _bpmManager = bpmManager;
+            _midiBindings = midi?.Bindings;
+            _midiUi = midiUi;
         }
 
         /// <summary>Loads the library named in the settings. The current one stays on screen until it finishes.</summary>
@@ -138,6 +135,92 @@ namespace Krab.ImageLayer.Performance
             CancelLoading();
             _loading = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             LoadAsync(_libraryName.Get(), _loading.Token);
+        }
+
+        private void DrawDeck(ImageDeck deck, ImageCanvas canvas)
+        {
+            var layoutKey = deck.LayoutKey;
+            if (layoutKey == ImageDeck.OffKey)
+            {
+                deck.Error = null;
+                return;
+            }
+
+            var layout = FindLayout(layoutKey);
+            var pattern = layout == null ? null : FindPattern(layout.Pattern);
+            var entry = FindImage(deck.ImageKey);
+            if (pattern == null || entry == null)
+            {
+                deck.Error = layout == null ? "No layout selected."
+                    : pattern == null ? $"Unknown pattern '{layout.Pattern}'."
+                    : "No image selected.";
+                return;
+            }
+
+            if (!_library.TryGet(entry.SetName, out var set))
+            {
+                deck.Error = $"Set '{entry.SetName}' is not in library '{_library.Name}'.";
+                return;
+            }
+
+            if (entry.Clip != ImageEntry.AllClips)
+            {
+                if (entry.Clip >= set.ClipCount)
+                {
+                    deck.Error = $"Set '{set.Name}' has no clip {entry.Clip} (0..{set.ClipCount - 1}).";
+                    return;
+                }
+
+                set = SingleClipSet(set, entry.Clip);
+            }
+
+            var camera = canvas.Camera;
+            var beats = _bpmManager?.Beat ?? Time.timeAsDouble * FallbackBpm / 60;
+            var bpm = _bpmManager?.CurrentBpm ?? FallbackBpm;
+            var context = new ImagePatternContext(canvas, _library, camera.pixelWidth, camera.pixelHeight, beats, bpm,
+                _dark.Get(), _light.Get(), Mathf.Clamp01(_thresholdLevel.Get()), entry.FramesPerBeat);
+
+            canvas.Push();
+            try
+            {
+                ApplyLook(canvas, ParseLook(entry.Look), context);
+                deck.Error = pattern.Draw(context, set, layout.Values);
+            }
+            finally
+            {
+                canvas.Pop();
+            }
+        }
+
+        /// <summary>The set narrowed to one clip, cached so drawing every frame does not allocate.</summary>
+        private ImageSet SingleClipSet(ImageSet set, int clip)
+        {
+            if (_singleClipSets.TryGetValue((set, clip), out var single)) return single;
+
+            single = new ImageSet(set.Name, set.Kind, new[] { set[clip] });
+            _singleClipSets.Add((set, clip), single);
+            return single;
+        }
+
+        private static ImageLook ParseLook(string look)
+        {
+            return Enum.TryParse(look, true, out ImageLook parsed) && Enum.IsDefined(typeof(ImageLook), parsed)
+                ? parsed
+                : ImageLook.Original;
+        }
+
+        private static void ApplyLook(ImageCanvas canvas, ImageLook look, in ImagePatternContext context)
+        {
+            switch (look)
+            {
+                case ImageLook.Duotone:
+                    canvas.Duotone(context.Dark, context.Light);
+                    break;
+                case ImageLook.Threshold:
+                    canvas.Duotone(context.Dark, context.Light);
+                    canvas.Threshold(context.ThresholdLevel, ThresholdSoftness);
+                    break;
+            }
         }
 
         // async void: fire-and-forget from a UI button; every exception is handled here.
@@ -171,11 +254,11 @@ namespace Krab.ImageLayer.Performance
 
         private void OnLibraryLoaded()
         {
+            _singleClipSets.Clear();
             _setNames.Clear();
             foreach (var set in _library.Sets)
                 _setNames.Add(set.Name);
 
-            Version++;
             var issues = new StringBuilder();
             foreach (var issue in _library.Issues)
                 issues.AppendLine(issue.ToString());
@@ -184,6 +267,8 @@ namespace Krab.ImageLayer.Performance
             if (_library.Issues.Count > 0)
                 Debug.LogWarning($"{nameof(ImageLayerPerformance)}: '{_library.Name}' loaded with issues:\n{_issuesText}",
                     this);
+
+            LoadImages();
         }
 
         private void CancelLoading()
@@ -193,77 +278,6 @@ namespace Krab.ImageLayer.Performance
             _loading.Cancel();
             _loading.Dispose();
             _loading = null;
-        }
-
-        private Element CreatePatternsTab()
-        {
-            var elements = new List<Element>
-            {
-                UI.Row(
-                    UI.Button("All Off", SetAllPatternsOff),
-                    UI.Label(() => $"{CountEnabled()} / {_patterns.Length} on")),
-                UI.Space()
-            };
-            foreach (var pattern in _patterns)
-                elements.Add(pattern.CreateElement());
-
-            return UI.Column(elements);
-        }
-
-        private Element CreateLibraryTab()
-        {
-            var libraries = new List<string>(ImageLibraryPaths.ListLibraries());
-            if (!libraries.Contains(_libraryName.Get())) libraries.Insert(0, _libraryName.Get());
-
-            return UI.Column(
-                UI.Dropdown("Library", () => _libraryName.Get(), value => _libraryName.Set(value), libraries),
-                _compress.CreateElement("Compress (DXT5, ~1/4 memory)"),
-                UI.Button("Reload", Reload),
-                UI.Label(StatusText),
-                UI.DynamicElementIf(() => _issuesText.Length > 0,
-                    () => UI.HelpBox(UI.Label(() => _issuesText), HelpBoxType.Warning)));
-        }
-
-        private Element CreateDisplayTab()
-        {
-            return UI.Column(
-                _visible.CreateElement("Visible"),
-                _dark.CreateElement("Dark"),
-                _light.CreateElement("Light"),
-                _thresholdLevel.CreateSlider("Threshold", 0f, 1f),
-                UI.Label("Dark / Light / Threshold color the Duotone and Threshold looks of every pattern."));
-        }
-
-        private string StatusText()
-        {
-            if (_loadError != null) return $"Load failed: {_loadError}";
-            if (_loading != null) return $"Loading {_libraryName.Get()}… {_progress:P0}";
-            if (_library == null) return "No library loaded.";
-
-            int frames = 0;
-            foreach (var set in _library.Sets)
-            foreach (var clip in set.Clips)
-                frames += clip.FrameCount;
-
-            return $"{_library.Name}: {_library.Sets.Count} sets, {frames} frames, " +
-                   $"{_library.TextureBytes / 1048576.0:F0} MB, loaded in {_library.LoadSeconds:F1} s";
-        }
-
-        private void SetAllPatternsOff()
-        {
-            foreach (var pattern in _patterns)
-                pattern.Enabled = false;
-        }
-
-        private int CountEnabled()
-        {
-            var count = 0;
-            foreach (var pattern in _patterns)
-            {
-                if (pattern.Enabled) count++;
-            }
-
-            return count;
         }
     }
 }

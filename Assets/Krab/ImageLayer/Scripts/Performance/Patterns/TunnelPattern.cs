@@ -1,8 +1,6 @@
 using System;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 using UnityEngine;
 
 namespace Krab.ImageLayer.Performance.Patterns
@@ -11,47 +9,35 @@ namespace Krab.ImageLayer.Performance.Patterns
     {
         private const int MaxLayers = 16;
 
-        private readonly PrefsInt _layers;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _ratio;
-        private readonly PrefsFloat _beatsPerLayer;
-        private readonly PrefsFloat _twist;
-        private readonly PrefsInt _seed;
+        private readonly PatternParameter _layers;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _ratio;
+        private readonly PatternParameter _beatsPerLayer;
+        private readonly PatternParameter _twist;
+        private readonly PatternParameter _seed;
 
         public TunnelPattern() : base("Tunnel",
             "Copies nested from the center, each larger than the last, zooming outward forever. Every layer " +
-            "keeps its clip while it grows.",
-            "noface", ImageLook.Duotone)
+            "keeps its clip while it grows.")
         {
-            _layers = new PrefsInt(Key("Layers"), 7);
-            _size = new PrefsFloat(Key("Size"), 60);
-            _ratio = new PrefsFloat(Key("Ratio"), 1.6f);
-            _beatsPerLayer = new PrefsFloat(Key("Beats Per Layer"), 1);
-            _twist = new PrefsFloat(Key("Twist"), 0);
-            _seed = new PrefsInt(Key("Seed"), 3);
+            _layers = Int("Layers", 7, 1, MaxLayers);
+            _size = Float("Size", 60, 10, 400, "Size (innermost)");
+            _ratio = Float("Ratio", 1.6, 1.05, 3);
+            _beatsPerLayer = Float("Beats Per Layer", 1, 0.125, 8);
+            _twist = Float("Twist", 0, -45, 45, "Twist (degrees per layer)");
+            _seed = Seed(3);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _layers.CreateSlider("Layers", 1, MaxLayers),
-                _size.CreateSlider("Size (innermost)", 10f, 400f),
-                _ratio.CreateSlider("Ratio", 1.05f, 3f),
-                _beatsPerLayer.CreateSlider("Beats Per Layer", 0.125f, 8f),
-                _twist.CreateSlider("Twist (degrees per layer)", -45f, 45f),
-                _seed.CreateElement("Seed"));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
-            float beatsPerLayer = _beatsPerLayer.Get();
+            float beatsPerLayer = values.GetFloat(_beatsPerLayer);
             RequirePositive(beatsPerLayer, "Beats Per Layer");
-            float ratio = _ratio.Get();
+            float ratio = values.GetFloat(_ratio);
             if (!(ratio > 1f)) throw new ArgumentException("Ratio must be greater than 1.");
 
-            int layers = Math.Clamp(_layers.Get(), 1, MaxLayers);
+            int layers = Math.Clamp(values.GetInt(_layers), 1, MaxLayers);
             double zoom = context.Beats / beatsPerLayer;
             long step = (long)Math.Floor(zoom);
             float fraction = (float)(zoom - step);
@@ -61,13 +47,13 @@ namespace Krab.ImageLayer.Performance.Patterns
             for (int layer = layers - 1; layer >= 0; layer--)
             {
                 long id = layer - step;
-                var clip = set.Wrap(RandomIndex(_seed.Get(), 0, id, set.ClipCount));
+                var clip = set.Wrap(RandomIndex(values.GetInt(_seed), 0, id, set.ClipCount));
                 float itemSize = size * Mathf.Pow(ratio, layer + fraction);
                 float alpha = layer == 0 ? fraction : 1f;
 
                 canvas.Push();
                 canvas.Translate(context.Width / 2, context.Height / 2);
-                canvas.Rotate(id * _twist.Get());
+                canvas.Rotate(id * values.GetFloat(_twist));
                 canvas.Tint(new Color(1f, 1f, 1f, alpha));
                 canvas.ImageFit(clip, Frame(clip, context, id * 5), -itemSize / 2, -itemSize / 2, itemSize, itemSize);
                 canvas.Pop();

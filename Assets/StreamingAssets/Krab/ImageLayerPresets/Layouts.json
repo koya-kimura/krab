@@ -1,0 +1,228 @@
+{
+  "SchemaVersion": 1,
+  "Layouts": [
+    {
+      "Id": "march",
+      "Name": "March",
+      "Pattern": "March",
+      "Values": {
+        "Clip": 0.0,
+        "Size": 220.0,
+        "Rows": 1.0,
+        "Cells Per Beat": 0.5,
+        "Position": 0.15,
+        "Alternate": 1.0
+      }
+    },
+    {
+      "Id": "lineup",
+      "Name": "Lineup",
+      "Pattern": "Lineup",
+      "Values": {
+        "Count": 4.0,
+        "Size": 420.0,
+        "Baseline": 0.85,
+        "Stagger": 1.0
+      }
+    },
+    {
+      "Id": "tile",
+      "Name": "Tile",
+      "Pattern": "Tile",
+      "Values": {
+        "Columns": 6.0,
+        "Rows": 3.0,
+        "Beats Per Change": 1.0,
+        "Fill": 0.9,
+        "Seed": 1.0
+      }
+    },
+    {
+      "Id": "scatter",
+      "Name": "Scatter",
+      "Pattern": "Scatter",
+      "Values": {
+        "Count": 8.0,
+        "Size": 320.0,
+        "Beats Per Change": 2.0,
+        "Spin": 30.0,
+        "Seed": 2.0
+      }
+    },
+    {
+      "Id": "fall",
+      "Name": "Fall",
+      "Pattern": "Fall",
+      "Values": {
+        "Count": 10.0,
+        "Size": 260.0,
+        "Speed": 0.15,
+        "Spin": 45.0,
+        "Rise": 0.0,
+        "Seed": 4.0
+      }
+    },
+    {
+      "Id": "center",
+      "Name": "Center",
+      "Pattern": "Center",
+      "Values": {
+        "Size": 0.85,
+        "Beats Per Change": 4.0,
+        "Swing": 3.0,
+        "Beats Per Swing": 2.0
+      }
+    },
+    {
+      "Id": "mirror",
+      "Name": "Mirror",
+      "Pattern": "Mirror",
+      "Values": {
+        "Clip": 1.0,
+        "Size": 0.8,
+        "Gap": 0.0,
+        "Breathe": 0.05
+      }
+    },
+    {
+      "Id": "orbit",
+      "Name": "Orbit",
+      "Pattern": "Orbit",
+      "Values": {
+        "Count": 8.0,
+        "Radius": 360.0,
+        "Size": 180.0,
+        "Degrees Per Beat": 15.0
+      }
+    },
+    {
+      "Id": "trail",
+      "Name": "Trail",
+      "Pattern": "Trail",
+      "Values": {
+        "Clip": 0.0,
+        "Size": 360.0,
+        "Copies": 8.0,
+        "Lag": 0.4,
+        "Beats Per Loop": 16.0,
+        "Fade": 0.9
+      }
+    },
+    {
+      "Id": "tunnel",
+      "Name": "Tunnel",
+      "Pattern": "Tunnel",
+      "Values": {
+        "Layers": 7.0,
+        "Size": 60.0,
+        "Ratio": 1.6,
+        "Beats Per Layer": 1.0,
+        "Twist": 0.0,
+        "Seed": 3.0
+      }
+    },
+    {
+      "Id": "wave",
+      "Name": "Wave",
+      "Pattern": "Wave",
+      "Values": {
+        "Count": 8.0,
+        "Size": 300.0,
+        "Amplitude": 160.0,
+        "Beats Per Wave": 2.0,
+        "Phase Step": 40.0,
+        "Position": 0.55
+      }
+    },
+    {
+      "Id": "spiral",
+      "Name": "Spiral",
+      "Pattern": "Spiral",
+      "Values": {
+        "Count": 40.0,
+        "Size": 90.0,
+        "Spread": 80.0,
+        "Degrees Between": 137.5,
+        "Degrees Per Beat": 8.0,
+        "Grow": 1.5
+      }
+    },
+    {
+      "Id": "flash",
+      "Name": "Flash",
+      "Pattern": "Flash",
+      "Values": {
+        "Count": 2.0,
+        "Size": 600.0,
+        "Size Spread": 0.5,
+        "Beats Per Change": 0.5,
+        "Random Flip": 1.0,
+        "Seed": 5.0
+      }
+    },
+    {
+      "Id": "pile",
+      "Name": "Pile",
+      "Pattern": "Pile",
+      "Values": {
+        "Max Count": 16.0,
+        "Size": 320.0,
+        "Beats Per Item": 1.0,
+        "Tilt": 30.0,
+        "Seed": 8.0
+      }
+    },
+    {
+      "Id": "columns",
+      "Name": "Columns",
+      "Pattern": "Columns",
+      "Values": {
+        "Columns": 5.0,
+        "Cell Height": 300.0,
+        "Cells Per Beat": 0.25,
+        "Fill": 0.9,
+        "Seed": 2.0
+      }
+    },
+    {
+      "Id": "bounce",
+      "Name": "Bounce",
+      "Pattern": "Bounce",
+      "Values": {
+        "Count": 6.0,
+        "Size": 320.0,
+        "Jump": 260.0,
+        "Beats Per Bounce": 1.0,
+        "Stagger": 0.25,
+        "Floor": 0.9
+      }
+    },
+    {
+      "Id": "radial",
+      "Name": "Radial",
+      "Pattern": "Radial",
+      "Values": {
+        "Clip": 0.0,
+        "Count": 10.0,
+        "Radius": 260.0,
+        "Size": 260.0,
+        "Degrees Per Beat": -10.0,
+        "Pulse": 0.15
+      }
+    },
+    {
+      "Id": "parade",
+      "Name": "Parade",
+      "Pattern": "Parade",
+      "Values": {
+        "Count": 12.0,
+        "Size": 520.0,
+        "Speed": 120.0,
+        "Horizon": 0.45,
+        "Both Ways": 1.0,
+        "Clips Face Left": 0.0,
+        "Seed": 6.0
+      }
+    }
+  ]
+}

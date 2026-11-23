@@ -5,7 +5,7 @@
 ## 前提
 
 - p5.Unite 0.2.1は画像描画を持たない。上流のAPI一覧（`references/api-checklist/image.md`）でもImageは0/39。内部のテクスチャ描画はText拡張のグリフ用で、公開APIではない。そのため描画はKrab側で行う。
-- 素材は事前に切り抜いた透過PNG。実行時の背景除去は対象外。クロマキーは将来の候補。
+- 素材は事前に切り抜いた透過PNG。実行時の背景除去は対象外。グリーンバック素材は変換時にffmpegでキーを抜いて透過PNGにする（下記「グリーンバック素材の変換」）。
 - GIF・動画はPNG連番に変換して使う。VideoPlayerは必要になってから検討する。
 - 素材はStreamingAssetsから実行時に読み込む（TypeLayoutのフォントと同じ）。公演ごとにUnityのインポートなしで入れ替えられる。
 
@@ -23,7 +23,7 @@
 
 ```text
 Assets/StreamingAssets/Krab/ImageLayer/
-  <ライブラリ>/        公演や素材群の単位（例：Maltine20）。ライブラリ単位で読み込む
+  <ライブラリ>/        公演や素材群の単位（例：Sequences）。ライブラリ単位で読み込む
     animal/            PNGが直接並ぶ：静止画のセット（1枚＝1クリップ）
       01.png 02.png …
     walk/              サブフォルダが並ぶ：連番のセット（サブフォルダ1つ＝1クリップ）
@@ -36,7 +36,7 @@ Assets/StreamingAssets/Krab/ImageLayer/
 - PNGはGit LFSで管理する（`.gitattributes`）。`.meta` は通常のGitで管理する。
 - 縮小はしない。最大は1920×1088（hand/03〜05）で、1080p出力で画面いっぱいに使えるサイズのため。
 
-### Maltine20（2026-11-22に旧VJから移行）
+### Sequences（2026-11-22に旧VJから移行、2026-11-23にMaltine20から改名）
 
 `~/Documents/develop/p5/Maltine-Records/public` の `image/`（静止画）と `animation/`（連番）を、上の構成へ並べ替えてコピーした。中身は無変更（md5一致）。754枚、約204MB。
 
@@ -49,6 +49,20 @@ Assets/StreamingAssets/Krab/ImageLayer/
 | hand | 連番 | 5 × 40 | 01〜02：1280×720、03〜05：1920×1088 |
 | step | 連番 | 1 × 40 | 1280×720 |
 | walk | 連番 | 4 × 40 | 1280×720 |
+| shirt | 連番 | 9 × 60 | 1280×720（2026-11-23追加、グリーンバック動画から変換） |
+
+### グリーンバック素材の変換（2026-11-23）
+
+`Assets/Krab/ImageLayer/Tools~/convert_greenscreen.sh` で、動画を12fpsの透過PNG連番にする（`~` 付きのフォルダなのでUnityは取り込まない）。元の動画はリポジトリに入れない。
+
+```bash
+Assets/Krab/ImageLayer/Tools~/convert_greenscreen.sh <動画のフォルダ> Reports/GreenScreen --preview   # マゼンタ地に合成した確認画像
+Assets/Krab/ImageLayer/Tools~/convert_greenscreen.sh <動画のフォルダ> Assets/StreamingAssets/Krab/ImageLayer/Sequences/shirt
+```
+
+- 素材ごとの設定（キー色、similarity、blend、despillの強さ、追加のフィルター）はスクリプト冒頭の表に書く。キー色は背景の実測値。
+- 背景が暗い素材（shirt/04）はキー色を暗い緑にする。緑寄りの色の素材（shirt/09、ティール）はdespillを使わない（青に寄るため）。shirt/02は左上の黒い影を `drawbox` で透明にする。
+- shirt：9クリップ × 60コマ（元は24fps・5秒）、PNG約209MB。どの素材もループ用ではないため、継ぎ目の見え方はLoop／PingPongで要確認。
 
 ## image()風の描画API
 
@@ -90,7 +104,7 @@ Assets/Krab/ImageLayer/
 | 2 | Unity層：走査と非同期読み込み、トリミング、検証結果の一覧、`ImageCanvas`、Duotoneシェーダー、検証Scene | 完了 |
 | 3 | 演奏用パターン（列で行進、敷き詰め、散らす、中央に大きく、パスに沿う）、UI/Prefs/BPM | 完了 |
 | 4 | 共通パレット、背景パターンとの統合 | 取り下げ（2026-11-22、ImageLayerは画像とアニメーションの管理に絞る） |
-| 5 | MIDI割り当て、クロマキー | 未着手 |
+| 5 | Layoutプリセット、Deck A/BのLayout・Imageラジオ、ラジオのMIDI割り当て（`LayoutPresets.md`） | 実装済み（2026-11-23、見た目とMIDIの操作感は未確認） |
 
 ## Phase 0の記録（2026-11-22）
 
@@ -180,13 +194,17 @@ p5.Uniteのスクリーン描画は、出力テクスチャ上で「y=0が上」
 
 `Assets/Krab/ImageLayer/Samples/ImageLayerSmokeTest.unity` をPlay（構成はSamplesのREADME）。
 
-- Maltine20：11セット、754フレーム、問題0件、テクスチャ約331MB（DXT5＋ミップマップ）、読み込み約11秒。読み込み中も60fpsで描画が続く。
+- Maltine20（現Sequences）：11セット、754フレーム、問題0件、テクスチャ約331MB（DXT5＋ミップマップ）、読み込み約11秒。読み込み中も60fpsで描画が続く。
 - 重ね順：背景（p5.Unite）→画像→前景（p5.Unite）の順で重なる。
 - 向き：Orientation Checkで、背景・画像・前景の目印が同じ左上に出る。
 - Consoleのエラー・警告0件。出力の画像を `Reports/ImageLayerSmoke.png` に保存した。
 - 未確認：見た目の最終評価、DXT5圧縮による画質（目視）、Syphon/Spoutの受信側。
 
+2026-11-23、shirt追加後にPerformance SceneをPlay：12セット、問題0件、テクスチャ約596MB、読み込み約21秒。Consoleのエラー・警告0件。shirtを使ったパターンの見た目は未確認。
+
 ## 演奏用コンポーネント（Phase 3、2026-11-22）
+
+> 2026-11-23：パターンごとのON/OFF・Set・Look・パラメータ（Prefs）は、Layoutプリセットと画像のラジオ選択（`LayoutPresets.md`）に置き換えた。以下の表の「既定のセット」と各パターンのLookは使っていない。配置と動き、パラメータは同じ。
 
 `Assets/Krab/ImageLayer/Samples/ImageLayerPerformance.unity` を開いてPlayする（操作はSamplesのREADME）。`ImageLayerPerformance`（Assembly-CSharp、`Scripts/Performance`）はTypeLayoutPerformanceと同じ作りで、配置と動きはパターンごとにコードで書き、UIからはON/OFFとパラメータだけを変える。BPM（Common/Timing）に同期し、注入がなければ120BPMで動く。
 
@@ -239,5 +257,5 @@ Overlay Cameraは自分の出力先を持たないため、`pixelWidth/Height` �
 
 ## 確認・相談事項（2026-11-22時点）
 
-1. 起動時の読み込み（Maltine20で約11秒）。今は全セットを起動時に読む。セット単位の遅延読み込みや、切り出し・圧縮結果のキャッシュは未実装。
-2. Phase 5（MIDI割り当て）はTypeLayoutのPhase 6と同じ横断的な仕組みにする想定で未着手。クロマキーも未着手（2026-11-22の方針どおり）。
+1. 起動時の読み込み（Sequencesで約21秒、shirt追加前は約11秒）。今は全セットを起動時に読む。セット単位の遅延読み込みや、切り出し・圧縮結果のキャッシュは未実装。
+2. Phase 5（MIDI割り当て）はTypeLayoutのPhase 6と同じ横断的な仕組みにする想定で未着手。実行時のクロマキーも未着手（グリーンバック素材は変換時に抜く）。

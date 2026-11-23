@@ -1,9 +1,7 @@
 using System;
 using Krab.ImageLayer.Core.Placement;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -11,50 +9,38 @@ namespace Krab.ImageLayer.Performance.Patterns
     {
         private const int MaxRows = 12;
 
-        private readonly PrefsInt _clip;
-        private readonly PrefsFloat _size;
-        private readonly PrefsInt _rows;
-        private readonly PrefsFloat _cellsPerBeat;
-        private readonly PrefsFloat _position;
-        private readonly PrefsBool _alternate;
+        private readonly PatternParameter _clip;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _rows;
+        private readonly PatternParameter _cellsPerBeat;
+        private readonly PatternParameter _position;
+        private readonly PatternParameter _alternate;
 
         public MarchPattern() : base("March",
-            "One clip repeated side by side in rows that march across the screen. Rows can alternate direction.",
-            "animal", ImageLook.Threshold, true)
+            "One clip repeated side by side in rows that march across the screen. Rows can alternate direction.")
         {
-            _clip = new PrefsInt(Key("Clip"), 0);
-            _size = new PrefsFloat(Key("Size"), 220);
-            _rows = new PrefsInt(Key("Rows"), 1);
-            _cellsPerBeat = new PrefsFloat(Key("Cells Per Beat"), 0.5f);
-            _position = new PrefsFloat(Key("Position"), 0.15f);
-            _alternate = new PrefsBool(Key("Alternate"), true);
+            _clip = Int("Clip", 0, 0, 20);
+            _size = Float("Size", 220, 40, 600);
+            _rows = Int("Rows", 1, 1, MaxRows);
+            _cellsPerBeat = Float("Cells Per Beat", 0.5, -2, 2);
+            _position = Float("Position", 0.15, 0, 1, "Position (0 top .. 1 bottom)");
+            _alternate = Bool("Alternate", true, "Alternate Direction");
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _clip.CreateSlider("Clip", 0, 20),
-                _size.CreateSlider("Size", 40f, 600f),
-                _rows.CreateSlider("Rows", 1, MaxRows),
-                _cellsPerBeat.CreateSlider("Cells Per Beat", -2f, 2f),
-                _position.CreateSlider("Position (0 top .. 1 bottom)", 0f, 1f),
-                _alternate.CreateElement("Alternate Direction"));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
 
-            var clip = set.Wrap(_clip.Get());
-            int rows = Math.Clamp(_rows.Get(), 1, MaxRows);
+            var clip = set.Wrap(values.GetInt(_clip));
+            int rows = Math.Clamp(values.GetInt(_rows), 1, MaxRows);
             float rowHeight = size * 1.1f;
-            float top = context.Height * _position.Get() - rows * rowHeight / 2;
-            double shift = context.Beats * _cellsPerBeat.Get();
+            float top = context.Height * values.GetFloat(_position) - rows * rowHeight / 2;
+            double shift = context.Beats * values.GetFloat(_cellsPerBeat);
             float fraction = (float)(shift - Math.Floor(shift));
             for (int row = 0; row < rows; row++)
             {
-                float direction = _alternate.Get() && row % 2 == 1 ? -1f : 1f;
+                float direction = values.GetBool(_alternate) && row % 2 == 1 ? -1f : 1f;
                 float offset = fraction * size * direction;
                 var frame = Frame(clip, context, row * 3);
                 float y = top + row * rowHeight;

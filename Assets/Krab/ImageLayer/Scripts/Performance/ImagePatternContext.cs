@@ -10,7 +10,7 @@ namespace Krab.ImageLayer.Performance
         private const double ReferenceHeight = 1080;
 
         public ImagePatternContext(ImageCanvas canvas, ImageLibrary library, float width, float height, double beats,
-            float bpm, Color dark, Color light, float thresholdLevel)
+            float bpm, Color dark, Color light, float thresholdLevel, double framesPerBeat)
         {
             Canvas = canvas;
             Library = library;
@@ -21,6 +21,7 @@ namespace Krab.ImageLayer.Performance
             Dark = dark;
             Light = light;
             ThresholdLevel = thresholdLevel;
+            FramesPerBeat = framesPerBeat;
         }
 
         public ImageCanvas Canvas { get; }
@@ -42,6 +43,9 @@ namespace Krab.ImageLayer.Performance
         public Color Light { get; }
 
         public float ThresholdLevel { get; }
+
+        /// <summary>Playback speed of sequences, set by the selected image entry.</summary>
+        public double FramesPerBeat { get; }
 
         /// <summary>Reference pixels (1080 tall) to output pixels.</summary>
         public float Px(double reference) => (float)(reference * Height / ReferenceHeight);

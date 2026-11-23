@@ -1,51 +1,39 @@
 using Krab.ImageLayer.Core.Placement;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
 using Krab.TypeLayout.Core.Motion;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
     public sealed class CenterPattern : ImagePattern
     {
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _beatsPerChange;
-        private readonly PrefsFloat _swing;
-        private readonly PrefsFloat _beatsPerSwing;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _beatsPerChange;
+        private readonly PatternParameter _swing;
+        private readonly PatternParameter _beatsPerSwing;
 
         public CenterPattern() : base("Center",
             "One clip large in the middle, standing on its bottom edge and swinging from there. Steps to the " +
-            "next clip of the set on the beat.",
-            "human", ImageLook.Original)
+            "next clip of the set on the beat.")
         {
-            _size = new PrefsFloat(Key("Size"), 0.85f);
-            _beatsPerChange = new PrefsFloat(Key("Beats Per Change"), 4);
-            _swing = new PrefsFloat(Key("Swing"), 3);
-            _beatsPerSwing = new PrefsFloat(Key("Beats Per Swing"), 2);
+            _size = Float("Size", 0.85, 0.1, 1.5, "Size (screen height)");
+            _beatsPerChange = Float("Beats Per Change", 4, 0.25, 32);
+            _swing = Float("Swing", 3, 0, 45, "Swing (± degrees)");
+            _beatsPerSwing = Float("Beats Per Swing", 2, 0.25, 16);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _size.CreateSlider("Size (screen height)", 0.1f, 1.5f),
-                _beatsPerChange.CreateSlider("Beats Per Change", 0.25f, 32f),
-                _swing.CreateSlider("Swing (± degrees)", 0f, 45f),
-                _beatsPerSwing.CreateSlider("Beats Per Swing", 0.25f, 16f));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float boxHeight = context.Height * _size.Get();
+            float boxHeight = context.Height * values.GetFloat(_size);
             RequirePositive(boxHeight, "Size");
-            float beatsPerChange = _beatsPerChange.Get();
+            float beatsPerChange = values.GetFloat(_beatsPerChange);
             RequirePositive(beatsPerChange, "Beats Per Change");
-            float beatsPerSwing = _beatsPerSwing.Get();
+            float beatsPerSwing = values.GetFloat(_beatsPerSwing);
             RequirePositive(beatsPerSwing, "Beats Per Swing");
 
             var clip = set.Wrap((int)(BeatSteps.Step(context.Beats, beatsPerChange) % int.MaxValue));
             float boxWidth = context.Width * 0.9f;
-            float angle = (Zigzag(context.Beats, beatsPerSwing) * 2 - 1) * _swing.Get();
+            float angle = (Zigzag(context.Beats, beatsPerSwing) * 2 - 1) * values.GetFloat(_swing);
             var canvas = context.Canvas;
             canvas.Translate(context.Width / 2, (context.Height + boxHeight) / 2);
             canvas.Rotate(angle);

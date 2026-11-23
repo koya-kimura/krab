@@ -1,8 +1,6 @@
 using System;
+using Krab.ImageLayer.Core.Presets;
 using Krab.ImageLayer.Unity.Library;
-using PrefsGUI;
-using PrefsGUI.RosettaUI;
-using RosettaUI;
 
 namespace Krab.ImageLayer.Performance.Patterns
 {
@@ -10,38 +8,28 @@ namespace Krab.ImageLayer.Performance.Patterns
     {
         private const int MaxCount = 24;
 
-        private readonly PrefsInt _count;
-        private readonly PrefsFloat _radius;
-        private readonly PrefsFloat _size;
-        private readonly PrefsFloat _degreesPerBeat;
+        private readonly PatternParameter _count;
+        private readonly PatternParameter _radius;
+        private readonly PatternParameter _size;
+        private readonly PatternParameter _degreesPerBeat;
 
         public OrbitPattern() : base("Orbit",
-            "Upright clips evenly spaced on a circle around the center, turning with the beat.",
-            "life", ImageLook.Original)
+            "Upright clips evenly spaced on a circle around the center, turning with the beat.")
         {
-            _count = new PrefsInt(Key("Count"), 8);
-            _radius = new PrefsFloat(Key("Radius"), 360);
-            _size = new PrefsFloat(Key("Size"), 180);
-            _degreesPerBeat = new PrefsFloat(Key("Degrees Per Beat"), 15);
+            _count = Int("Count", 8, 1, MaxCount);
+            _radius = Float("Radius", 360, 0, 1000);
+            _size = Float("Size", 180, 20, 800);
+            _degreesPerBeat = Float("Degrees Per Beat", 15, -90, 90);
         }
 
-        protected override Element CreateParameters()
+        protected override void DrawPattern(in ImagePatternContext context, ImageSet set, ParameterValues values)
         {
-            return UI.Column(
-                _count.CreateSlider("Count", 1, MaxCount),
-                _radius.CreateSlider("Radius", 0f, 1000f),
-                _size.CreateSlider("Size", 20f, 800f),
-                _degreesPerBeat.CreateSlider("Degrees Per Beat", -90f, 90f));
-        }
-
-        protected override void DrawPattern(in ImagePatternContext context, ImageSet set)
-        {
-            float size = context.Px(_size.Get());
+            float size = context.Px(values.GetFloat(_size));
             RequirePositive(size, "Size");
 
-            int count = Math.Clamp(_count.Get(), 1, MaxCount);
-            float radius = context.Px(_radius.Get());
-            double turn = context.Beats * _degreesPerBeat.Get();
+            int count = Math.Clamp(values.GetInt(_count), 1, MaxCount);
+            float radius = context.Px(values.GetFloat(_radius));
+            double turn = context.Beats * values.GetFloat(_degreesPerBeat);
             for (int index = 0; index < count; index++)
             {
                 double radians = (turn + 360.0 * index / count) * Math.PI / 180;
