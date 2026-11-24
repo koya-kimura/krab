@@ -181,14 +181,49 @@ namespace Krab.ShapeSynth.Tests.Editor
             var compiled = PresetCompiler.CompileGroup(document);
             var bindings = ((ShapeDefinition)compiled.Children.Single()).Opacity.Bindings;
 
-            Assert.That(compiled.Runtime.Modulators, Has.Count.EqualTo(3));
-            Assert.That(bindings.Select(binding => binding.ModulatorIndex), Is.EqualTo(new[] { 1, 2 }));
+            // The Default ADSR is no longer bound, so only the two components of mix become modulators.
+            Assert.That(compiled.Runtime.Modulators, Has.Count.EqualTo(2));
+            Assert.That(bindings.Select(binding => binding.ModulatorIndex), Is.EqualTo(new[] { 0, 1 }));
             Assert.That(bindings.Select(binding => binding.Depth), Is.EqualTo(new[] { 2.0, 1.0 }));
 
             mix.Components.Clear();
             var empty = (ShapeDefinition)PresetCompiler.CompileGroup(document).Children.Single();
 
             Assert.That(empty.Opacity.Bindings, Is.Empty);
+        }
+
+        [Test]
+        public void UnboundSharedValuesAddNoModulators()
+        {
+            var document = PresetDocument.CreateNew();
+            var unused = LfoValue("unused", 1);
+            unused.Components.Add(PresetComponent.Create(ModulatorKind.Adsr));
+            unused.Components[1].SustainTime = 50;
+            document.Values.Insert(0, unused);
+
+            var compiled = PresetCompiler.CompileGroup(document);
+
+            Assert.That(document.BoundValues(), Is.EqualTo(new[] { document.Values[1] }));
+            Assert.That(PresetCompiler.Components(document), Is.EqualTo(document.Values[1].Components));
+            Assert.That(compiled.Runtime.Modulators, Has.Count.EqualTo(1));
+            Assert.That(((ShapeDefinition)compiled.Children.Single()).Opacity.Bindings.Single().ModulatorIndex,
+                Is.EqualTo(0));
+        }
+
+        [Test]
+        public void NewPresetsShareTheGivenValuesAndAddADefaultAdsrOnlyWhenNoneExists()
+        {
+            var values = new List<PresetValue> { LfoValue("osc", 1) };
+
+            var first = PresetDocument.CreateNew(values);
+            var second = PresetDocument.CreateNew(values);
+
+            Assert.That(first.Values, Is.SameAs(values));
+            Assert.That(second.Values, Is.SameAs(values));
+            Assert.That(values, Has.Count.EqualTo(2));
+            Assert.That(values[1].Name, Is.EqualTo("Default ADSR"));
+            Assert.That(first.RootGroup.Children[0].Opacity.GetBinding().ValueId, Is.EqualTo(values[1].Id));
+            Assert.That(second.RootGroup.Children[0].Opacity.GetBinding().ValueId, Is.EqualTo(values[1].Id));
         }
 
         [Test]

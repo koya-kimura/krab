@@ -20,6 +20,8 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private ShapeSynthController _controller;
         private PresetRepository _repository;
+        private List<PresetValue> _values;
+        private string _valuesLoadError;
         private string _selectedId;
         private string _selectedValueId;
         private string _error;
@@ -65,6 +67,12 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public PresetRepository Repository => _repository ??= new PresetRepository();
 
+        /// <summary>
+        /// The shared Value library every opened preset is attached to, so the Values window lists the same Values
+        /// whichever preset is open. Read once; a script reload reads it again.
+        /// </summary>
+        public List<PresetValue> Values => _values ??= LoadValues();
+
         public string Error => _error;
 
         public bool IsDirty => _dirty;
@@ -79,7 +87,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         public void NewDocument()
         {
-            Document = PresetDocument.CreateNew();
+            Document = PresetDocument.CreateNew(Values);
             ResetDocumentView();
             _dirty = true;
         }
@@ -88,7 +96,7 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             Guard(() =>
             {
-                var document = Repository.Load(id);
+                var document = Repository.Load(id, Values);
                 // Older files may carry Multiplier / Absolute Value; fold them so the table shows real numbers.
                 PresetUnits.Normalize(document);
                 Document = document;
@@ -101,6 +109,12 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             Guard(() =>
             {
+                // An unreadable library is kept as is, so a save cannot replace it with the empty fallback.
+                if (_valuesLoadError != null)
+                    throw new InvalidOperationException(_valuesLoadError + " Fix Values.json before saving.");
+
+                // Values first: the preset's Bindings must find their Values when another reader loads it.
+                Repository.SaveValues(Values);
                 Repository.Save(Document);
                 _dirty = false;
             });
@@ -153,7 +167,22 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private PresetValue FindValue(string id)
         {
-            return id == null ? null : Document.Values.FirstOrDefault(value => value.Id == id);
+            return id == null ? null : Values.FirstOrDefault(value => value.Id == id);
+        }
+
+        private List<PresetValue> LoadValues()
+        {
+            try
+            {
+                _valuesLoadError = null;
+                return Repository.LoadValues();
+            }
+            catch (Exception exception)
+            {
+                _valuesLoadError = "Values.json could not be read: " + exception.Message;
+                _error = _valuesLoadError;
+                return new List<PresetValue>();
+            }
         }
 
         private PresetNode ParentOf(string id)
@@ -188,7 +217,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private void ResetDocumentView()
         {
             _selectedId = Document.RootGroup.Children.FirstOrDefault()?.Id ?? Document.RootGroup.Id;
-            _selectedValueId = Document.Values.FirstOrDefault()?.Id;
+            // The Value list is shared by every preset, so keep the selected Value across opening presets.
+            if (FindValue(_selectedValueId) == null) _selectedValueId = Values.FirstOrDefault()?.Id;
             _childrenRevisions.Clear();
             _expandedGroups.Clear();
             _expandedGroups.Add(Document.RootGroup.Id);

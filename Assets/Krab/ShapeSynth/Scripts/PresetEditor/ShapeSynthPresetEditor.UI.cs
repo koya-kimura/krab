@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Linq;
 using System.Reflection;
 using Krab.ShapeSynth.Core.Presets;
@@ -138,20 +136,7 @@ namespace Krab.ShapeSynth.PresetEditor
             if (PresetFilesSignature() != _presetFilesSignature) RefreshSavedPresets();
         }
 
-        private string PresetFilesSignature()
-        {
-            if (!Directory.Exists(Repository.DirectoryPath)) return string.Empty;
-
-            var files = Directory.GetFiles(Repository.DirectoryPath, "*.json");
-            Array.Sort(files, StringComparer.Ordinal);
-            var signature = new StringBuilder();
-            foreach (var file in files)
-            {
-                signature.Append(file).Append('|').Append(File.GetLastWriteTimeUtc(file).Ticks).Append('\n');
-            }
-
-            return signature.ToString();
-        }
+        private string PresetFilesSignature() => Repository.FilesSignature();
 
         // RosettaUI's custom dropdown menu uses a Unity internal interface removed in this Unity version.
         // Keep Rosetta's value binding and fall back to Unity's default runtime menu.

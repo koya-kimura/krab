@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using Krab.ShapeSynth.Core.Presets;
 using Krab.ShapeSynth.Core.Runtime;
 using Krab.ShapeSynth.Unity.Persistence;
@@ -103,21 +101,7 @@ namespace Krab.ShapeSynth.Performance
             if (FilesSignature() != _filesSignature) RefreshUserPresets();
         }
 
-        private string FilesSignature()
-        {
-            var directory = UserPresetRepository.DirectoryPath;
-            if (!Directory.Exists(directory)) return string.Empty;
-
-            var files = Directory.GetFiles(directory, "*.json");
-            Array.Sort(files, StringComparer.Ordinal);
-            var signature = new StringBuilder();
-            foreach (var file in files)
-            {
-                signature.Append(file).Append('|').Append(File.GetLastWriteTimeUtc(file).Ticks).Append('\n');
-            }
-
-            return signature.ToString();
-        }
+        private string FilesSignature() => UserPresetRepository.FilesSignature();
 
         private Element BuildUserPresets()
         {

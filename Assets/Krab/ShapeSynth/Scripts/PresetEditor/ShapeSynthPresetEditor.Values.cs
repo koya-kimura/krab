@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Presets;
@@ -45,7 +46,7 @@ namespace Krab.ShapeSynth.PresetEditor
             if (value == null) return UI.Space();
 
             var remove = UI.Button("Remove Value", () => DeleteValue(value));
-            remove.RegisterUpdateCallback(element => element.Interactable = Document.BindingCount(value.Id) == 0);
+            remove.RegisterUpdateCallback(element => element.Interactable = !IsValueInUse(value.Id));
             return UI.Column(
                 UI.Field("Name", () => value.Name, name =>
                 {
@@ -97,12 +98,22 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             Guard(() =>
             {
+                var user = SavedPresetUsing(value.Id);
+                if (user != null) throw new ArgumentException($"Value is used by the preset '{user.Name}'.");
+
                 Document.DeleteValue(value.Id);
                 _valuesRevision++;
                 _selectedValueId = Document.Values.FirstOrDefault()?.Id;
                 Changed();
             });
         }
+
+        /// <summary>Values are shared, so one bound by the open preset or by any saved preset stays.</summary>
+        private bool IsValueInUse(string id) => Document.BindingCount(id) > 0 || SavedPresetUsing(id) != null;
+
+        /// <summary>A saved preset other than the open one that binds the Value, or null.</summary>
+        private PresetDocument SavedPresetUsing(string id) =>
+            _savedPresets.FirstOrDefault(preset => preset.Id != Document.Id && preset.BindingCount(id) > 0);
 
         private void AddComponent(PresetValue value, ModulatorKind kind)
         {

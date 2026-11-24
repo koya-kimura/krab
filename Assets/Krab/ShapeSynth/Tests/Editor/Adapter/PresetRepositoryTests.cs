@@ -12,19 +12,22 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
 {
     public sealed class PresetRepositoryTests
     {
+        private string _root;
         private string _directory;
 
         [SetUp]
         public void SetUp()
         {
-            _directory = Path.Combine(Path.GetTempPath(), "Krab-Presets-" + Guid.NewGuid().ToString("N"));
+            // The Value library is written next to the preset folder, so both live under one temporary root.
+            _root = Path.Combine(Path.GetTempPath(), "Krab-Presets-" + Guid.NewGuid().ToString("N"));
+            _directory = Path.Combine(_root, "Presets");
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(_directory))
-                Directory.Delete(_directory, true);
+            if (Directory.Exists(_root))
+                Directory.Delete(_root, true);
         }
 
         [Test]
@@ -36,6 +39,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             shape.Layout.Kind = PresetLayoutKind.Grid;
             shape.Layout.SpacingX.Bind(document.Values[0].Id, 0.25);
 
+            repository.SaveValues(document.Values);
             repository.Save(document);
             var json = File.ReadAllText(Path.Combine(_directory, document.Id + ".json"));
             var loaded = repository.Load(document.Id).RootGroup.Children[0].Layout;
@@ -72,6 +76,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             polygon.Name = "Triangle";
             polygon.Vertices[1].X = 73.5;
 
+            repository.SaveValues(source.Values);
             repository.Save(source);
 
             Assert.That(repository.Exists(source.Id), Is.True);
@@ -120,6 +125,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             circle.Rotation.AbsoluteValue = 37.5;
             circle.Rotation.Base = 12.25;
 
+            repository.SaveValues(source.Values);
             repository.Save(source);
 
             var loaded = repository.Load(source.Id);
@@ -153,6 +159,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
                 }
             }
 
+            repository.SaveValues(draft.Values);
             repository.Save(draft);
 
             var loaded = repository.Load(draft.Id);
@@ -173,6 +180,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
 
             var shape = document.AddNode(parent.Id, PresetNodeKind.Rectangle);
             shape.PositionX.Base = 123;
+            repository.SaveValues(document.Values);
             repository.Save(document);
 
             var loaded = repository.Load(document.Id);
@@ -199,8 +207,10 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var repository = new PresetRepository(_directory);
             var document = PresetDocument.CreateNew();
+            repository.SaveValues(document.Values);
             repository.Save(document);
             document.Name = "Updated";
+            repository.SaveValues(document.Values);
             repository.Save(document);
 
             Assert.That(repository.Load(document.Id).Name, Is.EqualTo("Updated"));
@@ -230,6 +240,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             var repository = new PresetRepository(_directory);
             var valid = PresetDocument.CreateNew();
             valid.Id = "valid";
+            repository.SaveValues(valid.Values);
             repository.Save(valid);
             Directory.CreateDirectory(_directory);
             File.WriteAllText(FilePath("broken.json"), "not JSON");
@@ -247,6 +258,7 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             var repository = new PresetRepository(_directory);
             var document = PresetDocument.CreateNew();
+            repository.SaveValues(document.Values);
             repository.Save(document);
             File.Move(FilePath(document.Id + ".json"), FilePath("different-id.json"));
 
@@ -289,6 +301,90 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             File.WriteAllText(FilePath("broken.json"), "{");
 
             Assert.Throws<ArgumentException>(() => repository.Load("broken"));
+        }
+
+        [Test]
+        public void ValuesAreSavedOnceAndSharedByEveryLoadedPreset()
+        {
+            var repository = new PresetRepository(_directory);
+            var first = PresetDocument.CreateNew();
+            first.Id = "first";
+            var second = PresetDocument.CreateNew(first.Values);
+            second.Id = "second";
+            repository.SaveValues(first.Values);
+            repository.Save(first);
+            repository.Save(second);
+
+            var presetJson = File.ReadAllText(FilePath("first.json"));
+            var listed = repository.List(out var errors);
+
+            Assert.That(repository.ValuesPath, Is.EqualTo(Path.Combine(_root, PresetRepository.ValuesFileName)));
+            Assert.That(presetJson, Does.Not.Contain("\"Values\"").And.Not.Contain("Default ADSR"));
+            Assert.That(File.ReadAllText(repository.ValuesPath), Does.Contain("Default ADSR"));
+            Assert.That(errors, Is.Empty);
+            Assert.That(listed.Select(document => document.Id), Is.EqualTo(new[] { "first", "second" }));
+            Assert.That(listed[0].Values, Is.SameAs(listed[1].Values));
+            Assert.That(listed[0].Values.Single().Id, Is.EqualTo(first.Values.Single().Id));
+        }
+
+        [Test]
+        public void EditingASharedValueReachesEveryPresetOnTheNextLoad()
+        {
+            var repository = new PresetRepository(_directory);
+            var first = PresetDocument.CreateNew();
+            first.Id = "first";
+            var second = PresetDocument.CreateNew(first.Values);
+            second.Id = "second";
+            repository.SaveValues(first.Values);
+            repository.Save(first);
+            repository.Save(second);
+
+            first.Values.Single().Components.Single().Attack = 0.75;
+            repository.SaveValues(first.Values);
+
+            Assert.That(repository.Load("first").Values.Single().Components.Single().Attack, Is.EqualTo(0.75));
+            Assert.That(repository.Load("second").Values.Single().Components.Single().Attack, Is.EqualTo(0.75));
+        }
+
+        [Test]
+        public void MissingLibraryIsEmptyAndPresetsBindingMissingValuesFailToLoad()
+        {
+            var repository = new PresetRepository(_directory);
+            var document = PresetDocument.CreateNew();
+            repository.Save(document);
+
+            Assert.That(repository.LoadValues(), Is.Empty);
+            Assert.Throws<ArgumentException>(() => repository.Load(document.Id));
+            Assert.DoesNotThrow(() => repository.Load(document.Id, document.Values));
+        }
+
+        [Test]
+        public void ListReportsAnUnreadableLibraryOnceAndLoadsNoPresets()
+        {
+            var repository = new PresetRepository(_directory);
+            var document = PresetDocument.CreateNew();
+            repository.SaveValues(document.Values);
+            repository.Save(document);
+            File.WriteAllText(repository.ValuesPath, "{\"SchemaVersion\":2,\"Values\":[]}");
+
+            var listed = repository.List(out var errors);
+
+            Assert.That(listed, Is.Empty);
+            Assert.That(errors.Count, Is.EqualTo(1));
+            StringAssert.Contains(PresetRepository.ValuesFileName, errors[0]);
+        }
+
+        [Test]
+        public void InvalidValuesAreNotSaved()
+        {
+            var repository = new PresetRepository(_directory);
+            var values = PresetDocument.CreateNew().Values;
+            repository.SaveValues(values);
+            var saved = File.ReadAllText(repository.ValuesPath);
+            values.Add(new PresetValue { Id = values[0].Id, Name = "Duplicate" });
+
+            Assert.Throws<ArgumentException>(() => repository.SaveValues(values));
+            Assert.That(File.ReadAllText(repository.ValuesPath), Is.EqualTo(saved));
         }
 
         private void WriteDocument(PresetDocument document)

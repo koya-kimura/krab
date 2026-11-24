@@ -1,5 +1,7 @@
 # Phase 10: Preset Editor Workspace
 
+2026-11-25：Valueは全プリセット共通の部品になった（[共通Valueライブラリ](SharedValueLibrary.md)）。以下の「Valueはプリセットごと」「SchemaVersion 5」の記述は当時のもの。
+
 ## Gallery（2026-11-22追加）
 
 `Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → **Preset Editor - Gallery** を開く。Visual／Valuesと同じSceneから利用できる。Sceneへの追加設定は不要。

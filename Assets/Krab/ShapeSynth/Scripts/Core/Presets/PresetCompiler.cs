@@ -19,7 +19,7 @@ namespace Krab.ShapeSynth.Core.Presets
             if (!Components(document).Any(component => component.Kind == ModulatorKind.Adsr))
             {
                 throw new ArgumentException(
-                    "Preview/Trigger requires at least one ADSR Lifetime. The draft can still be saved.");
+                    "Preview/Trigger requires at least one bound ADSR Lifetime. The draft can still be saved.");
             }
 
             return new TriggerTarget(group);
@@ -32,7 +32,7 @@ namespace Krab.ShapeSynth.Core.Presets
             var slots = Components(document).Select(component => Slot(component, autoRelease)).ToArray();
             var indices = new ValueIndices();
             var next = 0;
-            foreach (var value in document.Values)
+            foreach (var value in document.BoundValues())
             {
                 indices.Add(value.Id, (next, value));
                 next += value.Components.Count;
@@ -41,10 +41,13 @@ namespace Krab.ShapeSynth.Core.Presets
             return (GroupDefinition)CompileNode(document.RootGroup, indices, new GroupRuntimeDefinition(slots));
         }
 
-        /// <summary>Every component in Value order; this is the Root scope slot order.</summary>
+        /// <summary>
+        /// Every component of the bound Values, in Value order; this is the Root scope slot order. Unbound Values
+        /// of the shared library add no modulators, so they do not lengthen the Voice.
+        /// </summary>
         public static IEnumerable<PresetComponent> Components(PresetDocument document)
         {
-            return document.Values.SelectMany(value => value.Components);
+            return document.BoundValues().SelectMany(value => value.Components);
         }
 
         internal static void ValidateDocument(PresetDocument document)
@@ -55,12 +58,24 @@ namespace Krab.ShapeSynth.Core.Presets
 
             PresetDocument.RequireId(document.Id);
             if (string.IsNullOrWhiteSpace(document.Name)) throw new ArgumentException("Preset name is required.");
-            if (document.Values == null || document.Values.Count > 2000)
-                throw new ArgumentException("Invalid Value list.");
+
+            var ids = ValidateValues(document.Values);
+            if (document.RootGroup == null || document.RootGroup.Kind != PresetNodeKind.Group)
+                throw new ArgumentException("Root Group is required.");
+
+            ValidateNode(document.RootGroup, ids, new HashSet<string>(StringComparer.Ordinal), 0);
+            if (document.Nodes().Sum(node => (long)node.Layout.GetCopyCount()) > PresetLayout.MaxTotalCopies)
+                throw new ArgumentException($"A preset can draw at most {PresetLayout.MaxTotalCopies} Shapes.");
+        }
+
+        /// <summary>Checks a Value list (the shared library) and returns its IDs.</summary>
+        public static HashSet<string> ValidateValues(IReadOnlyList<PresetValue> values)
+        {
+            if (values == null || values.Count > 2000) throw new ArgumentException("Invalid Value list.");
 
             var ids = new HashSet<string>(StringComparer.Ordinal);
             var componentCount = 0;
-            foreach (var value in document.Values)
+            foreach (var value in values)
             {
                 if (value == null) throw new ArgumentException("Null Value.");
 
@@ -78,15 +93,10 @@ namespace Krab.ShapeSynth.Core.Presets
                 }
 
                 componentCount += value.Components.Count;
-                if (componentCount > 2000) throw new ArgumentException("A preset can have at most 2000 components.");
+                if (componentCount > 2000) throw new ArgumentException("Values can have at most 2000 components.");
             }
 
-            if (document.RootGroup == null || document.RootGroup.Kind != PresetNodeKind.Group)
-                throw new ArgumentException("Root Group is required.");
-
-            ValidateNode(document.RootGroup, ids, new HashSet<string>(StringComparer.Ordinal), 0);
-            if (document.Nodes().Sum(node => (long)node.Layout.GetCopyCount()) > PresetLayout.MaxTotalCopies)
-                throw new ArgumentException($"A preset can draw at most {PresetLayout.MaxTotalCopies} Shapes.");
+            return ids;
         }
 
         private static void ValidateNode(PresetNode node, HashSet<string> modulators, HashSet<string> nodes, int depth)

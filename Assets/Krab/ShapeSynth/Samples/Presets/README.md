@@ -1,6 +1,6 @@
 # VJ演奏用プリセット30個
 
-2026-11-22追加。既存SchemaVersion 5のプリセットデータのみ。生成・登録・確認には既存Preset EditorのDocument／Preview／SaveDocument／OpenDocumentとPerformanceのTriggerを使用した。製品コードとSceneに変更なし。
+2026-11-22追加。既存SchemaVersion 5のプリセットデータのみ（2026-11-25にSchemaVersion 6へ移行し、Valueは[共通Valueライブラリ](../../../Docs/ShapeSynth/SharedValueLibrary.md)へまとめた。下の表のValues列は追加時の各プリセット内の数）。生成・登録・確認には既存Preset EditorのDocument／Preview／SaveDocument／OpenDocumentとPerformanceのTriggerを使用した。製品コードとSceneに変更なし。
 
 ## 使い方
 

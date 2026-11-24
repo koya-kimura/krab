@@ -18,7 +18,7 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetDocument
     {
-        public const int CurrentSchemaVersion = 5;
+        public const int CurrentSchemaVersion = 6;
 
         /// <summary>Deepest allowed Node, counting the Root Group as 0.</summary>
         public const int MaxDepth = 64;
@@ -26,7 +26,14 @@ namespace Krab.ShapeSynth.Core.Presets
         public int SchemaVersion = CurrentSchemaVersion;
         public string Id;
         public string Name = "New Preset";
+
+        /// <summary>
+        /// The Values that Bindings refer to. Not saved with the preset: the app attaches the shared Value library,
+        /// so editing a Value changes every preset bound to it.
+        /// </summary>
+        [NonSerialized]
         public List<PresetValue> Values = new();
+
         public PresetNode RootGroup;
 
         public static string NewId() => Guid.NewGuid().ToString("N");
@@ -40,14 +47,29 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        public static PresetDocument CreateNew()
+        public static PresetDocument CreateNew() => CreateNew(new List<PresetValue>());
+
+        /// <summary>
+        /// One Circle whose Opacity follows the first Value with an ADSR. Adds a Default ADSR to the given Values
+        /// only when none of them has one.
+        /// </summary>
+        public static PresetDocument CreateNew(List<PresetValue> values)
         {
-            var envelope = new PresetValue
+            if (values == null) throw new ArgumentNullException(nameof(values));
+
+            var envelope = values.FirstOrDefault(value =>
+                value?.Components != null && value.Components.Any(component => component?.Kind == ModulatorKind.Adsr));
+            if (envelope == null)
             {
-                Id = NewId(),
-                Name = "Default ADSR",
-                Components = new List<PresetComponent> { PresetComponent.Create(ModulatorKind.Adsr) }
-            };
+                envelope = new PresetValue
+                {
+                    Id = NewId(),
+                    Name = "Default ADSR",
+                    Components = new List<PresetComponent> { PresetComponent.Create(ModulatorKind.Adsr) }
+                };
+                values.Add(envelope);
+            }
+
             var root = PresetNode.Create(PresetNodeKind.Group);
             root.Name = "Root Group";
             var circle = PresetNode.Create(PresetNodeKind.Circle);
@@ -58,7 +80,7 @@ namespace Krab.ShapeSynth.Core.Presets
             {
                 Id = NewId(),
                 RootGroup = root,
-                Values = new List<PresetValue> { envelope }
+                Values = values
             };
         }
 
@@ -206,6 +228,16 @@ namespace Krab.ShapeSynth.Core.Presets
             if (BindingCount(id) > 0) throw new ArgumentException("Value is in use. Unbind it first.");
 
             Values.RemoveAll(value => value.Id == id);
+        }
+
+        /// <summary>The Values this preset binds, in Value order; only these become its modulators.</summary>
+        public IEnumerable<PresetValue> BoundValues()
+        {
+            var bound = new HashSet<string>(Nodes()
+                .SelectMany(node => node.Parameters())
+                .SelectMany(parameter => parameter.Bindings)
+                .Select(binding => binding.ValueId), StringComparer.Ordinal);
+            return Values.Where(value => bound.Contains(value.Id));
         }
 
         public int BindingCount(string valueId)
