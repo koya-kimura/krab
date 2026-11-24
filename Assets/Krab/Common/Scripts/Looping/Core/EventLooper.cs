@@ -67,11 +67,34 @@ namespace Krab.Common.Looping.Core
                 return;
             }
 
-            Duration = duration;
-            PlaybackStartPosition = position;
-            _playbackOrigin = position;
-            _lastPosition = position;
-            State = EventLooperState.Playing;
+            StartPlayback(position, duration, position);
+        }
+
+        /// <summary>
+        /// Finishes into an explicit loop window, e.g. one snapped to bars. Event offsets are measured from
+        /// <paramref name="origin"/> and wrapped into <paramref name="duration"/>; the first cycle starts at
+        /// <paramref name="playbackStart"/>, which must not be earlier than <paramref name="position"/>.
+        /// </summary>
+        public void FinishRecording(double position, double origin, double duration, double playbackStart)
+        {
+            ValidatePosition(position);
+            ValidatePosition(origin);
+            ValidatePosition(playbackStart);
+            if (!(duration > 0) || double.IsInfinity(duration))
+                throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be positive and finite.");
+            if (playbackStart < position)
+                throw new ArgumentOutOfRangeException(nameof(playbackStart), "Playback cannot start in the past.");
+            if (State != EventLooperState.Recording) return;
+
+            GetElapsed(position, RecordStartPosition);
+            if (EventCount == 0)
+            {
+                Clear();
+                return;
+            }
+
+            WrapOffsets(RecordStartPosition - origin, duration);
+            StartPlayback(position, duration, playbackStart);
         }
 
         /// <summary>
@@ -129,6 +152,36 @@ namespace Krab.Common.Looping.Core
             PlaybackStartPosition = 0;
             DroppedEventCount = 0;
             State = EventLooperState.Idle;
+        }
+
+        private void StartPlayback(double position, double duration, double playbackStart)
+        {
+            Duration = duration;
+            PlaybackStartPosition = playbackStart;
+            _playbackOrigin = playbackStart;
+            _lastPosition = position;
+            State = EventLooperState.Playing;
+        }
+
+        private void WrapOffsets(double shift, double duration)
+        {
+            var wrapped = new List<(LoopPlaybackEvent<T> Event, int Order)>(_recorded.Count);
+            for (var index = 0; index < _recorded.Count; index++)
+            {
+                var offset = (_recorded[index].Position + shift) % duration;
+                if (offset < 0) offset += duration;
+                // Rounding can land a wrapped offset exactly on the end; that is the next cycle's start.
+                if (offset >= duration) offset = 0;
+
+                wrapped.Add((new LoopPlaybackEvent<T>(_recorded[index].Payload, offset), index));
+            }
+
+            // Recording order breaks ties, so simultaneous events keep their input order after wrapping.
+            wrapped.Sort((a, b) => a.Event.Position != b.Event.Position
+                ? a.Event.Position.CompareTo(b.Event.Position)
+                : a.Order.CompareTo(b.Order));
+            _recorded.Clear();
+            foreach (var entry in wrapped) _recorded.Add(entry.Event);
         }
 
         private void SkipDueEvents(double position, double elapsed)

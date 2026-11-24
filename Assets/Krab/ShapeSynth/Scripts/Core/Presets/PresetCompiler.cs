@@ -10,9 +10,12 @@ namespace Krab.ShapeSynth.Core.Presets
     /// <summary>Authoring DTO to immutable Core snapshot. No IO, UI, clock or runtime state.</summary>
     public static class PresetCompiler
     {
-        public static TriggerTarget Compile(PresetDocument document)
+        /// <param name="autoRelease">
+        /// false keeps every ADSR at Sustain until the Voice is released, e.g. while a pad is held.
+        /// </param>
+        public static TriggerTarget Compile(PresetDocument document, bool autoRelease = true)
         {
-            var group = CompileGroup(document);
+            var group = CompileGroup(document, autoRelease);
             if (!Components(document).Any(component => component.Kind == ModulatorKind.Adsr))
             {
                 throw new ArgumentException(
@@ -22,11 +25,11 @@ namespace Krab.ShapeSynth.Core.Presets
             return new TriggerTarget(group);
         }
 
-        public static GroupDefinition CompileGroup(PresetDocument document)
+        public static GroupDefinition CompileGroup(PresetDocument document, bool autoRelease = true)
         {
             ValidateDocument(document);
 
-            var slots = Components(document).Select(Slot).ToArray();
+            var slots = Components(document).Select(component => Slot(component, autoRelease)).ToArray();
             var indices = new ValueIndices();
             var next = 0;
             foreach (var value in document.Values)
@@ -172,9 +175,12 @@ namespace Krab.ShapeSynth.Core.Presets
             }
         }
 
-        private static ModulatorSlotDefinition Slot(PresetComponent model)
+        private static ModulatorSlotDefinition Slot(PresetComponent model, bool autoRelease = true)
         {
-            return new ModulatorSlotDefinition(ModulatorDefinition(model));
+            var definition = ModulatorDefinition(model);
+            return definition is AdsrDefinition adsr
+                ? new ModulatorSlotDefinition(adsr, autoRelease)
+                : new ModulatorSlotDefinition(definition);
         }
 
         // A bound Value becomes one Binding per component, so the runtime sum equals Depth × Σ Weight × signal.

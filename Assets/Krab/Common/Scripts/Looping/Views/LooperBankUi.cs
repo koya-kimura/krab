@@ -14,7 +14,17 @@ namespace Krab.Common.Looping.Views
         public static Element Create(ILooperBank bank, string durationUnit,
             Func<int, Element> cycleAccessory = null, Func<int, Element> clearAccessory = null)
         {
+            return Create(bank, _ => durationUnit, cycleAccessory, clearAccessory);
+        }
+
+        /// <param name="durationUnit">The unit shown after a slot's length; slots may use different clocks.</param>
+        /// <param name="settingsAccessory">Per-slot settings placed after the status, e.g. a clock switch.</param>
+        public static Element Create(ILooperBank bank, Func<int, string> durationUnit,
+            Func<int, Element> cycleAccessory = null, Func<int, Element> clearAccessory = null,
+            Func<int, Element> settingsAccessory = null)
+        {
             if (bank == null) throw new ArgumentNullException(nameof(bank));
+            if (durationUnit == null) throw new ArgumentNullException(nameof(durationUnit));
 
             var rows = new List<Element>();
             for (var slot = 0; slot < bank.Count; slot++)
@@ -27,7 +37,8 @@ namespace Krab.Common.Looping.Views
                     cycleAccessory?.Invoke(index) ?? UI.Space(),
                     UI.Button("Clear", () => bank.Clear(index)),
                     clearAccessory?.Invoke(index) ?? UI.Space(),
-                    UI.Label(() => Status(bank, index, durationUnit)).SetWidth(190)));
+                    UI.Label(() => Status(bank, index, durationUnit(index))).SetWidth(190),
+                    settingsAccessory?.Invoke(index) ?? UI.Space()));
             }
 
             return UI.Fold("Loopers", rows);

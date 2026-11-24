@@ -23,10 +23,10 @@
 
 ## 今後の検討（未実装・未合意）
 
-- MIDI NoteOffとVoiceの対応、同音重複時の扱い。現在のユーザープリセット演奏は押下によるTriggerのみ。
+- MIDI NoteOffとVoiceの対応は、2026-11-24にプリセットごとのHold（OneShot）割り当てとして追加した（[演奏UI](UserPresetPerformance.md)）。ベロシティ、同じプリセットを複数のパッドで同時に保持する扱いは未対応。
 - 最大Voice数、Pooling、想定負荷・FPS・GCの基準と測定。
 - 演奏中のDefinition変更を既存Voiceへ反映する仕様。現在は生成時のスナップショット。
-- ゲーム時間以外の時計や明示的なトランスポート、厳密な拍同期。
+- ゲーム時間以外の時計や明示的なトランスポート、厳密な拍同期。ルーパーは2026-11-24にスロットごとのBPM同期（小節への丸め）を選べるようにした（[ルーパー](Looper.md)）。
 - ADSRの積分値、Triggerをまたいで積み重なる値。
 
 これらは依頼範囲と仕様を合意してから実装する。検証Sceneの操作は [Samples README](../../ShapeSynth/Samples/README.md) を参照。

@@ -9,14 +9,17 @@ using RosettaUI;
 namespace Krab.ShapeSynth.Performance
 {
     /// <summary>
-    /// One press-to-trigger MIDI action per saved user preset, the same pattern as the MIDI sample. Bindings are
-    /// stored by action ID, which uses the preset ID, so they survive renames and re-registration.
+    /// Two MIDI actions per saved user preset: Trigger (Momentary, one Voice per press that releases itself)
+    /// and Hold (OneShot, the Voice stays at Sustain while the pad is down and is released when it goes up).
+    /// Bindings are stored by action ID, which uses the preset ID, so they survive renames and re-registration.
     /// </summary>
     public sealed partial class ShapeSynthPerformance
     {
         private const string MidiActionPrefix = "ShapeSynth.UserPreset.";
+        private const string MidiHoldActionPrefix = "ShapeSynth.UserPresetHold.";
 
         private readonly Dictionary<string, Param<bool>> _midiTriggers = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Param<bool>> _midiHolds = new(StringComparer.Ordinal);
 
         private MidiBindingManager _midiBindings;
         private IMidiBindingUi _midiUi;
@@ -31,10 +34,18 @@ namespace Krab.ShapeSynth.Performance
                 _midiBindings.UnregisterAction(MidiActionId(presetId));
             }
 
+            foreach (var presetId in _midiHolds.Keys)
+            {
+                _midiBindings.UnregisterAction(MidiHoldActionId(presetId));
+            }
+
             _midiTriggers.Clear();
+            _midiHolds.Clear();
         }
 
         private static string MidiActionId(string presetId) => MidiActionPrefix + presetId;
+
+        private static string MidiHoldActionId(string presetId) => MidiHoldActionPrefix + presetId;
 
         /// <summary>Registers actions for newly listed presets and removes those whose file is gone.</summary>
         private void SyncMidiTriggers()
@@ -59,11 +70,42 @@ namespace Krab.ShapeSynth.Performance
                 _midiBindings.RegisterMomentary(MidiActionId(presetId), pressed);
                 _midiTriggers.Add(presetId, pressed);
             }
+
+            foreach (var presetId in _midiHolds.Keys.Where(id => !listed.Contains(id)).ToList())
+            {
+                _midiBindings.UnregisterAction(MidiHoldActionId(presetId));
+                _midiHolds.Remove(presetId);
+                EndHold(presetId);
+            }
+
+            foreach (var presetId in listed.Where(id => !_midiHolds.ContainsKey(id)))
+            {
+                var held = new Param<bool>(false);
+                // OneShot follows the pad: true from press to release, also reset to false when MIDI is reset.
+                held.Changed += value =>
+                {
+                    if (value)
+                        StartHold(presetId);
+                    else
+                        EndHold(presetId);
+                };
+                _midiBindings.RegisterOneShot(MidiHoldActionId(presetId), held);
+                _midiHolds.Add(presetId, held);
+            }
         }
 
         private Element MidiTriggerButton(string presetId, string presetName)
         {
             return _midiUi == null ? UI.Space() : _midiUi.CreateButton(MidiActionId(presetId), presetName);
+        }
+
+        private Element MidiHoldButton(string presetId, string presetName)
+        {
+            if (_midiUi == null) return UI.Space();
+
+            // Both launchers read "MIDI", so the Hold one gets its own label.
+            return UI.Row(UI.Label("Hold").SetWidth(40),
+                _midiUi.CreateButton(MidiHoldActionId(presetId), presetName + " (Hold)"));
         }
     }
 }

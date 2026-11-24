@@ -263,6 +263,17 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
 
             Assert.Throws<ArgumentException>(() => repository.Load(unsupported.Id));
 
+            // An old schema with a retired field is reported by its version, not by the unknown field.
+            var old = PresetDocument.CreateNew();
+            old.SchemaVersion = 4;
+            WriteDocument(old);
+            var oldJson = File.ReadAllText(FilePath(old.Id + ".json"));
+            Assert.That(oldJson, Does.Contain("\"Name\":\"Circle\""));
+            File.WriteAllText(FilePath(old.Id + ".json"),
+                oldJson.Replace("\"Name\":\"Circle\"", "\"Name\":\"Circle\",\"Red\":1"));
+            var exception = Assert.Throws<ArgumentException>(() => repository.Load(old.Id));
+            Assert.That(exception.Message, Does.Contain("SchemaVersion 4"));
+
             var duplicateNodes = PresetDocument.CreateNew();
             duplicateNodes.RootGroup.Children[0].Id = duplicateNodes.RootGroup.Id;
             WriteDocument(duplicateNodes);

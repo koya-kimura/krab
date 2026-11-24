@@ -21,6 +21,29 @@ p5版と同じく秒数固定で記録する。時計は `Time.unscaledTimeAsDou
 
 （Codexによる初版は `IBPMManager.Beat` を時計にした拍数基準だった。ユーザーの選択により2026-11-22に秒数固定へ変更した。Coreは単位を持たないため、変更は接続側の時計だけ。）
 
+## BPM同期モード（2026-11-24）
+
+スロットごとに、状態表示の右の `Sync: Free` / `Sync: BPM` ボタンで時計を切り替える。既定はFree（上記の秒数固定）。切り替えるとそのスロットの内容はクリアされる（位置の単位が秒と拍で違うため）。設定は `ShapeSynth.Looper.{番号}.BpmSync` としてPrefsに保存される（ほかの設定と同じくSaveで永続化）。
+
+BPMにしたスロットは次のように動く。
+
+- 時計は `IBPMManager.Beat`（拍）。BPMを変えるとループもテンポに追従し、長さの表示は `beats`。
+- 録音を止めたとき、Commonの `LoopWindow.SnapToGrid` で1小節＝4拍のグリッドに合わせる。
+  - 原点：録音開始に最も近い小節頭。少し早く押した音はループ末尾へ、少し遅く押した音は先頭付近へ入る。
+  - 長さ：原点から停止までを最も近い小節数に丸める（最低1小節）。丸めではみ出した音はループ内へ折り返す。
+  - 再生開始：停止した時点以降の最初の小節頭。それまでは発火しない。
+- 個々の音の位置はクオンタイズしない。
+
+例：0.2拍目でRecord、15.7拍目でPlay → 原点0、長さ16拍、16拍目から再生。16.3拍目でPlayした場合は長さ16拍、20拍目から再生。
+
+## Hold（押している間だけ保持）の記録
+
+プリセット行のHold（OneShot）で叩いた音は、押下と離しを同じHoldIdを持つ2つのイベント（`LoopNote.HoldStart` / `HoldEnd`）として記録する。再生でも押下でSustainを保持したVoiceを作り、離しの位置でReleaseする。
+
+- 離しが記録されていない（録音停止時にまだ押していた）場合は、次の周の同じ押下で前のVoiceをReleaseする。つまりループ長で切れる。
+- 小節への折り返しで離しが押下より前に来ても、前の周のVoiceをReleaseする形で長さが保たれる。最初の周の対応する押下がない離しは何もしない。
+- スロットをClear／停止すると、そのスロットが保持中のVoiceをReleaseする。
+
 ## Sceneと操作
 
 専用検証Scene：`Assets/Krab/ShapeSynth/Samples/ShapeSynthLooper.unity`。
@@ -50,12 +73,12 @@ Action IDは `ShapeSynth.Looper.1.Cycle` / `ShapeSynth.Looper.1.Clear` から8�
 
 ## 記録と再生の規則
 
-- 記録対象は、成功した手動のプリセットTrigger。UI／MIDIの入口を共通にする。
+- 記録対象は、成功した手動のプリセットTriggerとHoldの押下・離し。UI／MIDIの入口を共通にする。
 - ループ再生から生まれたTriggerは録音しない。別スロットを録音中でも、既存ループの内容が混ざらない。
 - 一覧の番号ではなくプリセットIDを保存するので、名前変更やタブ変更で対象が変わらない。
 - 再生時には既存経路でプリセットを読み直してCompileする。保存した変更は次の発火から反映し、RandのSeedも新しいVoiceごとに進める。
 - プリセットが削除された／不正になった場合は、影響を受けたスロットだけ停止してエラーを表示する。他のループや手動演奏は継続できる。
-- Clearは以降の発火を止める。すでに出ているVoiceは元の寿命まで残る。
+- Clearは以降の発火を止める。すでに出ているTriggerのVoiceは元の寿命まで残り、Holdで保持中のVoiceはReleaseされる。
 - 長いフレーム停止ではCoreの上限を超える期限超過イベントを破棄し、UIに通知する。
 
 再生はフレーム単位の即時Trigger。予定時刻へさかのぼってVoiceを生成する仕組みは今回追加していない。
@@ -72,4 +95,9 @@ Action IDは `ShapeSynth.Looper.1.Cycle` / `ShapeSynth.Looper.1.Clear` から8�
 - 実時間で2スロットへそれぞれ2イベントを録音し、同時再生によるRenderTexture出力と操作画面を確認。
 - Console Errorなし。Sceneの未保存変更なし。実行ログ・画像は `Reports/ShapeSynthLooper/`。
 
-実機MIDI、外部Syphon／Spout受信、長時間のライブ運用、Windowsは未検証。録音保存、オーバーダブ、停止内容を保持した再開、拍への吸着は今回追加していない。使い心地と見た目の最終評価はユーザーが行う。
+実機MIDI、外部Syphon／Spout受信、長時間のライブ運用、Windowsは未検証。録音保存、オーバーダブ、停止内容を保持した再開は今回追加していない。BPM同期モードでも個々の音のクオンタイズは行わない。使い心地と見た目の最終評価はユーザーが行う。
+
+### BPM同期モードとHoldの追加時（2026-11-24）
+
+- Unityコンパイル成功。EditMode全381件成功（`GridLoopTests` 13件、`PresetDocumentTests.CompileWithoutAutoReleaseHoldsSustainUntilReleased` を追加）。
+- Play Mode、実機MIDI、UI操作、見た目は未確認。

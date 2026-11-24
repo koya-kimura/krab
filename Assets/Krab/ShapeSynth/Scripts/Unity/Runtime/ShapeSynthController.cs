@@ -62,5 +62,13 @@ namespace Krab.ShapeSynth.Unity.Runtime
         {
             return Collection.Restart(target, Time.timeAsDouble, currentBpm, voiceSeed);
         }
+
+        /// <summary>Sends Release to the Voice's ADSRs now; a Voice that already ended is unaffected.</summary>
+        public void Release(VoiceInstance voice)
+        {
+            if (voice == null) throw new ArgumentNullException(nameof(voice));
+
+            voice.Release(Time.timeAsDouble);
+        }
     }
 }

@@ -232,6 +232,28 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
+        public void CompileWithoutAutoReleaseHoldsSustainUntilReleased()
+        {
+            var document = PresetDocument.CreateNew();
+            var envelope = document.Values.Single().Components.Single();
+            envelope.Attack = 0.1;
+            envelope.Decay = 0.1;
+            envelope.SustainTime = 0.1;
+            envelope.Release = 0.1;
+            var released = new VoiceInstance(PresetCompiler.Compile(document), new VoiceTime(0, 60));
+            var held = new VoiceInstance(PresetCompiler.Compile(document, false), new VoiceTime(0, 60));
+            var heldEnvelope = (AdsrInstance)held.Modulators[0];
+
+            Assert.That(((ILifetime)released.Modulators[0]).IsFinished(1), Is.True);
+            Assert.That(((ILifetime)heldEnvelope).IsFinished(100), Is.False);
+            Assert.That(heldEnvelope.Evaluate(100), Is.EqualTo(envelope.SustainLevel).Within(1e-9));
+
+            held.Release(100);
+            Assert.That(((ILifetime)heldEnvelope).IsFinished(100.05), Is.False);
+            Assert.That(((ILifetime)heldEnvelope).IsFinished(100.2), Is.True);
+        }
+
+        [Test]
         public void CollectionCanStopOnlyOneOwnedVoice()
         {
             var target = PresetCompiler.Compile(PresetDocument.CreateNew());

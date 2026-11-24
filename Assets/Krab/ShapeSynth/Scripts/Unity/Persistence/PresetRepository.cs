@@ -58,6 +58,16 @@ namespace Krab.ShapeSynth.Unity.Persistence
                         throw new ArgumentException("Preset JSON requires an integer SchemaVersion.");
                     }
 
+                    // Older schemas are not migrated. Reject them before deserializing, so the error names the
+                    // version instead of the first field that no longer exists.
+                    var schemaVersion = token.Value<int>("SchemaVersion");
+                    if (schemaVersion != PresetDocument.CurrentSchemaVersion)
+                    {
+                        throw new ArgumentException(
+                            $"Unsupported SchemaVersion {schemaVersion} (current {PresetDocument.CurrentSchemaVersion}). " +
+                            "Old presets are not migrated; delete the file or re-create the preset.");
+                    }
+
                     document = token.ToObject<PresetDocument>(JsonSerializer.Create(JsonSettings()));
                 }
             }

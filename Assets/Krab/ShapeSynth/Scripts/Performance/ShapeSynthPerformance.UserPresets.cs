@@ -67,17 +67,17 @@ namespace Krab.ShapeSynth.Performance
         public VoiceInstance TriggerUserPreset(string id)
         {
             var voice = SpawnUserPreset(id);
-            if (voice != null) RecordManualTrigger(id);
+            if (voice != null) RecordLoopNote(LoopNote.Trigger(id));
             return voice;
         }
 
-        private VoiceInstance SpawnUserPreset(string id)
+        private VoiceInstance SpawnUserPreset(string id, bool autoRelease = true)
         {
             try
             {
                 // Reload and compile at Trigger, so the Preset Editor's saved edits apply only to a new Voice.
                 var document = UserPresetRepository.Load(id);
-                var target = PresetCompiler.Compile(document);
+                var target = PresetCompiler.Compile(document, autoRelease);
                 LastVoice = _controller.Spawn(target, _bpm.CurrentBpm, _seed);
                 // Each Trigger gets a new seed, so Rand differs from the previous Voice.
                 _seed = unchecked(_seed + 1);
@@ -163,7 +163,8 @@ namespace Krab.ShapeSynth.Performance
             return UI.Row(
                 UI.Label(path.Title).SetWidth(NameColumnWidth),
                 UI.Button("Trigger", () => TriggerUserPreset(document.Id)),
-                MidiTriggerButton(document.Id, path.ToString()));
+                MidiTriggerButton(document.Id, path.ToString()),
+                MidiHoldButton(document.Id, path.ToString()));
         }
     }
 }

@@ -8,7 +8,7 @@
 
 1. [制作姿勢と現在の考え](ArtisticIntent.md)：対話で確認した考え、未確定の論点、過去資料。
 2. [現代VJ・ライブ映像の見取り図](Landscape.md)：実践の違いを捉えるための暫定的な整理。
-3. [リファレンス台帳](References.md)：作品・道具・論文の一次ソースと、近い点・異なる点・次に見る点。
+3. [リファレンス台帳](References.md)：作品・道具・論文の一次ソースと、近い点・異なる点・次に見る点。入口から [実践・道具](ReferencesPractice.md)、[観客・VJ実践](ReferencesAudience.md)、[図形・動き](ReferencesShapeMotion.md) の分冊へ分かれる。
 
 ## この場所の使い方
 
