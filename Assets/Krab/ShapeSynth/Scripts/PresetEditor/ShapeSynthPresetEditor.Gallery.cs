@@ -18,7 +18,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private bool _galleryPlaying = true;
         private bool _galleryLoop = true;
         private float _galleryBeat;
-        private int _gallerySeed = 1234;
         private double _galleryLastVisible = double.NegativeInfinity;
         private string _galleryError;
 
@@ -29,8 +28,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     UI.Toggle("Play", () => _galleryPlaying),
                     UI.Toggle("Loop", () => _galleryLoop),
                     UI.Button("Restart", () => _galleryBeat = 0),
-                    UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value)),
-                    UI.Field("Seed", () => _gallerySeed)),
+                    UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value))),
                 UI.Field("Beat", () => _galleryBeat, value => _galleryBeat = Mathf.Max(0, value)),
                 UI.DynamicElementIf(() => _galleryError != null,
                     () => UI.Label(() => _galleryError).SetColor(PresetEditorPalette.Error)),
@@ -94,7 +92,7 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 _galleryBeat += Time.unscaledDeltaTime * _bpm / 60f;
             }
-            _galleryRenderer.Tick(_galleryBeat, _galleryLoop, _gallerySeed);
+            _galleryRenderer.Tick(_galleryBeat, _galleryLoop);
             _galleryError = string.IsNullOrEmpty(_galleryRenderer.Error) ? null : _galleryRenderer.Error;
         }
 

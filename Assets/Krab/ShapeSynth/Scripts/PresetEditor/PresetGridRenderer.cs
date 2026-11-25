@@ -77,7 +77,8 @@ namespace Krab.ShapeSynth.PresetEditor
             UpdateTargets();
         }
 
-        public void Tick(double elapsedBeats, bool loop, int seed = DefaultSeed)
+        /// <summary>Each cell's seed moves on with every loop of that cell, so Rand differs on each replay.</summary>
+        public void Tick(double elapsedBeats, bool loop)
         {
             if (_disposed || !_texture || double.IsNaN(elapsedBeats) || double.IsInfinity(elapsedBeats)) return;
 
@@ -93,6 +94,8 @@ namespace Krab.ShapeSynth.PresetEditor
                     var canvas = _cells[index].Canvas;
                     canvas.EnsureInitialized();
                     var beat = loop ? elapsedBeats % entry.LoopBeats : Math.Min(elapsedBeats, entry.LoopBeats);
+                    var loops = loop ? Math.Min(int.MaxValue - DefaultSeed, elapsedBeats / entry.LoopBeats) : 0;
+                    var seed = DefaultSeed + (int)loops;
                     UniteShapeAdapter.Draw(canvas, entry.Evaluate(beat, seed), CellWidth, CellHeight, true);
                 }
                 catch (ArgumentException exception)

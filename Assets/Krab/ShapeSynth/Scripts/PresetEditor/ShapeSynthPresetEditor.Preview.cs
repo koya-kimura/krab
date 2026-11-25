@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Modulation;
 using Krab.ShapeSynth.Core.Presets;
@@ -11,8 +12,10 @@ namespace Krab.ShapeSynth.PresetEditor
 {
     public sealed partial class ShapeSynthPresetEditor
     {
-        // Fixed so the preview of Rand stays the same between edits; performance triggers vary the seed.
-        private const int PreviewSeed = 1234;
+        // Kept between edits so Rand does not jump while tuning; each loop of playback moves to the next seed, as if
+        // the pad were pressed again.
+        private int _previewSeed = 1;
+        private GroupDefinition _previewDefinition;
 
         private const double PreviewDelaySeconds = 0.3;
 
@@ -68,7 +71,8 @@ namespace Krab.ShapeSynth.PresetEditor
                     .ToArray();
                 _signalByComponent = _previewSignals.ToDictionary(signal => signal.Model);
                 UpdatePreviewSignals();
-                _controller.StaticPreview = new HierarchyEvaluator(target.Definition, _previewSignals, PreviewSeed);
+                _previewDefinition = target.Definition;
+                _controller.StaticPreview = new HierarchyEvaluator(_previewDefinition, _previewSignals, _previewSeed);
             });
         }
 
@@ -139,7 +143,11 @@ namespace Krab.ShapeSynth.PresetEditor
             if (_beat >= end)
             {
                 // Without Loop, playback holds the last frame of one trigger and stops.
-                if (_loop) _beat %= end;
+                if (_loop)
+                {
+                    _beat %= end;
+                    NextPreviewSeed();
+                }
                 else
                 {
                     _beat = end;
@@ -148,6 +156,13 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             UpdatePreviewSignals();
+        }
+
+        private void NextPreviewSeed()
+        {
+            _previewSeed++;
+            if (_controller && _previewDefinition != null)
+                _controller.StaticPreview = new HierarchyEvaluator(_previewDefinition, _previewSignals, _previewSeed);
         }
 
         private void UpdatePreviewSignals()
