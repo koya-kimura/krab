@@ -26,7 +26,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BuildValueGalleryWindow()
         {
             return Scrollable(
-                BuildMessages(),
+                BuildValueMessages(),
                 UI.Row(
                     UI.Toggle("Play", () => _valueGalleryPlaying),
                     UI.Toggle("Loop", () => _valueGalleryLoop),
@@ -41,21 +41,23 @@ namespace Krab.ShapeSynth.PresetEditor
         /// <summary>One tab per Value group, as the Values window and the Performance tabs.</summary>
         private Element BuildValueGalleryTabs()
         {
-            if (Document.Values.Count == 0) return UI.Label("No values.");
+            if (!Document.AllValues().Any()) return UI.Label("No values.");
 
             return ValueTabs(
-                entries => BuildValueGalleryGrid(entries.Select(entry => entry.Item).ToList()),
+                values => BuildValueGalleryGrid(values, ValueGalleryCell),
                 _valueGalleryTab,
                 tab => _valueGalleryTab = tab);
         }
 
-        private Element BuildValueGalleryGrid(IReadOnlyList<PresetValue> values)
+        /// <summary>Values in rows of six with gaps; Value Gallery and the Bind picker share it.</summary>
+        private static Element BuildValueGalleryGrid(
+            IReadOnlyList<PresetValue> values, Func<PresetValue, Element> cell, float gap = ValueGalleryGap)
         {
             var rows = (values.Count + ValueGalleryColumns - 1) / ValueGalleryColumns;
             return UI.Column(Gapped(Enumerable.Range(0, rows).Select(row =>
                 (Element)UI.Row(Gapped(values.Skip(row * ValueGalleryColumns).Take(ValueGalleryColumns)
-                    .Select(ValueGalleryCell), () => UI.Space().SetWidth(ValueGalleryGap)))),
-                () => UI.Space().SetHeight(ValueGalleryGap)));
+                    .Select(cell), () => UI.Space().SetWidth(gap)))),
+                () => UI.Space().SetHeight(gap)));
         }
 
         // RosettaUI has no margin setter, so spacers sit between the cells and between the rows.
@@ -73,7 +75,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element ValueGalleryCell(PresetValue value)
         {
             var graph = new PresetSignalGraph(() => value, () => _valueGalleryBeat, ValueGalleryGraphHeight);
-            return UI.Column(graph.CreateElement(), UI.Label(() => PresetPath.Parse(value.Name).Title)).SetWidth(ValueGalleryCellWidth);
+            return UI.Column(graph.CreateElement(), UI.Label(() => DisplayName(value))).SetWidth(ValueGalleryCellWidth);
         }
 
         private void UpdateValueGallery()

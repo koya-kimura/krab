@@ -15,7 +15,7 @@ Valueを全プリセット共通の部品にした。プリセットは「Visual
 | ファイル | 中身 |
 |---|---|
 | `{persistentDataPath}/ShapeSynth/Values.json` | 共通Value（`{"SchemaVersion": 1, "Values": [...]}`） |
-| `{persistentDataPath}/ShapeSynth/Presets/{ID}.json` | プリセット（SchemaVersion 6。`Values` を持たない） |
+| `{persistentDataPath}/ShapeSynth/Presets/{ID}.json` | プリセット（SchemaVersion 7。共有の `Values` は持たず、専用の `LocalValues` を持つ） |
 
 - `PresetDocument.Values` は保存しない（`[NonSerialized]`）。読み込み時に `PresetRepository` が共通Valueを付ける。`List()` で読んだプリセットは同じValue一覧を共有する。
 - `Values.json` がない場合は空のライブラリとして扱う。読めない場合は一覧に1件のエラーを出し、プリセットは読み込まない。
@@ -34,13 +34,25 @@ Compileでモジュレーターになるのは、そのプリセットがバイ�
 - Newは、最初にADSRを含む共通Valueへ円のOpacityをバインドする。ADSRを含むValueが1つもないときだけ「Default ADSR」を共通Valueに足す。
 - 保存先の変更検知（約1秒ごと）は `Values.json` も対象にする。PerformanceとGalleryは、Saveの後の一打・一覧更新から新しいValueを使う。
 
+## プリセット専用のValue（ローカルValue、SchemaVersion 7、2026-11-25）
+
+共有のValueを「部品」として保ちつつ、そのプリセットだけで値を直せるようにした。
+
+- プリセットのJSONに `LocalValues` を持つ。ローカルValueは `Values.json` には入らず、編集しても他のプリセットは変わらない。IDは共有Valueと重ならない（重なるとValidateで拒否）。バインドはどちらのValueもIDで指す。
+- SchemaVersion 6のプリセットは「ローカルValueのない7」としてそのまま読み込む（内容の変換はない）。次にSaveしたときに7で書かれる。
+- **Bindウィンドウ**：InspectorのBind列はボタンになり、押すと「Preset Editor - Bind」が開く。ValueをグラフでタブごとにValue Galleryと同じ形で並べ、名前のボタンでバインドする。**None**で外す。この画面では値を編集しない。
+- **Copy & Bind**：今バインドしているValueをローカルValueとして複製し、バインドを付け替える（Depthはそのまま）。複製はValuesウィンドウで選択されるので、そこで直す。
+- Valuesウィンドウ・Value Gallery・Bindは、ローカルValueがあるとき先頭に **This Preset** タブを出す。This Presetタブで `+ Value` を押すとローカルValueを足す。Duplicateは、共有なら共有に、ローカルならローカルに複製する。
+- Valuesウィンドウでは、Nameの下に「This preset only.」か、共有のValueなら「Shared. Editing changes N preset(s): …」（使っているプリセット名）を出す。
+- 似たローカルValueを共有ライブラリへまとめる操作は、まだない（今後、AIで候補を出して人が確認する形を検討）。
+
 ## 階層（group/name、2026-11-25）
 
 Valueの名前は、プリセットと同じ `group/name` の形で書ける（`PresetPath`）。保存形式は変えていない。名前の最初の `/` までがグループ。
 
 - Valuesウィンドウの一覧とValue Galleryは、グループごとのタブに分かれる。並びはPerformanceのタブと同じで、グループ名の順、`/` のない名前は最後の **Ungrouped**。タブの中は名前の残りの部分の順。並べ替えは `PresetPathGroups.Of`（Core、EditModeテストあり）。
 - 一覧とギャラリーには名前の残りの部分だけを出す。Bindのプルダウンには `group/name` の全体を、同じ並びで出す。
-- Valuesウィンドウで名前や選択が変わると、選択中のValueのグループのタブを開く。`+ Value` は開いているタブのグループに「Value N」を足す。
+- Valuesウィンドウで名前や選択が変わると、選択中のValueのグループのタブを開く。`+ Value` はグループなしの「New Value」（同名があれば「New Value 2」…）を足し、Ungroupedのタブを開く。
 - ADSRの代表形16個は、グラフの形を一通り揃えたグループとして **All Shapes** に入れた（例：`All Shapes/Rise`）。
 
 ## 移行（2026-11-25実施）

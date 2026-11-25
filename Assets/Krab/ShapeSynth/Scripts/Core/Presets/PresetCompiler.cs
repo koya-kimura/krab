@@ -59,7 +59,9 @@ namespace Krab.ShapeSynth.Core.Presets
             PresetDocument.RequireId(document.Id);
             if (string.IsNullOrWhiteSpace(document.Name)) throw new ArgumentException("Preset name is required.");
 
-            var ids = ValidateValues(document.Values);
+            if (document.Values == null || document.LocalValues == null) throw new ArgumentException("Invalid Value list.");
+
+            var ids = ValidateValues(document.AllValues().ToList());
             if (document.RootGroup == null || document.RootGroup.Kind != PresetNodeKind.Group)
                 throw new ArgumentException("Root Group is required.");
 
@@ -68,7 +70,7 @@ namespace Krab.ShapeSynth.Core.Presets
                 throw new ArgumentException($"A preset can draw at most {PresetLayout.MaxTotalCopies} Shapes.");
         }
 
-        /// <summary>Checks a Value list (the shared library) and returns its IDs.</summary>
+        /// <summary>Checks a Value list (the shared library, or it with a preset's local Values) and returns its IDs.</summary>
         public static HashSet<string> ValidateValues(IReadOnlyList<PresetValue> values)
         {
             if (values == null || values.Count > 2000) throw new ArgumentException("Invalid Value list.");

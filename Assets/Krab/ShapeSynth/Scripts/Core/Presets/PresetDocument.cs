@@ -18,7 +18,7 @@ namespace Krab.ShapeSynth.Core.Presets
     [Serializable]
     public sealed class PresetDocument
     {
-        public const int CurrentSchemaVersion = 6;
+        public const int CurrentSchemaVersion = 7;
 
         /// <summary>Deepest allowed Node, counting the Root Group as 0.</summary>
         public const int MaxDepth = 64;
@@ -33,6 +33,12 @@ namespace Krab.ShapeSynth.Core.Presets
         /// </summary>
         [NonSerialized]
         public List<PresetValue> Values = new();
+
+        /// <summary>
+        /// Values that belong to this preset only, saved in its file (SchemaVersion 7). Editing one changes no
+        /// other preset. IDs are unique across both lists, so a Binding's ValueId finds exactly one Value.
+        /// </summary>
+        public List<PresetValue> LocalValues = new();
 
         public PresetNode RootGroup;
 
@@ -85,6 +91,21 @@ namespace Krab.ShapeSynth.Core.Presets
         }
 
         public IEnumerable<PresetNode> Nodes() => Walk(RootGroup);
+
+        /// <summary>The shared Values, then this preset's local Values.</summary>
+        public IEnumerable<PresetValue> AllValues() => Values.Concat(LocalValues);
+
+        public bool IsLocal(string valueId) => LocalValues.Any(value => value.Id == valueId);
+
+        /// <summary>Adds a local copy of a Value (shared or local) under a new ID and returns it.</summary>
+        public PresetValue AddLocalCopy(PresetValue source, string name)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            var copy = source.Duplicate(NewId(), name);
+            LocalValues.Add(copy);
+            return copy;
+        }
 
         public PresetNode AddNode(string parentId, PresetNodeKind kind)
         {
@@ -228,6 +249,7 @@ namespace Krab.ShapeSynth.Core.Presets
             if (BindingCount(id) > 0) throw new ArgumentException("Value is in use. Unbind it first.");
 
             Values.RemoveAll(value => value.Id == id);
+            LocalValues.RemoveAll(value => value.Id == id);
         }
 
         /// <summary>The Values this preset binds, in Value order; only these become its modulators.</summary>
@@ -237,7 +259,7 @@ namespace Krab.ShapeSynth.Core.Presets
                 .SelectMany(node => node.Parameters())
                 .SelectMany(parameter => parameter.Bindings)
                 .Select(binding => binding.ValueId), StringComparer.Ordinal);
-            return Values.Where(value => bound.Contains(value.Id));
+            return AllValues().Where(value => bound.Contains(value.Id));
         }
 
         public int BindingCount(string valueId)

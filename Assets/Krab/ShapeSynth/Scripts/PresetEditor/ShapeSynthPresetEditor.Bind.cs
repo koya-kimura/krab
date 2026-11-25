@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Krab.ShapeSynth.Core.Definitions;
 using Krab.ShapeSynth.Core.Evaluation;
 using Krab.ShapeSynth.Core.Presets;
@@ -23,26 +22,18 @@ namespace Krab.ShapeSynth.PresetEditor
         }
 
         /// <summary>
-        /// The row's Bind column: a dropdown of None and every Value as "group/name", in group order. Rebuilt when
-        /// Values or their names change.
+        /// The row's Bind column: the bound Value's name, or None. Pressing it opens the Bind picker for this
+        /// Parameter, where the Values are shown as graphs.
         /// </summary>
-        private Element BindChoice(PresetParameter parameter, InitialDepth initialDepth)
+        private Element BindButton(PresetParameter parameter, InitialDepth initialDepth, string parameterName)
         {
-            return UI.DynamicElementOnStatusChanged(
-                () => (_valuesRevision, _valueNamesRevision),
-                _ =>
-                {
-                    var values = ValuesInGroupOrder();
-                    var choice = Choice(
-                        null,
-                        () => Array.FindIndex(values, value => value.Id == parameter.GetBinding()?.ValueId) + 1,
-                        index => BindValue(parameter, initialDepth,
-                            index == 0 ? null : values.ElementAtOrDefault(index - 1)),
-                        new[] { NoValueName }.Concat(values.Select(value => value.Name)));
-                    choice.RegisterUpdateCallback(element =>
-                        element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
-                    return choice.SetWidth(BindColumnWidth);
-                });
+            ButtonElement button = null;
+            button = UI.Button(
+                UI.Label(() => FindValue(parameter.GetBinding()?.ValueId) is { } value ? DisplayName(value) : NoValueName),
+                () => OpenBindPicker(button, parameter, initialDepth, $"{Selected.Name} / {parameterName}"));
+            button.RegisterUpdateCallback(element =>
+                element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
+            return button;
         }
 
         private void BindValue(PresetParameter parameter, InitialDepth initialDepth, PresetValue value)

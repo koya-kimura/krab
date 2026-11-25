@@ -23,7 +23,8 @@ namespace Krab.ShapeSynth.PresetEditor
 
         /// <summary>
         /// Authoring and gallery windows opened from the shared Settings window. Visual owns the document and
-        /// playback, Values edits its signals, Gallery compares saved presets without replacing the draft, and Value Gallery lists every shared Value as a graph.
+        /// playback, Values edits its signals, Gallery compares saved presets without replacing the draft,
+        /// and Value Gallery lists every Value as a graph. The Bind picker opens from the Bind buttons instead.
         /// The edited preset stays in the background output. Each window can scroll in both directions.
         /// </summary>
         public IReadOnlyList<(string Name, Element Content)> CreateWindows()
@@ -59,8 +60,23 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BuildValuesWindow()
         {
             return Scrollable(
-                BuildMessages(),
+                BuildValueMessages(),
                 BuildValuesView());
+        }
+
+        /// <summary>
+        /// The Values windows show only what concerns the shared Values: an unreadable library and failed Value
+        /// operations. Preset messages, such as a missing ADSR Lifetime for Preview, stay in the Visual window.
+        /// </summary>
+        private Element BuildValueMessages()
+        {
+            return UI.Column(
+                UI.DynamicElementIf(
+                    () => _valuesLoadError != null,
+                    () => UI.Label(() => _valuesLoadError).SetColor(PresetEditorPalette.Error)),
+                UI.DynamicElementIf(
+                    () => _valueError != null,
+                    () => UI.Label(() => _valueError).SetColor(PresetEditorPalette.Error)));
         }
 
         private Element BuildMessages()
@@ -89,9 +105,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 }),
                 UI.Row(
                     UI.Button("New", NewDocument),
-                    // The window title belongs to UiBuilder, so the unsaved mark sits on Save.
-                    UI.Button(UI.Label(() => _dirty ? "Save *" : "Save"), SaveDocument),
-                    UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildOpenChoice())));
+                    UI.Button("Duplicate", DuplicateDocument),
+                    UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildOpenChoice()),
+                    // Saving is the Settings Save button or Cmd+S, as for Prefs; this only shows that it is due.
+                    UI.Label(() => _dirty ? "● Unsaved (Cmd+S)" : "Saved")
+                        .SetColor(PresetEditorPalette.Title)));
         }
 
         private Element BuildOpenChoice()

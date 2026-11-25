@@ -2,6 +2,13 @@
 
 2026-11-25：Valueは全プリセット共通の部品になった（[共通Valueライブラリ](SharedValueLibrary.md)）。以下の「Valueはプリセットごと」「SchemaVersion 5」の記述は当時のもの。
 
+## 保存と複製（2026-11-25）
+
+- Visualの個別のSaveボタンを廃止した。保存は、Prefsと同じくSettingsウィンドウの **Save** ボタンか **Cmd+S**（どちらも `IUiSaveTarget.Save()` を呼ぶ）。未保存の変更があるときだけ、共通Value → プリセットの順に書き込む。Visualの上部に「● Unsaved (Cmd+S)」／「Saved」を表示する。
+- Visualの **Duplicate**：開いているプリセットを、新しいIDと「… Copy」（同名があれば番号付き）の名前で複製して開く。未保存なので、残すならSaveする。Valueは共有のまま。
+- Valuesの **Duplicate**（Nameの右）：選択中のValueを、同じグループの「… Copy」として元のValueのすぐ後ろに追加し、選択する。
+- 入力欄に文字を入力している間は、UIの表示切り替えキー（D）が効かない。
+
 ## Value Gallery（2026-11-25追加）
 
 Settings → ShapeSynth → Authoring → **Preset Editor - Value Gallery**。共通Valueを全て、小さな出力グラフ（Valuesウィンドウと同じ描き方。Componentは細線、合計は白の太線）で6列に並べる。

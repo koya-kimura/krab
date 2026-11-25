@@ -98,7 +98,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     .SetWidth(FlipColumnWidth));
             }
 
-            cells.Add(BindChoice(parameter, initialDepth).SetWidth(BindColumnWidth));
+            cells.Add(BindButton(parameter, initialDepth, name).SetWidth(BindColumnWidth));
             return UI.Row(cells.ToArray());
         }
 

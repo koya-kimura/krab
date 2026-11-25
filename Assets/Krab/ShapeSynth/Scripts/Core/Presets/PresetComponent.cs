@@ -25,5 +25,8 @@ namespace Krab.ShapeSynth.Core.Presets
         {
             return new PresetComponent { Kind = kind };
         }
+
+        /// <summary>An independent copy; every field is a value, so a shallow copy shares nothing.</summary>
+        public PresetComponent Clone() => (PresetComponent)MemberwiseClone();
     }
 }

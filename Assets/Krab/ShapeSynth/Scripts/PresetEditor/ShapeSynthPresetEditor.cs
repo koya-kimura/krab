@@ -25,6 +25,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private string _selectedId;
         private string _selectedValueId;
         private string _error;
+        private string _valueError;
         private bool _dirty;
         private int _documentRevision;
         private int _valuesRevision;
@@ -123,10 +124,36 @@ namespace Krab.ShapeSynth.PresetEditor
             if (!_dirty) RefreshSavedPresets();
         }
 
-        /// <summary>The Settings save shortcut (Cmd+S): writes the open preset only when it has unsaved changes.</summary>
+        /// <summary>
+        /// The Settings Save button and Cmd+S: writes the shared Values and the open preset only when they have
+        /// unsaved changes.
+        /// </summary>
         public void Save()
         {
             if (_dirty) SaveDocument();
+        }
+
+        /// <summary>Opens an unsaved copy of the open preset, named "… Copy"; save it to keep it.</summary>
+        public void DuplicateDocument()
+        {
+            Guard(() =>
+            {
+                var names = _savedPresets.Select(preset => preset.Name).Append(Document.Name);
+                Document = Repository.Duplicate(Document, UniqueName(Document.Name + " Copy", names));
+                ResetDocumentView();
+                _dirty = true;
+            });
+        }
+
+        /// <summary>The name itself when free, otherwise the name followed by the first free number from 2.</summary>
+        private static string UniqueName(string name, IEnumerable<string> taken)
+        {
+            var names = new HashSet<string>(taken);
+            if (!names.Contains(name)) return name;
+
+            var number = 2;
+            while (names.Contains(name + " " + number)) number++;
+            return name + " " + number;
         }
 
         public void SelectNode(string id)
@@ -168,7 +195,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private PresetValue FindValue(string id)
         {
-            return id == null ? null : Values.FirstOrDefault(value => value.Id == id);
+            return id == null ? null : (Document?.AllValues() ?? Values).FirstOrDefault(value => value.Id == id);
         }
 
         private List<PresetValue> LoadValues()
@@ -200,6 +227,20 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             _dirty = true;
             QueuePreview();
+        }
+
+        /// <summary>Like Guard, for Value operations: their message shows in the Values windows.</summary>
+        private void GuardValues(Action action)
+        {
+            try
+            {
+                action();
+                _valueError = null;
+            }
+            catch (Exception exception)
+            {
+                _valueError = exception.Message;
+            }
         }
 
         private void Guard(Action action)

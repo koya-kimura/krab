@@ -10,30 +10,41 @@ namespace Krab.ShapeSynth.PresetEditor
     {
         private const string UngroupedTab = "Ungrouped";
 
-        /// <summary>Shared Values by their "group/name" path, as the Performance tabs group presets.</summary>
-        private IReadOnlyList<(string Group, IReadOnlyList<(PresetPath Path, PresetValue Item)> Entries)> ValueGroups() =>
-            PresetPathGroups.Of(Document.Values, value => value.Name);
+        /// <summary>The open preset's own Values. Their names are not read as "group/name".</summary>
+        private const string ThisPresetTab = "This Preset";
 
-        /// <summary>Values in group order, for lists that are not split into tabs (the Bind dropdown).</summary>
-        private PresetValue[] ValuesInGroupOrder() =>
-            ValueGroups().SelectMany(group => group.Entries.Select(entry => entry.Item)).ToArray();
+        /// <summary>
+        /// The tabs the Values lists show: This Preset first (when it has local Values), then the shared Values by
+        /// their "group/name" path, as the Performance tabs group presets.
+        /// </summary>
+        private IReadOnlyList<(string Tab, IReadOnlyList<PresetValue> Values)> ValueTabsContent()
+        {
+            var tabs = new List<(string, IReadOnlyList<PresetValue>)>();
+            if (Document.LocalValues.Count > 0) tabs.Add((ThisPresetTab, Document.LocalValues.ToList()));
+
+            tabs.AddRange(PresetPathGroups.Of(Document.Values, value => value.Name).Select(group =>
+                (TabLabel(group.Group), (IReadOnlyList<PresetValue>)group.Entries.Select(entry => entry.Item).ToList())));
+            return tabs;
+        }
 
         private static string TabLabel(string group) => group.Length == 0 ? UngroupedTab : group;
 
-        private static string GroupOfTab(string label) => label == UngroupedTab ? string.Empty : label ?? string.Empty;
+        private string TabOf(PresetValue value) =>
+            Document.IsLocal(value.Id) ? ThisPresetTab : TabLabel(PresetPath.Parse(value.Name).Group);
+
+        /// <summary>A shared Value shows the part after its group (the tab); a local Value shows its whole name.</summary>
+        private string DisplayName(PresetValue value) =>
+            Document.IsLocal(value.Id) ? value.Name : PresetPath.Parse(value.Name).Title;
 
         /// <summary>
         /// One tab per Value group. The tab named by <paramref name="tab"/> is selected when it still exists, and the
         /// user's tab choice is written back through <paramref name="setTab"/>.
         /// </summary>
-        private Element ValueTabs(
-            Func<IReadOnlyList<(PresetPath Path, PresetValue Item)>, Element> page,
-            string tab,
-            Action<string> setTab)
+        private Element ValueTabs(Func<IReadOnlyList<PresetValue>, Element> page, string tab, Action<string> setTab)
         {
-            var groups = ValueGroups();
-            var labels = groups.Select(group => TabLabel(group.Group)).ToList();
-            var tabs = UI.Tabs(groups.Select(group => (TabLabel(group.Group), page(group.Entries))));
+            var content = ValueTabsContent();
+            var labels = content.Select(entry => entry.Tab).ToList();
+            var tabs = UI.Tabs(content.Select(entry => (entry.Tab, page(entry.Values))));
             var selected = labels.IndexOf(tab);
             if (selected >= 0) tabs.CurrentTabIndex = selected;
 

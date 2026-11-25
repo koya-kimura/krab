@@ -508,5 +508,64 @@ namespace Krab.ShapeSynth.Tests.Editor
             component.Waveform = waveform;
             return new PresetValue { Id = id, Name = id, Components = new List<PresetComponent> { component } };
         }
+    
+        [Test]
+        public void DuplicatedValueHasItsOwnIdNameAndComponents()
+        {
+            var source = new PresetValue
+            {
+                Id = "source",
+                Name = "fx/Swell",
+                Components = new List<PresetComponent> { PresetComponent.Create(ModulatorKind.Adsr) }
+            };
+
+            var copy = source.Duplicate("copy", "fx/Swell Copy");
+            copy.Components[0].Attack = 3;
+            copy.Components.Add(PresetComponent.Create(ModulatorKind.Lfo));
+
+            Assert.That((copy.Id, copy.Name), Is.EqualTo(("copy", "fx/Swell Copy")));
+            Assert.That(source.Components, Has.Count.EqualTo(1));
+            Assert.That(source.Components[0].Attack, Is.EqualTo(PresetComponent.Create(ModulatorKind.Adsr).Attack));
+            Assert.Throws<ArgumentException>(() => source.Duplicate("bad id", "x"));
+        }
+    
+        [Test]
+        public void LocalCopyChangesOnlyThisPresetAndCompilesLikeASharedValue()
+        {
+            var shared = new List<PresetValue>();
+            var document = PresetDocument.CreateNew(shared);
+            var circle = document.RootGroup.Children[0];
+            var source = shared[0];
+
+            var local = document.AddLocalCopy(source, "Fade");
+            circle.Opacity.Bind(local.Id, 1);
+            local.Components[0].Attack = 2;
+
+            Assert.That(document.IsLocal(local.Id), Is.True);
+            Assert.That(document.IsLocal(source.Id), Is.False);
+            Assert.That(source.Components[0].Attack, Is.Not.EqualTo(2));
+            Assert.That(document.BoundValues(), Is.EqualTo(new[] { local }));
+            Assert.That(PresetCompiler.Components(document).Single().Attack, Is.EqualTo(2));
+            Assert.DoesNotThrow(() => PresetCompiler.Compile(document));
+
+            Assert.Throws<ArgumentException>(() => document.DeleteValue(local.Id));
+            circle.Opacity.Unbind();
+            document.DeleteValue(local.Id);
+            Assert.That(document.LocalValues, Is.Empty);
+            Assert.That(shared, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void LocalValueIdsMustNotRepeatASharedId()
+        {
+            var document = PresetDocument.CreateNew();
+            var local = document.AddLocalCopy(document.Values[0], "Copy");
+            local.Id = document.Values[0].Id;
+
+            Assert.Throws<ArgumentException>(() => document.Validate());
+
+            document.LocalValues = null;
+            Assert.Throws<ArgumentException>(() => document.Validate());
+        }
     }
 }

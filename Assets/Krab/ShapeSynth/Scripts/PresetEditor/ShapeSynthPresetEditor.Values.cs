@@ -37,16 +37,16 @@ namespace Krab.ShapeSynth.PresetEditor
         /// <summary>Tabs per Value group. A rebuild after an edit shows the group of the selected Value.</summary>
         private Element BuildValueList()
         {
-            if (SelectedValue != null) _valuesTab = TabLabel(PresetPath.Parse(SelectedValue.Name).Group);
+            if (SelectedValue != null) _valuesTab = TabOf(SelectedValue);
             return ValueTabs(
-                entries => UI.Column(entries.Select(entry => ValueRow(entry.Item))),
+                values => UI.Column(values.Select(ValueRow)),
                 _valuesTab,
                 tab => _valuesTab = tab);
         }
 
         private Element ValueRow(PresetValue value)
         {
-            var row = UI.Button(UI.Label(() => PresetPath.Parse(value.Name).Title), () => SelectValue(value.Id));
+            var row = UI.Button(UI.Label(() => DisplayName(value)), () => SelectValue(value.Id));
             row.RegisterUpdateCallback(element =>
                 element.Style.BackgroundColor = value.Id == _selectedValueId ? PresetEditorPalette.Selected : null);
             return row;
@@ -68,7 +68,9 @@ namespace Krab.ShapeSynth.PresetEditor
                         _valueNamesRevision++;
                         _dirty = true;
                     }).SetFlexGrow(1),
+                    UI.Button("Duplicate", () => DuplicateValue(value)),
                     remove),
+                ValueScopeLine(value),
                 PaneTitle("Components"),
                 UI.Column(value.Components.Select(component => ComponentFold(value, component))),
                 UI.Row(
@@ -102,23 +104,39 @@ namespace Krab.ShapeSynth.PresetEditor
                 Name = NewValueName(),
                 Components = new List<PresetComponent> { PresetComponent.Create(ModulatorKind.Adsr) }
             };
-            Document.Values.Add(value);
+            // The This Preset tab adds a local Value; any other tab adds to the shared library.
+            (_valuesTab == ThisPresetTab ? Document.LocalValues : Document.Values).Add(value);
             _valuesRevision++;
             SelectValue(value.Id);
             Changed();
         }
 
-        /// <summary>"Value N" in the group of the open Values tab.</summary>
-        private string NewValueName()
+        /// <summary>
+        /// "New Value", numbered when taken. It has no group, so it lands in Ungrouped until it is renamed.
+        /// </summary>
+        private string NewValueName() => UniqueName("New Value", Document.AllValues().Select(value => value.Name));
+
+        /// <summary>
+        /// Adds a copy named "… Copy" right after the original and selects it. A shared Value is copied into the
+        /// library, a local one stays local.
+        /// </summary>
+        private void DuplicateValue(PresetValue value)
         {
-            var group = GroupOfTab(_valuesTab);
-            var title = "Value " + (Document.Values.Count + 1);
-            return group.Length == 0 ? title : group + PresetPath.Separator + title;
+            GuardValues(() =>
+            {
+                var copy = value.Duplicate(PresetDocument.NewId(),
+                    UniqueName(value.Name + " Copy", Document.AllValues().Select(other => other.Name)));
+                var list = Document.IsLocal(value.Id) ? Document.LocalValues : Document.Values;
+                list.Insert(list.IndexOf(value) + 1, copy);
+                _valuesRevision++;
+                SelectValue(copy.Id);
+                Changed();
+            });
         }
 
         private void DeleteValue(PresetValue value)
         {
-            Guard(() =>
+            GuardValues(() =>
             {
                 var user = SavedPresetUsing(value.Id);
                 if (user != null) throw new ArgumentException($"Value is used by the preset '{user.Name}'.");
@@ -132,6 +150,32 @@ namespace Krab.ShapeSynth.PresetEditor
 
         /// <summary>Values are shared, so one bound by the open preset or by any saved preset stays.</summary>
         private bool IsValueInUse(string id) => Document.BindingCount(id) > 0 || SavedPresetUsing(id) != null;
+
+        /// <summary>
+        /// Says whose Value this is: a local one changes only the open preset; a shared one lists every preset
+        /// it would change, so an edit here is not a surprise.
+        /// </summary>
+        private Element ValueScopeLine(PresetValue value)
+        {
+            return UI.Label(() =>
+            {
+                if (Document.IsLocal(value.Id)) return "This preset only.";
+
+                var users = PresetsUsing(value.Id);
+                return users.Count == 0
+                    ? "Shared. Not used by any preset."
+                    : $"Shared. Editing changes {users.Count} preset(s): {string.Join(", ", users)}";
+            }).SetColor(PresetEditorPalette.Title);
+        }
+
+        /// <summary>Names of the presets binding the Value: the open one (saved or not) and the other saved ones.</summary>
+        private List<string> PresetsUsing(string id)
+        {
+            var names = _savedPresets.Where(preset => preset.Id != Document.Id && preset.BindingCount(id) > 0)
+                .Select(preset => preset.Name).ToList();
+            if (Document.BindingCount(id) > 0) names.Insert(0, Document.Name);
+            return names;
+        }
 
         /// <summary>A saved preset other than the open one that binds the Value, or null.</summary>
         private PresetDocument SavedPresetUsing(string id) =>

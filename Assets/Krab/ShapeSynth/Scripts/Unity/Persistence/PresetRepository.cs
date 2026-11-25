@@ -67,8 +67,10 @@ namespace Krab.ShapeSynth.Unity.Persistence
 
                 // Older schemas are not migrated. Reject them before deserializing, so the error names the
                 // version instead of the first field that no longer exists.
+                // SchemaVersion 6 is 7 without local Values, so it is read as is.
                 var schemaVersion = token.Value<int>("SchemaVersion");
-                if (schemaVersion != PresetDocument.CurrentSchemaVersion)
+                if (schemaVersion == 6) token["SchemaVersion"] = PresetDocument.CurrentSchemaVersion;
+                else if (schemaVersion != PresetDocument.CurrentSchemaVersion)
                 {
                     throw new ArgumentException(
                         $"Unsupported SchemaVersion {schemaVersion} (current {PresetDocument.CurrentSchemaVersion}). " +
@@ -192,6 +194,22 @@ namespace Krab.ShapeSynth.Unity.Persistence
 
             errors = failures;
             return documents;
+        }
+
+        /// <summary>
+        /// A deep copy of the preset under a new ID and name, sharing the same Value library. Node IDs are kept: they
+        /// only need to be unique inside one preset. Nothing is written; save the copy to keep it.
+        /// </summary>
+        public PresetDocument Duplicate(PresetDocument document, string name)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            var json = JsonConvert.SerializeObject(document, JsonSettings());
+            var copy = JsonConvert.DeserializeObject<PresetDocument>(json, JsonSettings());
+            copy.Id = PresetDocument.NewId();
+            copy.Name = name;
+            copy.Values = document.Values;
+            return copy;
         }
 
         public void Save(PresetDocument document)

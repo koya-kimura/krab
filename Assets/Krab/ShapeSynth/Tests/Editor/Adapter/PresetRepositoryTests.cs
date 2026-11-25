@@ -397,5 +397,66 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
         {
             return Path.Combine(_directory, fileName);
         }
+    
+        [Test]
+        public void DuplicateIsADeepCopyUnderANewIdThatSharesTheValueLibrary()
+        {
+            var repository = new PresetRepository(_directory);
+            var source = PresetDocument.CreateNew();
+            source.Name = "fx/Pulse";
+
+            var copy = repository.Duplicate(source, "fx/Pulse Copy");
+            copy.RootGroup.Children[0].Name = "Changed";
+            copy.RootGroup.Children[0].Layout.Kind = PresetLayoutKind.Grid;
+
+            Assert.That(copy.Id, Is.Not.EqualTo(source.Id));
+            Assert.That(copy.Name, Is.EqualTo("fx/Pulse Copy"));
+            Assert.That(copy.Values, Is.SameAs(source.Values));
+            Assert.That(source.RootGroup.Children[0].Name, Is.Not.EqualTo("Changed"));
+            Assert.That(source.RootGroup.Children[0].Layout.Kind, Is.EqualTo(PresetLayoutKind.None));
+            Assert.That(File.Exists(Path.Combine(_directory, copy.Id + ".json")), Is.False);
+
+            repository.SaveValues(copy.Values);
+            repository.Save(copy);
+            Assert.That(repository.Load(copy.Id).Name, Is.EqualTo("fx/Pulse Copy"));
+        }
+    
+        [Test]
+        public void LocalValuesAreSavedInThePresetAndNotInTheLibrary()
+        {
+            var repository = new PresetRepository(_directory);
+            var document = PresetDocument.CreateNew();
+            var local = document.AddLocalCopy(document.Values[0], "Only here");
+            local.Components[0].Attack = 1.5;
+            document.RootGroup.Children[0].Opacity.Bind(local.Id, 1);
+
+            repository.SaveValues(document.Values);
+            repository.Save(document);
+            var loaded = repository.Load(document.Id);
+
+            Assert.That(loaded.LocalValues.Single().Name, Is.EqualTo("Only here"));
+            Assert.That(loaded.LocalValues.Single().Components[0].Attack, Is.EqualTo(1.5));
+            Assert.That(loaded.BoundValues().Single().Id, Is.EqualTo(local.Id));
+            Assert.That(repository.LoadValues().Select(value => value.Id), Does.Not.Contain(local.Id));
+        }
+
+        [Test]
+        public void SchemaVersion6IsReadAsAPresetWithoutLocalValues()
+        {
+            var repository = new PresetRepository(_directory);
+            var document = PresetDocument.CreateNew();
+            repository.SaveValues(document.Values);
+            var json = Newtonsoft.Json.Linq.JObject.FromObject(document);
+            json.Remove("LocalValues");
+            json["SchemaVersion"] = 6;
+            Directory.CreateDirectory(_directory);
+            File.WriteAllText(FilePath(document.Id + ".json"), json.ToString());
+
+            var loaded = repository.Load(document.Id);
+
+            Assert.That(loaded.SchemaVersion, Is.EqualTo(PresetDocument.CurrentSchemaVersion));
+            Assert.That(loaded.LocalValues, Is.Empty);
+            Assert.That(loaded.BoundValues().Single().Id, Is.EqualTo(document.Values[0].Id));
+        }
     }
 }
