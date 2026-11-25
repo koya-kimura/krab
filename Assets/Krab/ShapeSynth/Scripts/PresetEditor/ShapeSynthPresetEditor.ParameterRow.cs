@@ -23,6 +23,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float FlipColumnWidth = 76;
 
         private static readonly string[] FlipNames = Enum.GetNames(typeof(PresetFlip));
+        private static readonly string[] AnchorNames = Enum.GetNames(typeof(PresetAnchor));
+        private const float StepsFieldWidth = 140;
 
         /// <summary>
         /// Column headings, shown once above a block of Parameter rows. The header and every row are rebuilt
@@ -99,7 +101,22 @@ namespace Krab.ShapeSynth.PresetEditor
             }
 
             cells.Add(BindButton(parameter, initialDepth, name).SetWidth(BindColumnWidth));
-            return UI.Row(cells.ToArray());
+            return UI.Column(UI.Row(cells.ToArray()), RandomStepsLine(parameter));
+        }
+
+        /// <summary>
+        /// Shown under the row only while Rand is set: Steps 0 keeps any value in ±Rand, 2 or more picks one of that
+        /// many evenly spaced values (5 → one of five fixed positions). Placed under the Rand column.
+        /// </summary>
+        private Element RandomStepsLine(PresetParameter parameter)
+        {
+            return UI.DynamicElementIf(() => parameter.Random != 0, () => UI.Row(
+                UI.Space().SetWidth(NameColumnWidth + NumberColumnWidth),
+                UI.Field("Steps", () => parameter.RandomSteps, value =>
+                {
+                    parameter.RandomSteps = Math.Clamp(value, 0, RandomRange.MaxSteps);
+                    Changed();
+                }).SetWidth(StepsFieldWidth)));
         }
 
         private Element DepthField(PresetParameter parameter)

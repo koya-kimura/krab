@@ -167,9 +167,15 @@ namespace Krab.ShapeSynth.Core.Evaluation
                     var stroke = ReferenceEquals(_strokeColor, _fillColor)
                         ? fill
                         : _strokeColor.Evaluate(now, context);
-                    output.Add(new DrawItem(_shape, world, _width.Evaluate(now, context),
-                        _height.Evaluate(now, context), _opacity.Evaluate(now, context), fill, stroke,
-                        _strokeWidth.Evaluate(now, context)));
+                    var width = _width.Evaluate(now, context);
+                    var height = _height.Evaluate(now, context);
+                    // The anchor shifts only the drawn geometry; Shapes have no children to carry it.
+                    var offset = _shape.AnchorOffset(width, height);
+                    var drawn = offset.X == 0 && offset.Y == 0
+                        ? world
+                        : world * Affine2D.Trs(offset.X, offset.Y, 0, 1, 1);
+                    output.Add(new DrawItem(_shape, drawn, width, height, _opacity.Evaluate(now, context), fill,
+                        stroke, _strokeWidth.Evaluate(now, context)));
                 }
 
                 foreach (var child in _children)

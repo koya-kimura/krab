@@ -2,6 +2,10 @@
 
 2026-11-25：Valueは全プリセット共通の部品になった（[共通Valueライブラリ](SharedValueLibrary.md)）。以下の「Valueはプリセットごと」「SchemaVersion 5」の記述は当時のもの。
 
+## プレビューのSeed（2026-11-26）
+
+Rand（とSteps）の結果は、ループのたびに変わる。Visualのプレビューは、Loopで先頭へ戻るたびにSeedを1つ進める（編集しただけでは変わらないので、調整中に値が飛ばない）。Galleryは、セルごとに「何回目のループか」をSeedに足す。GalleryのSeed欄は廃止した。
+
 ## Play中にCLIからVisualを作る（2026-11-26）
 
 Playを止めずに、Unity CLIで作ったプリセットをGalleryで見て対話しながら調整するための決まり。

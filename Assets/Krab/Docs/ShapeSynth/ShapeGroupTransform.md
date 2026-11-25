@@ -104,3 +104,11 @@ Voiceの寿命方針は [実装計画の寿命仕様](VoiceAndLifetime.md) に�
 - Definitionは不変のため、その場編集は行わない。編集後の新しいDefinitionを既存Instanceへ反映するか、新規Voiceだけに適用するかは未決定。現在のサンプルは評価器を明示的に再生成する。
 - 毎評価でDraw Itemスナップショットを確保する。大規模運用のバッファ再利用/キャッシュ/性能保証は後続で検討する。
 - Group Trigger、Voice寿命/Spawn/Restart、Variation、Layout、保存DTOや編集UIは今回実装していない。
+
+## アンカー（2026-11-26）
+
+- `ShapeDefinition.WithAnchor(x, y)`：図形の外接範囲のどの点を、そのShapeのローカル原点に置くか。各軸−0.5〜0.5（Y上向き）で、(0, 0)が中央、(0, −0.5)が下辺の中点、(0.5, 0.5)が右上の角。Positionはその点を置き、RotationとScaleはその点を中心にかかる。範囲はCircle・RectangleならWidth × Height、Polygonなら頂点の外接矩形。
+- 評価では、描くときだけ `world × Translate(オフセット)` をかける（Shapeは子を持たないので、子の座標には影響しない）。
+- プリセットでは `PresetNode.Anchor`（Center／Bottom／Top／Left／Right／四隅、既定Center）。Groupでは使えない（Validateで拒否）。Preset EditorではShapeのFoldの先頭で選ぶ。
+- 例：AnchorをBottomにしてScaleYを0→1に動かすと、下辺を固定したまま上へ伸びる。
+

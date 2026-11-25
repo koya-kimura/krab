@@ -59,7 +59,8 @@ namespace Krab.ShapeSynth.Core.Presets
             PresetDocument.RequireId(document.Id);
             if (string.IsNullOrWhiteSpace(document.Name)) throw new ArgumentException("Preset name is required.");
 
-            if (document.Values == null || document.LocalValues == null) throw new ArgumentException("Invalid Value list.");
+            if (document.Values == null || document.LocalValues == null)
+                throw new ArgumentException("Invalid Value list.");
 
             var ids = ValidateValues(document.AllValues().ToList());
             if (document.RootGroup == null || document.RootGroup.Kind != PresetNodeKind.Group)
@@ -70,7 +71,9 @@ namespace Krab.ShapeSynth.Core.Presets
                 throw new ArgumentException($"A preset can draw at most {PresetLayout.MaxTotalCopies} Shapes.");
         }
 
-        /// <summary>Checks a Value list (the shared library, or it with a preset's local Values) and returns its IDs.</summary>
+        /// <summary>
+        /// Checks a Value list (the shared library, or it with a preset's local Values) and returns its IDs.
+        /// </summary>
         public static HashSet<string> ValidateValues(IReadOnlyList<PresetValue> values)
         {
             if (values == null || values.Count > 2000) throw new ArgumentException("Invalid Value list.");
@@ -119,6 +122,9 @@ namespace Krab.ShapeSynth.Core.Presets
                 throw new ArgumentException("Unknown Layout kind.");
             if (node.Kind == PresetNodeKind.Group && node.Layout.Kind != PresetLayoutKind.None)
                 throw new ArgumentException("Layout is set on Shapes, not Groups.");
+            if (!Enum.IsDefined(typeof(PresetAnchor), node.Anchor)) throw new ArgumentException("Unknown Anchor.");
+            if (node.Kind == PresetNodeKind.Group && node.Anchor != PresetAnchor.Center)
+                throw new ArgumentException("Anchor is set on Shapes, not Groups.");
 
             PresetLayout.RequireCount(node.Layout.Count);
             PresetLayout.RequireColumns(node.Layout.Columns);
@@ -137,6 +143,8 @@ namespace Krab.ShapeSynth.Core.Presets
                 new ReferenceDefinition(parameter.Reference, parameter.Multiplier, parameter.AbsoluteValue);
                 VoiceTime.RequireFinite(parameter.Base, "Parameter Base");
                 VoiceTime.RequireFinite(parameter.Random, "Parameter Random");
+                if (parameter.RandomSteps < 0 || parameter.RandomSteps > RandomRange.MaxSteps)
+                    throw new ArgumentException($"Random Steps must be 0–{RandomRange.MaxSteps}.");
                 if (!Enum.IsDefined(typeof(PresetFlip), parameter.Flip)) throw new ArgumentException("Unknown Flip.");
                 foreach (var binding in parameter.Bindings)
                 {
@@ -213,7 +221,9 @@ namespace Krab.ShapeSynth.Core.Presets
                 new ReferenceDefinition(model.Reference, model.Multiplier, model.AbsoluteValue),
                 scale * model.Base,
                 bindings.ToArray());
-            return model.Random == 0 ? parameter : parameter.WithBaseRandom(RandomRange.Spread(scale * model.Random));
+            return model.Random == 0
+                ? parameter
+                : parameter.WithBaseRandom(RandomRange.Spread(scale * model.Random, steps: model.RandomSteps));
         }
 
         private static ShapeStyle Style(PresetNode node) => new ShapeStyle(node.Fill, node.Stroke);
@@ -270,6 +280,31 @@ namespace Krab.ShapeSynth.Core.Presets
         }
 
         private static ShapeDefinition CompileGeometry(PresetNode node, TransformDefinition transform,
+            ColorDefinition fill, ColorDefinition stroke, Func<PresetParameter, ParameterDefinition> parameter)
+        {
+            var (anchorX, anchorY) = AnchorPoint(node.Anchor);
+            return Geometry(node, transform, fill, stroke, parameter).WithAnchor(anchorX, anchorY);
+        }
+
+        /// <summary>The anchor as a point of the bounds, −0.5 to 0.5 per axis (Y up).</summary>
+        public static (double X, double Y) AnchorPoint(PresetAnchor anchor)
+        {
+            switch (anchor)
+            {
+                case PresetAnchor.Center: return (0, 0);
+                case PresetAnchor.Bottom: return (0, -0.5);
+                case PresetAnchor.Top: return (0, 0.5);
+                case PresetAnchor.Left: return (-0.5, 0);
+                case PresetAnchor.Right: return (0.5, 0);
+                case PresetAnchor.BottomLeft: return (-0.5, -0.5);
+                case PresetAnchor.BottomRight: return (0.5, -0.5);
+                case PresetAnchor.TopLeft: return (-0.5, 0.5);
+                case PresetAnchor.TopRight: return (0.5, 0.5);
+                default: throw new ArgumentException("Unknown Anchor.");
+            }
+        }
+
+        private static ShapeDefinition Geometry(PresetNode node, TransformDefinition transform,
             ColorDefinition fill, ColorDefinition stroke, Func<PresetParameter, ParameterDefinition> parameter)
         {
             var opacity = parameter(node.Opacity);

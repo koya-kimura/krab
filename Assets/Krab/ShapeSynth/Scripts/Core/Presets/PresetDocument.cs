@@ -274,6 +274,20 @@ namespace Krab.ShapeSynth.Core.Presets
         public void Validate() => PresetCompiler.ValidateDocument(this);
     }
 
+    /// <summary>Where a Shape's local origin is: its center, an edge middle or a corner.</summary>
+    public enum PresetAnchor
+    {
+        Center,
+        Bottom,
+        Top,
+        Left,
+        Right,
+        BottomLeft,
+        BottomRight,
+        TopLeft,
+        TopRight
+    }
+
     [Serializable]
     public sealed class PresetNode
     {
@@ -310,6 +324,9 @@ namespace Krab.ShapeSynth.Core.Presets
 
         // Only used by Shapes; Groups keep the default None.
         public PresetLayout Layout = new();
+
+        // The point of a Shape that Position places and Rotation/Scale turn around. Groups keep Center.
+        public PresetAnchor Anchor;
 
         public static PresetNode Create(PresetNodeKind kind)
         {
@@ -361,6 +378,10 @@ namespace Krab.ShapeSynth.Core.Presets
 
         // ±Random is added to Base once per copy and trigger (Voice seed). Flip reverses Depth on some copies.
         public double Random;
+
+        // 0: any value within ±Random. 2 or more: one of that many evenly spaced values from −Random to +Random,
+        // e.g. 5 picks one of five fixed positions.
+        public int RandomSteps;
         public PresetFlip Flip;
 
         // Kept as a list for the JSON schema; a Document allows at most one Binding per Parameter.

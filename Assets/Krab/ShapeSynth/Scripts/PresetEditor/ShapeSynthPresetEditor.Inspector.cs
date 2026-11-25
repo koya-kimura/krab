@@ -56,6 +56,12 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private IEnumerable<Element> ShapeParameters(PresetNode node)
         {
+            // The point that Position places and Rotation/Scale turn around; Bottom grows a Shape upwards.
+            yield return Choice("Anchor", () => (int)node.Anchor, value =>
+            {
+                node.Anchor = (PresetAnchor)value;
+                Changed();
+            }, AnchorNames);
             yield return ParameterHeader(node.Layout);
             if (node.Kind == PresetNodeKind.Circle)
                 yield return ParameterRow("Diameter", node.Width, PresetQuantity.Length, node.Layout);

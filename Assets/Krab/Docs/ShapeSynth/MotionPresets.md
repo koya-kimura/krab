@@ -34,9 +34,10 @@
 | Motion/Follow（Trailing Ribbon） | Follow-through、Overlapping Action | 縦線9本（Row、Delay 0.05拍・CenterOut）。ScaleY = Wobbleで、中央から順に伸び、少し行き過ぎて収まる |
 | Motion/Arc（Pendulum） | Arcs | 円周上の正方形6個（FaceOutward）を入れたGroupを、Rotation = −90 + 90 × Sweep で4分の1周だけ弧に沿って回し、揺れて止める。Sweepはこのプリセットのローカル値（Attack 1拍 OutElastic、Hold 0.5拍） |
 | Motion/Pose（Pop Grid） | Pose to Pose、Slow in/out | 正方形25個（Grid 5列、Delay 0.03拍・CenterOut）。Scale = Pop、Rotation = 45 − 45 × Popで、中央から順に回り込んで決めのポーズで止まる |
-| Motion/Secondary（Orbit Accent） | Secondary Action、Staging | 主役は枠線の正方形で、Rise Hold Fall（計3拍）に合わせて現れ、45°ゆっくり回る。中の小さな正方形はローカルのSpin（のこぎり波 1周期/拍）で速く回り、不透明度は主役の0.6倍 |
 
 Motion/DropとMotion/Impactは、作り直した版では使っていない（共有Valueとしては残している）。
+
+2026-11-26：当面は1種類のShapeで表せるものに絞るため、2種類のShape（枠線の正方形と小さな正方形）を使っていたMotion/Secondary（Secondary Action、Staging）を削除した。色もいったん白で考える（既存のRow Circlesも白にした）。
 
 ## 作成と確認
 
@@ -44,3 +45,28 @@ Motion/DropとMotion/Impactは、作り直した版では使っていない（�
 - 保存後、9個（既存3＋新規6）のプリセットが読込エラーなしで読めることを確認した。Motionの各Valueを0〜1拍で標本化し、Windupの最小値が約−0.10、Impactの最大がDropの最初の着地（0.36拍、Drop ≈ 0.02）と一致することを確認した。
 - 作り直しは同じ方法で行い、9個とも読込エラーがないことを確認した。
 - 見た目・動きの印象は未確認。本人がGalleryで確認する。
+
+## Monoプリセット（2026-11-26）
+
+方針：1種類のShape（全て長方形、Layoutによる複製は可）、白、共有Valueのみ（All Shapes／ADSR／Motion）、ワンショット。RandomのStepsとAnchorを使い、画面の1/5・1/4・1/2のような決まった位置から出す。Unity CLIの一度きりのスクリプトで、1つずつ検証・Compileして保存した（同名は飛ばすので、途中で止まっても再実行できる）。25個（既存7＋Mono 18）が読込エラーなし。見た目は未確認。
+
+| プリセット | 動き |
+|---|---|
+| Mono/Column Rise | 幅1/5の柱が、5か所のどれかで下から伸びて戻る（Anchor Bottom、X Steps 5、ScaleY = Rise Fall） |
+| Mono/Column Flash | 幅1/5の柱が、5か所のどれかで光って消える（Opacity = ADSR/Fast） |
+| Mono/Band Wipe | 高さ1/5の帯が、5段のどれかで左から伸びて戻る（Anchor Left） |
+| Mono/Column Stagger | 5本の柱が左から順に下から伸びる（Delay 0.125拍） |
+| Mono/Column Scatter | 5本の柱がばらばらの時刻に伸びる（Delay Random 0.5拍） |
+| Mono/Full Wipe | 画面全体が下から埋まって戻る |
+| Mono/Horizon | 細い横線が中央から開いて消える（Pop、Fade） |
+| Mono/Tilt | 棒が±45°のどちらかの傾きで中央から開いて消える（Rotation Rand 45・Steps 2） |
+| Mono/Quarter | 画面の1/4の四角が、4象限のどれかに出る（X・Y Steps 2、Pop） |
+| Mono/Grid Pop | 5×5の小さな正方形が中央から順に出る |
+| Mono/Grid Twinkle | 4×4のタイルがばらばらに光る |
+| Mono/Tick Chase | 円周上の24本の目盛りが順に光る |
+| Mono/Tick Burst | 放射状の32本が一度寄ってから広がる（Windup） |
+| Mono/Line Curtain | 画面幅に17本の縦線が中央から順に伸びて揺れる（Wobble） |
+| Mono/Corner Grow | 正方形が左下の角から、3×3のどこかで広がる（Anchor BottomLeft） |
+| Mono/Flash | 画面全体が一瞬光る（Fall） |
+| Mono/Quarter Turn | 正方形が4分の1回転して止まる（Wobble） |
+| Mono/Band Stack | 高さ1/5の帯が下から順に5段積まれる |

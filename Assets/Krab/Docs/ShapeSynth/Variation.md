@@ -42,3 +42,11 @@ var value = SeededRandom.Range(0, 360, new RandomContext(seed, i), salt: 81); //
 ## 検証（2026-11-17）
 
 EditMode 220件成功（Variation関連19件を削除、`RandomAndDelayTests` 9件を追加）。Smoke Sceneから `ShapeSynth/Variation` をEditor経由で削除して保存。Preset EditorでのDelay/Rand/Flipの見た目と操作はユーザー確認。
+
+## Randomの段数（Steps、2026-11-26）
+
+- `RandomRange` に `Steps` を追加した。0か1は従来どおり範囲内の任意の値。2以上なら、MinからMaxまで（両端を含む）を等間隔に分けたSteps個の値のどれかになる。選び方は従来と同じSeedとチャンネルで決まり、Triggerごと・複製ごとに1回だけ決まる。上限は1000。
+- プリセットでは `PresetParameter.RandomSteps`（既定0）。Preset EditorではRandが0以外のときだけ、その行の下（Rand列の下）にStepsの欄が出る。
+- 例：PositionXをCanvasWidth基準でBase 0、Rand 0.4、Steps 5にすると、毎回−0.4／−0.2／0／+0.2／+0.4（画面幅比）のどれか、つまり幅1/5の帯の中心のどれかから出る。
+- 叩くたびに順番に巡る方式（Cycle）は未実装。
+
