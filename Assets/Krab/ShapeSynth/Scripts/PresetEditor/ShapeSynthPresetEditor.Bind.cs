@@ -23,7 +23,8 @@ namespace Krab.ShapeSynth.PresetEditor
         }
 
         /// <summary>
-        /// The row's Bind column: a dropdown of None and every Value. Rebuilt when Values or their names change.
+        /// The row's Bind column: a dropdown of None and every Value as "group/name", in group order. Rebuilt when
+        /// Values or their names change.
         /// </summary>
         private Element BindChoice(PresetParameter parameter, InitialDepth initialDepth)
         {
@@ -31,7 +32,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 () => (_valuesRevision, _valueNamesRevision),
                 _ =>
                 {
-                    var values = Document.Values.ToArray();
+                    var values = ValuesInGroupOrder();
                     var choice = Choice(
                         null,
                         () => Array.FindIndex(values, value => value.Id == parameter.GetBinding()?.ValueId) + 1,

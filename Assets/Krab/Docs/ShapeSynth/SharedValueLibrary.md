@@ -34,6 +34,15 @@ Compileでモジュレーターになるのは、そのプリセットがバイ�
 - Newは、最初にADSRを含む共通Valueへ円のOpacityをバインドする。ADSRを含むValueが1つもないときだけ「Default ADSR」を共通Valueに足す。
 - 保存先の変更検知（約1秒ごと）は `Values.json` も対象にする。PerformanceとGalleryは、Saveの後の一打・一覧更新から新しいValueを使う。
 
+## 階層（group/name、2026-11-25）
+
+Valueの名前は、プリセットと同じ `group/name` の形で書ける（`PresetPath`）。保存形式は変えていない。名前の最初の `/` までがグループ。
+
+- Valuesウィンドウの一覧とValue Galleryは、グループごとのタブに分かれる。並びはPerformanceのタブと同じで、グループ名の順、`/` のない名前は最後の **Ungrouped**。タブの中は名前の残りの部分の順。並べ替えは `PresetPathGroups.Of`（Core、EditModeテストあり）。
+- 一覧とギャラリーには名前の残りの部分だけを出す。Bindのプルダウンには `group/name` の全体を、同じ並びで出す。
+- Valuesウィンドウで名前や選択が変わると、選択中のValueのグループのタブを開く。`+ Value` は開いているタブのグループに「Value N」を足す。
+- ADSRの代表形16個は、グラフの形を一通り揃えたグループとして **All Shapes** に入れた（例：`All Shapes/Rise`）。
+
 ## 移行（2026-11-25実施）
 
 保存済み31個（SchemaVersion 5）を変換した。変換前のフォルダはバックアップとして残していたが、2026-11-25に削除した。

@@ -17,10 +17,11 @@ namespace Krab.ShapeSynth.PresetEditor
         private bool _valueGalleryPlaying = true;
         private bool _valueGalleryLoop = true;
         private float _valueGalleryBeat;
+        private string _valueGalleryTab;
 
         /// <summary>
-        /// Every shared Value as a small signal graph with its name, like Gallery does for presets. Graphs follow
-        /// edits; the Beat cursor runs on its own clock.
+        /// Every shared Value as a small signal graph with its name, like Gallery does for presets, in one tab per
+        /// "group/name" group. Graphs follow edits; the Beat cursor runs on its own clock.
         /// </summary>
         private Element BuildValueGalleryWindow()
         {
@@ -33,15 +34,23 @@ namespace Krab.ShapeSynth.PresetEditor
                     UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value))),
                 UI.Field("Beat", () => _valueGalleryBeat, value => _valueGalleryBeat = Mathf.Max(0, value)),
                 UI.DynamicElementOnStatusChanged(
-                    () => (_documentRevision, _valuesRevision),
-                    _ => BuildValueGalleryGrid()));
+                    () => (_documentRevision, _valuesRevision, _valueNamesRevision),
+                    _ => BuildValueGalleryTabs()));
         }
 
-        private Element BuildValueGalleryGrid()
+        /// <summary>One tab per Value group, as the Values window and the Performance tabs.</summary>
+        private Element BuildValueGalleryTabs()
         {
-            var values = Document.Values;
-            if (values.Count == 0) return UI.Label("No values.");
+            if (Document.Values.Count == 0) return UI.Label("No values.");
 
+            return ValueTabs(
+                entries => BuildValueGalleryGrid(entries.Select(entry => entry.Item).ToList()),
+                _valueGalleryTab,
+                tab => _valueGalleryTab = tab);
+        }
+
+        private Element BuildValueGalleryGrid(IReadOnlyList<PresetValue> values)
+        {
             var rows = (values.Count + ValueGalleryColumns - 1) / ValueGalleryColumns;
             return UI.Column(Gapped(Enumerable.Range(0, rows).Select(row =>
                 (Element)UI.Row(Gapped(values.Skip(row * ValueGalleryColumns).Take(ValueGalleryColumns)
@@ -64,7 +73,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element ValueGalleryCell(PresetValue value)
         {
             var graph = new PresetSignalGraph(() => value, () => _valueGalleryBeat, ValueGalleryGraphHeight);
-            return UI.Column(graph.CreateElement(), UI.Label(() => value.Name)).SetWidth(ValueGalleryCellWidth);
+            return UI.Column(graph.CreateElement(), UI.Label(() => PresetPath.Parse(value.Name).Title)).SetWidth(ValueGalleryCellWidth);
         }
 
         private void UpdateValueGallery()

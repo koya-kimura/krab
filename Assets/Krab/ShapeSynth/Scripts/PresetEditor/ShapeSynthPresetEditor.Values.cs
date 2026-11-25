@@ -10,6 +10,7 @@ namespace Krab.ShapeSynth.PresetEditor
     {
 
         private int _valueNamesRevision;
+        private string _valuesTab;
 
         private Element BuildValuesView()
         {
@@ -20,10 +21,10 @@ namespace Krab.ShapeSynth.PresetEditor
                     UI.ScrollViewVertical(
                         400,
                         UI.DynamicElementOnStatusChanged(
-                            () => (_documentRevision, _valuesRevision),
-                            _ => UI.Column(Document.Values.Select(ValueRow)))),
+                            () => (_documentRevision, _valuesRevision, _valueNamesRevision),
+                            _ => BuildValueList())),
                     UI.Button("+ Value", AddValue)
-                ).SetWidth(140),
+                ).SetWidth(200),
                 UI.Column(
                     PaneTitle("Output"),
                     signalGraph.CreateElement(),
@@ -33,9 +34,19 @@ namespace Krab.ShapeSynth.PresetEditor
                     .SetWidth(520));
         }
 
+        /// <summary>Tabs per Value group. A rebuild after an edit shows the group of the selected Value.</summary>
+        private Element BuildValueList()
+        {
+            if (SelectedValue != null) _valuesTab = TabLabel(PresetPath.Parse(SelectedValue.Name).Group);
+            return ValueTabs(
+                entries => UI.Column(entries.Select(entry => ValueRow(entry.Item))),
+                _valuesTab,
+                tab => _valuesTab = tab);
+        }
+
         private Element ValueRow(PresetValue value)
         {
-            var row = UI.Button(UI.Label(() => value.Name), () => SelectValue(value.Id));
+            var row = UI.Button(UI.Label(() => PresetPath.Parse(value.Name).Title), () => SelectValue(value.Id));
             row.RegisterUpdateCallback(element =>
                 element.Style.BackgroundColor = value.Id == _selectedValueId ? PresetEditorPalette.Selected : null);
             return row;
@@ -48,7 +59,8 @@ namespace Krab.ShapeSynth.PresetEditor
             var remove = UI.Button("Remove Value", () => DeleteValue(value));
             remove.RegisterUpdateCallback(element => element.Interactable = !IsValueInUse(value.Id));
             return UI.Column(
-                UI.Field("Name", () => value.Name, name =>
+                // "group/name" files the Value under a tab named after the group, as presets are.
+                UI.Field("Name (group/name)", () => value.Name, name =>
                 {
                     value.Name = name;
                     _valueNamesRevision++;
@@ -85,13 +97,21 @@ namespace Krab.ShapeSynth.PresetEditor
             var value = new PresetValue
             {
                 Id = PresetDocument.NewId(),
-                Name = "Value " + (Document.Values.Count + 1),
+                Name = NewValueName(),
                 Components = new List<PresetComponent> { PresetComponent.Create(ModulatorKind.Adsr) }
             };
             Document.Values.Add(value);
             _valuesRevision++;
             SelectValue(value.Id);
             Changed();
+        }
+
+        /// <summary>"Value N" in the group of the open Values tab.</summary>
+        private string NewValueName()
+        {
+            var group = GroupOfTab(_valuesTab);
+            var title = "Value " + (Document.Values.Count + 1);
+            return group.Length == 0 ? title : group + PresetPath.Separator + title;
         }
 
         private void DeleteValue(PresetValue value)
