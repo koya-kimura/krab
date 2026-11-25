@@ -46,7 +46,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private Element ValueRow(PresetValue value)
         {
-            var row = UI.Button(UI.Label(() => DisplayName(value)), () => SelectValue(value.Id));
+            var row = LeftAligned(UI.Button(UI.Label(() => DisplayName(value)), () => SelectValue(value.Id)));
             row.RegisterUpdateCallback(element =>
                 element.Style.BackgroundColor = value.Id == _selectedValueId ? PresetEditorPalette.Selected : null);
             return row;

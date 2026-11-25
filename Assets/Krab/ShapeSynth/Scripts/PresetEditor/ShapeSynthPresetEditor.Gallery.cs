@@ -35,11 +35,8 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Field("Beat", () => _galleryBeat, value => _galleryBeat = Mathf.Max(0, value)),
                 UI.DynamicElementIf(() => _galleryError != null,
                     () => UI.Label(() => _galleryError).SetColor(PresetEditorPalette.Error)),
-                UI.Row(
-                    UI.ScrollViewVertical(GalleryGridHeight,
-                        UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildGalleryGrid())),
-                    UI.DynamicElementOnStatusChanged(() => (_galleryDetailsId, _savedRevision),
-                        _ => BuildGalleryDetails())));
+                UI.ScrollViewVertical(GalleryGridHeight,
+                    UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildGalleryGrid())));
             content.RegisterUpdateCallback(_ => _galleryLastVisible = Time.unscaledTimeAsDouble);
             return content;
         }
@@ -74,8 +71,10 @@ namespace Krab.ShapeSynth.PresetEditor
                     1f - (float)(row + 1) / rows, 1f / PresetGridRenderer.Columns, 1f / rows);
             });
             // A fixed cell width: otherwise a short last row stretches its cells and leaves gaps between them.
-            // The name button shows this preset's parameters next to the grid.
-            var name = UI.Button(UI.Label(PresetPath.Parse(preset.Name).Title), () => _galleryDetailsId = preset.Id)
+            // The name button opens this preset's parameters in their own window.
+            ButtonElement name = null;
+            name = LeftAligned(UI.Button(UI.Label(PresetPath.Parse(preset.Name).Title),
+                    () => ShowGalleryDetails(preset.Id, name)))
                 .SetWidth(GalleryCellWidth);
             name.RegisterUpdateCallback(element => element.Style.BackgroundColor =
                 preset.Id == _galleryDetailsId ? PresetEditorPalette.Selected : null);

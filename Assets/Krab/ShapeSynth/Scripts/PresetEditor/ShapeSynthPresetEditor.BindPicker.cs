@@ -27,24 +27,12 @@ namespace Krab.ShapeSynth.PresetEditor
         private string _bindPickerTab;
         private WindowElement _bindWindow;
 
-        /// <summary>
-        /// The picker window, built once on the RosettaUI root that shows the Bind button. Building it on the root
-        /// keeps it updated without a launcher in the Settings window.
-        /// </summary>
-        private WindowElement BindPickerWindow(RosettaUIRoot root)
-        {
-            if (_bindWindow != null) return _bindWindow;
-
-            _bindWindow = UI.Window("Preset Editor - Bind", UI.Page(Scrollable(
+        private WindowElement BindPickerWindow() =>
+            PopupWindow(ref _bindWindow, "Preset Editor - Bind", () => Scrollable(
                 BuildValueMessages(),
                 UI.DynamicElementOnStatusChanged(
                     () => (_bindTargetRevision, _documentRevision),
-                    _ => BuildBindPicker()))));
-            _bindWindow.IsOpen = false;
-            // Not opened with the root: it opens only from a Bind button.
-            root.Build(_bindWindow, setEnableWhenRootEnabled: false);
-            return _bindWindow;
-        }
+                    _ => BuildBindPicker())));
 
         private Element BuildBindPicker()
         {
@@ -111,8 +99,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BindPickerCell(PresetParameter parameter, PresetValue value)
         {
             var graph = new PresetSignalGraph(() => value, () => _beat, BindPickerGraphHeight);
-            var choose = UI.Button(UI.Label(() => DisplayName(value)),
-                () => BindValue(parameter, _bindInitialDepth, value));
+            var choose = LeftAligned(UI.Button(UI.Label(() => DisplayName(value)),
+                () => BindValue(parameter, _bindInitialDepth, value)));
             choose.RegisterUpdateCallback(element => element.Style.BackgroundColor =
                 parameter.GetBinding()?.ValueId == value.Id ? PresetEditorPalette.Selected : null);
             return UI.Column(graph.CreateElement(), choose).SetWidth(BindPickerCellWidth);
@@ -146,15 +134,7 @@ namespace Krab.ShapeSynth.PresetEditor
             _bindTargetRevision++;
             if (FindValue(parameter.GetBinding()?.ValueId) is { } bound) _bindPickerTab = TabOf(bound);
 
-            var anchorView = UIToolkitBuilder.Instance.GetUIObj(anchor);
-            var root = FindAnyObjectByType<RosettaUIRoot>();
-            if (anchorView?.panel == null || root == null) return;
-
-            var windowElement = BindPickerWindow(root);
-            if (UIToolkitBuilder.Instance.GetUIObj(windowElement) is not Window window) return;
-
-            window.Show(new Vector2(anchorView.worldBound.xMax + 8, anchorView.worldBound.yMin), anchorView);
-            window.BringToFront();
+            ShowPopup(BindPickerWindow(), anchor);
         }
     }
 }

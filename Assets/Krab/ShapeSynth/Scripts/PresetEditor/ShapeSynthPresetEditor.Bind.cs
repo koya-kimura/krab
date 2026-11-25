@@ -28,9 +28,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element BindButton(PresetParameter parameter, InitialDepth initialDepth, string parameterName)
         {
             ButtonElement button = null;
-            button = UI.Button(
+            button = LeftAligned(UI.Button(
                 UI.Label(() => FindValue(parameter.GetBinding()?.ValueId) is { } value ? DisplayName(value) : NoValueName),
-                () => OpenBindPicker(button, parameter, initialDepth, $"{Selected.Name} / {parameterName}"));
+                () => OpenBindPicker(button, parameter, initialDepth, $"{Selected.Name} / {parameterName}")));
             button.RegisterUpdateCallback(element =>
                 element.Style.Color = parameter.GetBinding() != null ? PresetEditorPalette.Bound : null);
             return button;

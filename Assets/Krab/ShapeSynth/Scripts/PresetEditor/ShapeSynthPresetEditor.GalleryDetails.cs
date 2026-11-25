@@ -17,6 +17,15 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float GalleryDetailsWidth = 440;
 
         private string _galleryDetailsId;
+        private WindowElement _galleryDetailsWindow;
+
+        private void ShowGalleryDetails(string presetId, Element anchor)
+        {
+            _galleryDetailsId = presetId;
+            ShowPopup(PopupWindow(ref _galleryDetailsWindow, "Preset Editor - Parameters", () => Scrollable(
+                UI.DynamicElementOnStatusChanged(() => (_galleryDetailsId, _savedRevision),
+                    _ => BuildGalleryDetails()))), anchor);
+        }
 
         private Element BuildGalleryDetails()
         {
@@ -25,7 +34,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
             var lines = new List<Element> { PaneTitle(preset.Name) };
             lines.AddRange(PresetSummary(preset).Select(line => (Element)UI.Label(line)));
-            return UI.Column(lines).SetWidth(GalleryDetailsWidth);
+            return UI.Column(lines).SetMinWidth(GalleryDetailsWidth);
         }
 
         private static IEnumerable<string> PresetSummary(PresetDocument preset)

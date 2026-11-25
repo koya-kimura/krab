@@ -5,7 +5,9 @@
 ## Galleryのスクロールとパラメータ表示（2026-11-26）
 
 - グリッドは高さ520の中でスクロールする。プリセットが増えてもウィンドウが画面より高くならない。
-- セルの名前（ボタン）を押すと、グリッドの右にそのプリセットのパラメータを読み取り専用で表示する。Nodeの種類・Anchor・Fill/Stroke・Layout（数、Delayと順番、FaceOutward）と、新しいNodeの既定値と違うParameterだけを「Base 単位 Rand ±… Steps … + Depth × Value名 Flip …」の形で並べる。ローカルValueはADSR/LFOの中身も出す。編集はVisualウィンドウで行う。
+- セルの名前（ボタン）を押すと、別ウィンドウ「Preset Editor - Parameters」にそのプリセットのパラメータを読み取り専用で表示する（2026-11-26に、グリッドの右から別ウィンドウへ移した）。Nodeの種類・Anchor・Fill/Stroke・Layout（数、Delayと順番、FaceOutward）と、新しいNodeの既定値と違うParameterだけを「Base 単位 Rand ±… Steps … + Depth × Value名 Flip …」の形で並べる。ローカルValueはADSR/LFOの中身も出す。編集はVisualウィンドウで行う。
+
+- 名前のボタン（Gallery、Valuesの一覧、Bindウィンドウ、InspectorのBind列）は左揃えで、入りきらない文字は「…」で切る。
 
 ## プレビューのSeed（2026-11-26）
 
