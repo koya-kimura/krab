@@ -2,6 +2,7 @@ using System;
 using Unite.Canvas;
 using Unite.Drawing;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Krab.ShapeSynth.Unity.Rendering
 {
@@ -16,7 +17,8 @@ namespace Krab.ShapeSynth.Unity.Rendering
         // Serialized-only option of UCanvas; JsonUtility reaches it without reflection.
         private const string DisableSceneViewJson = "{\"_drawInSceneView\":false}";
 
-        [SerializeField] private Camera _targetCamera;
+        // UCanvas has a private _targetCamera of its own; Unity rejects the same serialized name twice.
+        [SerializeField, FormerlySerializedAs("_targetCamera")] private Camera _pinnedCamera;
 
         // UCanvas disposes its drawing context before every assembly reload, including one during Play, and Awake
         // does not run again afterwards. NonSerialized makes the reload reset this flag together with the context.
@@ -24,13 +26,13 @@ namespace Krab.ShapeSynth.Unity.Rendering
 
         public Camera TargetCamera
         {
-            get => _targetCamera;
-            set => _targetCamera = value;
+            get => _pinnedCamera;
+            set => _pinnedCamera = value;
         }
 
         public void Initialize(Camera camera)
         {
-            _targetCamera = camera;
+            _pinnedCamera = camera;
             JsonUtility.FromJsonOverwrite(DisableSceneViewJson, this);
             CreateCanvas(DrawingMode.ScreenOverlay, targetCamera: camera);
             _initialized = true;
@@ -39,7 +41,7 @@ namespace Krab.ShapeSynth.Unity.Rendering
         /// <summary>Recreates the canvas for the same camera after a script reload; call before drawing.</summary>
         public void EnsureInitialized()
         {
-            if (!_initialized && _targetCamera) Initialize(_targetCamera);
+            if (!_initialized && _pinnedCamera) Initialize(_pinnedCamera);
         }
     }
 }

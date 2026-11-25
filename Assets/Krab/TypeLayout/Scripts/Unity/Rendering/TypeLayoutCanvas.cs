@@ -1,6 +1,7 @@
 using Unite.Canvas;
 using Unite.Drawing;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Krab.TypeLayout.Unity.Rendering
 {
@@ -14,19 +15,20 @@ namespace Krab.TypeLayout.Unity.Rendering
         // Serialized-only option of UCanvas; JsonUtility reaches it without reflection.
         private const string DisableSceneViewJson = "{\"_drawInSceneView\":false}";
 
-        [SerializeField] private Camera _targetCamera;
+        // UCanvas has a private _targetCamera of its own; Unity rejects the same serialized name twice.
+        [SerializeField, FormerlySerializedAs("_targetCamera")] private Camera _pinnedCamera;
 
         public Camera TargetCamera
         {
-            get => _targetCamera;
-            set => _targetCamera = value;
+            get => _pinnedCamera;
+            set => _pinnedCamera = value;
         }
 
         public bool IsInitialized { get; private set; }
 
         public void Initialize(Camera camera)
         {
-            _targetCamera = camera;
+            _pinnedCamera = camera;
             JsonUtility.FromJsonOverwrite(DisableSceneViewJson, this);
             CreateCanvas(DrawingMode.ScreenOverlay, targetCamera: camera);
             IsInitialized = true;
