@@ -16,6 +16,12 @@ namespace Krab.ShapeSynth.PresetEditor
         // The grid scrolls inside this height, so a long list does not make the window taller than the screen.
         private const float GalleryGridHeight = 520;
 
+        // Only one page is compiled and drawn at a time, so the cell RenderTexture and the per-frame evaluation
+        // stay the size of one page however many presets are saved.
+        private const int GalleryPageSize = 36;
+
+        private int _galleryPage;
+
         private PresetGridRenderer _galleryRenderer;
         private bool _galleryNeedsReload = true;
         private bool _galleryPlaying = true;
@@ -35,15 +41,32 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Field("Beat", () => _galleryBeat, value => _galleryBeat = Mathf.Max(0, value)),
                 UI.DynamicElementIf(() => _galleryError != null,
                     () => UI.Label(() => _galleryError).SetColor(PresetEditorPalette.Error)),
+                UI.Row(
+                    UI.Button("◀", () => SetGalleryPage(_galleryPage - 1)),
+                    UI.Label(() => $"Page {GalleryPage() + 1} / {GalleryPageCount()}  ({_savedPresets.Count} presets)"),
+                    UI.Button("▶", () => SetGalleryPage(_galleryPage + 1))),
                 UI.ScrollViewVertical(GalleryGridHeight,
-                    UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildGalleryGrid())));
+                    UI.DynamicElementOnStatusChanged(() => (_savedRevision, GalleryPage()), _ => BuildGalleryGrid())));
             content.RegisterUpdateCallback(_ => _galleryLastVisible = Time.unscaledTimeAsDouble);
             return content;
         }
 
+        /// <summary>The presets of the current page, in name order.</summary>
         private PresetDocument[] GalleryPresets() =>
             _savedPresets.OrderBy(preset => preset.Name, StringComparer.Ordinal)
-                .ThenBy(preset => preset.Id, StringComparer.Ordinal).ToArray();
+                .ThenBy(preset => preset.Id, StringComparer.Ordinal)
+                .Skip(GalleryPage() * GalleryPageSize).Take(GalleryPageSize).ToArray();
+
+        private int GalleryPageCount() => Math.Max(1, (_savedPresets.Count + GalleryPageSize - 1) / GalleryPageSize);
+
+        // Clamped on read, so a page past the end after presets are deleted shows the last page.
+        private int GalleryPage() => Math.Clamp(_galleryPage, 0, GalleryPageCount() - 1);
+
+        private void SetGalleryPage(int page)
+        {
+            _galleryPage = Math.Clamp(page, 0, GalleryPageCount() - 1);
+            _galleryNeedsReload = true;
+        }
 
         private Element BuildGalleryGrid()
         {
