@@ -77,11 +77,11 @@ BPMを共有すればグルーブを作れる足場があり、その上はフ�
 
 - **形は秩序の側に、時間（動き）は複雑さの側に置く**、という立場として読める。輪郭の読める図形は崩さず、加減速・ずれ・重なり・反復のずれで変化を作る。要素数やノイズで空間側を乱すことは避ける。
 - Galanterは、完全な秩序も完全な乱雑さもどちらも単純であり、面白いのはその中間だとする（[What is Generative Art?](https://www.mat.ucsb.edu/~g.legrady/academic/courses/21s255/r/galanter.pdf)、要旨確認）。等速・単純な反復は飽きやすく、乱雑すぎるとグチャグチャになる、という感覚の説明に使える。
-- 飽きについては、完全に予測できると面白くなくなるというSchmidhuberの仮説がある（[R40](ReferencesShapeMotion.md#r40--driven-by-compression-progress)）。抽象図形でも動きで生き物らしく見えることは、Heider & Simmel以来の知覚研究が示している（[R39](ReferencesShapeMotion.md#r39--an-experimental-study-of-apparent-behavior)）。
-- 図形を増やさず動きの質で生き生きさを出す先例として、Snibbe & Levin（[R23](ReferencesShapeMotion.md#r23--interactive-dynamic-abstraction)）、Motion Sketch（[R24](ReferencesShapeMotion.md#r24--motion-sketch--motion-phone)）がある。音と図形を一対一で鳴らす実例はLumière（[R27](ReferencesShapeMotion.md#r27--lumière)）、Haisuinonasa（[R31](ReferencesShapeMotion.md#r31--haisuinonasadynamics-of-the-subway)）。
+- 飽きについては、完全に予測できると面白くなくなるというSchmidhuberの仮説がある（[Driven by Compression Progress](https://arxiv.org/pdf/0812.4360)、2008）。抽象図形でも動きで生き物らしく見えることは、Heider & Simmel以来の知覚研究が示している（[R39](References.md#r39--an-experimental-study-of-apparent-behavior)）。
+- 図形を増やさず動きの質で生き生きさを出す先例として、Snibbe & Levin（[Interactive Dynamic Abstraction](https://www.flong.com/archive/storage/pdf/articles/dynamicNPAR.pdf)、2000）、Motion Sketch（[R24](References.md#r24--motion-sketch--motion-phone)）がある。音と図形を一対一で鳴らす実例はLumière（[R27](References.md#r27--lumière)）、Haisuinonasa（[R31](References.md#r31--haisuinonasadynamics-of-the-subway)）。
 - 留保：「有機的な動きは飽きにくい」を直接実験で示した研究は見つかっていない。理論と知覚研究を組み合わせた説明にとどまる。「無機的・規則的な動きも重要」という既存の考えと矛盾させず、比率や切り替えの問題として扱う。
 
-観客の見え方について：ワンショットは操作と結果が同時に見え、ルーパー再生は操作が過去にある。Reevesらの枠組み（[R19](ReferencesAudience.md#r19--designing-the-spectator-experience)）で、前者はexpressive、後者はmagical寄りと整理できる。ルーパーの記録・再生状態を画面に出すかどうかは、設計上の選択として残す（[R37](ReferencesAudience.md#r37--the-digital-muse-technology-in-live-performance)）。
+観客の見え方について：ワンショットは操作と結果が同時に見え、ルーパー再生は操作が過去にある。Reevesらの枠組み（[R19](References.md#r19--designing-the-spectator-experience)）で、前者はexpressive、後者はmagical寄りと整理できる。ルーパーの記録・再生状態を画面に出すかどうかは、設計上の選択として残す（Auslander「[The Digital Muse](https://www.theartsection.com/digital-muse)」）。
 
 ## 興味の整理（2026-11-24）
 
@@ -92,7 +92,7 @@ BPMを共有すればグルーブを作れる足場があり、その上はフ�
 - 池田亮司のようなコアなものになりがちなところは、テキストや画像で情報量を増やしてポップにする。Pop Live Codingにも通じる話。
 - VJが叩くのを楽しみたい。操作が伝わった方が面白い。
 - 叩き続けるのはしんどいので、ルーパーの仕組みは賢い。
-- 地下鉄のMV（[R31](ReferencesShapeMotion.md#r31--haisuinonasadynamics-of-the-subway)）を見て、LFOのような震えも大事だと思った。
+- 地下鉄のMV（[R31](References.md#r31--haisuinonasadynamics-of-the-subway)）を見て、LFOのような震えも大事だと思った。
 - 音に合わせたいのか、音に勝ちたいのかがぶれていて、話がややこしい。
 
 以下は対話での整理で、本人が「合っている」と確認した。
@@ -120,7 +120,7 @@ BPMを共有すればグルーブを作れる足場があり、その上はフ�
 
 ### 入口：図形は崩さず、親しみは別の層で足す
 
-「図形を大事にしたい、グチャグチャにしたくない」と「情報量を足してポップにする」は、層を分けて両立させる。図形の層には要素を足さず明快に保ち、親しみや情報量は文字・画像（ImageLayerのSequencesなど）の別の層で足す。図形そのものをポップにするのではなく、見覚えのあるものを横に置いて入口を作る。Pop Live Codingが既知の曲を入口にする構造（[R01](ReferencesPractice.md#r01--pop-live-coding-encounters-reflections-on-practice)）と同じ。
+「図形を大事にしたい、グチャグチャにしたくない」と「情報量を足してポップにする」は、層を分けて両立させる。図形の層には要素を足さず明快に保ち、親しみや情報量は文字・画像（ImageLayerのSequencesなど）の別の層で足す。図形そのものをポップにするのではなく、見覚えのあるものを横に置いて入口を作る。Pop Live Codingが既知の曲を入口にする構造（[R01](References.md#r01--pop-live-coding-encounters-reflections-on-practice)）と同じ。
 
 ### 演奏：ルーパーは見せたい一打のために手を空ける
 
@@ -139,8 +139,8 @@ BPMという土台は音と共有し、なぞるかどうかは自由にする�
 
 この話題の調査者の整理は、本人から誤りと指摘された（下の「対話で修正された解釈」）。正しい捉え方は未確認のため、本人の発言だけを残す。
 
-- どういう図形の動き・見た目が良いか、具体的なところ（Preset Editorのvalueとvisual）が詰まっていない。ディズニーの12原則は役立ちそう（[R38](ReferencesShapeMotion.md#r38--アニメーションの12原則)）。
-- ADSRは値の動きの抽象化として、さまざまなパターンを示せるので良い。本人が作った代表形の比較資料がある（手元のHTML『adsr-patterns-all.html』。リポジトリ未収録）。代表形をPreset Editorに登録することも検討している。
+- どういう図形の動き・見た目が良いか、具体的なところ（Preset Editorのvalueとvisual）が詰まっていない。ディズニーの12原則は役立ちそう（[R38](References.md#r38--アニメーションの12原則)）。
+- ADSRは値の動きの抽象化として、さまざまなパターンを示せるので良い。本人が作った代表形の比較資料がある（未公開）。代表形をPreset Editorに登録することも検討している。
 - 今のプリセットのビジュアルは「対象の表現 → 実現する値」の順で作っている。どちらかといえば「値・いろいろなパターンのバインド → ビジュアル」の順で、いろいろな所に値をバインドして見比べる方が良いと考えている。
 
 ## 未確定の論点
@@ -165,11 +165,7 @@ BPMという土台は音と共有し、なぞるかどうかは自由にする�
 
 以下は本人の考えの一次資料であり、文中の提案をこのプロジェクトの実装指示とは扱わない。
 
-- [楽しいジェネVJの構成についてメモする](https://note.com/kimura_koya/n/nb30745a3d31a)：前の対話で本文確認。身体性、レイヤー、ルーパー、図形と画像。
-- [p5.jsでVJをやってみよう！ -音楽に合わせて楽しむ-](https://note.com/kimura_koya/n/nebe551357dcf)：前の対話で本文確認。手で操作する楽しさ。
-- [p5.js で生成的かつ動的な映像を作る！](https://note.com/kimura_koya/n/ndc8204774201)：前の対話で本文確認。テンポ、イージング、生成。
-- [generative visual music について01 - ざっくり論点を洗い出す](https://note.com/kimura_koya/n/n011f1ae14b9f)：前の対話で本文確認。映像自体の音楽性。
-- [過去記事 n53f406b858fb](https://note.com/kimura_koya/n/n53f406b858fb)：本文取得不可。内容は未反映。
-- プレビュー記事 naf13abfe3ec5：本文取得不可。アクセスキーを含むURLはリポジトリへ保存しない。
-- 手元のPDF『[保管] アニメーション (2).pdf』：前の対話で全17ページのテキストを確認。動きのパラメータ化、ADSR・LFO、図形の装飾と演奏の関心。配布元URLなし。PDF本体はこのリポジトリへコピーしていない。
-- Pinterest：具体的なボードURLは未共有。確認したふりをして絵の好みを定義しない。
+- [楽しいジェネVJの構成についてメモする](https://note.com/kimura_koya/n/nb30745a3d31a)：本文確認。身体性、レイヤー、ルーパー、図形と画像。
+- [p5.jsでVJをやってみよう！ -音楽に合わせて楽しむ-](https://note.com/kimura_koya/n/nebe551357dcf)：本文確認。手で操作する楽しさ。
+- [p5.js で生成的かつ動的な映像を作る！](https://note.com/kimura_koya/n/ndc8204774201)：本文確認。テンポ、イージング、生成。
+- [generative visual music について01 - ざっくり論点を洗い出す](https://note.com/kimura_koya/n/n011f1ae14b9f)：本文確認。映像自体の音楽性。
