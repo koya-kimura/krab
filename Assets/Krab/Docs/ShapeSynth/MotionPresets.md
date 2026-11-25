@@ -70,3 +70,17 @@ Motion/DropとMotion/Impactは、作り直した版では使っていない（�
 | Mono/Flash | 画面全体が一瞬光る（Fall） |
 | Mono/Quarter Turn | 正方形が4分の1回転して止まる（Wobble） |
 | Mono/Band Stack | 高さ1/5の帯が下から順に5段積まれる |
+
+## 共有Valueの追加（2026-11-26）
+
+- **LFO/…**（16個）：Sine／Triangle／Sawtooth／Square × 0.25／0.5／1／2周期/拍のLFO単体。揺れ用で、一打の長さは別のADSR（Opacityなど）で決める。
+- **Eased/…**（16個）：All Shapesの16個に、Attack OutSine・Decay InOutSine・Release InSineを掛けた版（12原則のSlow in／Slow out）。All ShapesはLinearの基準として残す。
+
+## Genプリセット（自動生成、2026-11-26）
+
+出力の絵を想定せずにランダムにバインドし、数値で「マシな動き」だけを残した100個（`Gen/001…100`）。名前は「番号 形 Layout 動かしたParameter」。
+
+- 生成：Rectangle／Circleの1ノード（Layout複製は可）、白。大きさ、Anchor、枠線、Layout（None／Row／Column／Grid／Circle、数、間隔、FaceOutward、Delayと順番）、単独のときは位置のSteps 3か5、をランダムに選ぶ。OpacityにはADSRのValue（Eased／Motion／ADSR/Fast）を必ずバインドして一打の長さにする。動かすParameterを1〜2個（X、Y、回転、拡大、横・縦の拡大、大きさ、並びの広がり）選び、Eased／Motion／LFOのValueをバインドする。乱数の種は固定（20261126）。
+- ふるい分け（一打を24点で評価）：長さ0.5〜4拍、図形の中心の85%以上が画面内、24点の30%以上で不透明度0.2超、動きの量（中心位置と大きさの変化の合計）が0.08〜6、既に残したものと動きの曲線の平均差が0.02以上。
+- 結果：263個を試し、100個を保存（落としたもの：動きが少ない83、似すぎ35、見えない16、長さ13、画面外12、動きすぎ4）。全150個が読込エラーなし。見た目の良し悪しは未確認で、Galleryで選ぶ。
+- 生成スクリプトは `Assets/Krab/ShapeSynth/Samples/Generators/GenPresets.csx.txt`（Unity CLIの `script eval_file` 用。型名を完全修飾名に置き換えてから実行する）。
