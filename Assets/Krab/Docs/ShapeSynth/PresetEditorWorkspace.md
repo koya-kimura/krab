@@ -2,6 +2,18 @@
 
 2026-11-25：Valueは全プリセット共通の部品になった（[共通Valueライブラリ](SharedValueLibrary.md)）。以下の「Valueはプリセットごと」「SchemaVersion 5」の記述は当時のもの。
 
+## Play中にCLIからVisualを作る（2026-11-26）
+
+Playを止めずに、Unity CLIで作ったプリセットをGalleryで見て対話しながら調整するための決まり。
+
+- 作り方：`unity command script eval_file --file <C#>` で、`PresetRepository` を使ってプリセット（とValue）を保存する。evalはその場でコンパイルされるだけで、ドメインのリロードを起こさないので、Play中でもエディターの未保存の編集は消えない。保存の前に `PresetCompiler.Compile` を通す。
+- 反映：Preset Editorは保存先を約1秒ごとに確かめ、GalleryとOpenの一覧を読み直す。Loadの操作は不要。
+- 共有Value：`Values.json` がエディターの外で書き換えられると、エディターはValueに未保存の編集がなければ読み直す（開いているプリセットが参照する一覧をそのまま入れ替える）。未保存の編集があるときは読み直さず、Valuesウィンドウに「Saveすると上書きする」警告を出す。
+- 開いているプリセットは書き換えない。Visualウィンドウで開いているプリセットはディスクから読み直されず、次のCmd+Sでエディターの内容に上書きされるため。
+- C#のコード変更はPlay中に行わない。このプロジェクトはPlay中も再コンパイルして続行する設定で、リロードで開いているプリセットの未保存の編集が消える。コード変更が必要なときはPlayを止めてもらう。
+
+確認：Unityでコンパイル成功、EditModeテスト385件成功。読み直しは、一時フォルダのライブラリに差し替えたPreset Editorで、外部の書き込み → 読み直し（1→2個）、未保存の編集がある状態での書き込み → 読み直さず警告、を確かめた。Play中の実操作は未確認。
+
 ## 保存と複製（2026-11-25）
 
 - Visualの個別のSaveボタンを廃止した。保存は、Prefsと同じくSettingsウィンドウの **Save** ボタンか **Cmd+S**（どちらも `IUiSaveTarget.Save()` を呼ぶ）。未保存の変更があるときだけ、共通Value → プリセットの順に書き込む。Visualの上部に「● Unsaved (Cmd+S)」／「Saved」を表示する。

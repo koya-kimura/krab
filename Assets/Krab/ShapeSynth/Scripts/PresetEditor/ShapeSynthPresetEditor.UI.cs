@@ -152,7 +152,10 @@ namespace Krab.ShapeSynth.PresetEditor
             if (now < _nextPresetCheck) return;
 
             _nextPresetCheck = now + 1;
-            if (PresetFilesSignature() != _presetFilesSignature) RefreshSavedPresets();
+            if (PresetFilesSignature() == _presetFilesSignature) return;
+
+            ReloadValuesWhenFileChanges();
+            RefreshSavedPresets();
         }
 
         private string PresetFilesSignature() => Repository.FilesSignature();

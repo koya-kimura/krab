@@ -32,7 +32,7 @@ Compileでモジュレーターになるのは、そのプリセットがバイ�
 - Save（Cmd+S）で共通Value → プリセットの順に書き込む。`Values.json` が読めなかった場合は、空の一覧で上書きしないようSaveを止めてエラーを出す。
 - Remove Valueは、開いているプリセットと保存済みの全プリセットのどれにもバインドされていないValueだけ有効。
 - Newは、最初にADSRを含む共通Valueへ円のOpacityをバインドする。ADSRを含むValueが1つもないときだけ「Default ADSR」を共通Valueに足す。
-- 保存先の変更検知（約1秒ごと）は `Values.json` も対象にする。PerformanceとGalleryは、Saveの後の一打・一覧更新から新しいValueを使う。
+- 保存先の変更検知（約1秒ごと）は `Values.json` も対象にする。2026-11-26から、Valueに未保存の編集がなければエディター内のValueも読み直す（[Play中にCLIから作る](PresetEditorWorkspace.md)）。PerformanceとGalleryは、Saveの後の一打・一覧更新から新しいValueを使う。
 
 ## プリセット専用のValue（ローカルValue、SchemaVersion 7、2026-11-25）
 

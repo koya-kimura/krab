@@ -22,6 +22,10 @@ namespace Krab.ShapeSynth.PresetEditor
         private PresetRepository _repository;
         private List<PresetValue> _values;
         private string _valuesLoadError;
+
+        // Values.json as last read or written by this editor, to tell a change on disk from an edit here.
+        private string _valuesFileSignature;
+        private string _valuesSnapshot;
         private string _selectedId;
         private string _selectedValueId;
         private string _error;
@@ -116,6 +120,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
                 // Values first: the preset's Bindings must find their Values when another reader loads it.
                 Repository.SaveValues(Values);
+                RememberValuesOnDisk();
                 Repository.Save(Document);
                 _dirty = false;
             });
@@ -202,7 +207,9 @@ namespace Krab.ShapeSynth.PresetEditor
             try
             {
                 _valuesLoadError = null;
-                return Repository.LoadValues();
+                var values = Repository.LoadValues();
+                RememberValuesOnDisk(values);
+                return values;
             }
             catch (Exception exception)
             {
@@ -210,6 +217,44 @@ namespace Krab.ShapeSynth.PresetEditor
                 _error = _valuesLoadError;
                 return new List<PresetValue>();
             }
+        }
+
+        private void RememberValuesOnDisk(IReadOnlyList<PresetValue> values = null)
+        {
+            _valuesFileSignature = Repository.ValuesSignature();
+            _valuesSnapshot = PresetRepository.SerializeValues(values ?? Values);
+        }
+
+        /// <summary>
+        /// Reads Values.json again when something else wrote it (e.g. a tool while in Play), so a later save keeps
+        /// those Values. The list is refilled in place, since the open preset refers to it. Unsaved Value edits here
+        /// are kept instead, with a warning that saving will overwrite the file.
+        /// </summary>
+        private void ReloadValuesWhenFileChanges()
+        {
+            if (_values == null) return;
+
+            var signature = Repository.ValuesSignature();
+            if (signature == _valuesFileSignature) return;
+
+            if (_valuesLoadError == null && PresetRepository.SerializeValues(_values) != _valuesSnapshot)
+            {
+                _valuesFileSignature = signature;
+                _valueError = "Values.json changed on disk, but Values here have unsaved edits. Saving overwrites it.";
+                return;
+            }
+
+            GuardValues(() =>
+            {
+                var loaded = Repository.LoadValues();
+                _values.Clear();
+                _values.AddRange(loaded);
+                RememberValuesOnDisk();
+                if (_valuesLoadError != null && _error == _valuesLoadError) _error = null;
+                _valuesLoadError = null;
+                _valuesRevision++;
+                QueuePreview();
+            });
         }
 
         private PresetNode ParentOf(string id)

@@ -135,6 +135,19 @@ namespace Krab.ShapeSynth.Unity.Persistence
             WriteAtomically(ValuesPath, JsonConvert.SerializeObject(library, Formatting.Indented, JsonSettings()));
         }
 
+        /// <summary>The Value library file's write time and size, or empty when there is no file.</summary>
+        public string ValuesSignature()
+        {
+            if (!File.Exists(ValuesPath)) return string.Empty;
+
+            var file = new FileInfo(ValuesPath);
+            return file.LastWriteTimeUtc.Ticks + "|" + file.Length;
+        }
+
+        /// <summary>Values as JSON, in the library's own settings; equal text means equal Values.</summary>
+        public static string SerializeValues(IReadOnlyList<PresetValue> values) =>
+            JsonConvert.SerializeObject(values, JsonSettings());
+
         /// <summary>File names and write times of the presets and the Value library, to notice saves from elsewhere.</summary>
         public string FilesSignature()
         {
