@@ -17,13 +17,13 @@ namespace Krab.ShapeSynth.PresetEditor
             var signalGraph = new PresetSignalGraph(() => SelectedValue, () => _beat);
             return UI.Row(
                 UI.Column(
-                    PaneTitle("Values"),
+                    // Adding sits beside the title so it stays in reach however long the list grows.
+                    UI.Row(PaneTitle("Values"), UI.Button("+ Value", AddValue)),
                     UI.ScrollViewVertical(
                         400,
                         UI.DynamicElementOnStatusChanged(
                             () => (_documentRevision, _valuesRevision, _valueNamesRevision),
-                            _ => BuildValueList())),
-                    UI.Button("+ Value", AddValue)
+                            _ => BuildValueList()))
                 ).SetWidth(200),
                 UI.Column(
                     PaneTitle("Output"),
@@ -59,19 +59,21 @@ namespace Krab.ShapeSynth.PresetEditor
             var remove = UI.Button("Remove Value", () => DeleteValue(value));
             remove.RegisterUpdateCallback(element => element.Interactable = !IsValueInUse(value.Id));
             return UI.Column(
-                // "group/name" files the Value under a tab named after the group, as presets are.
-                UI.Field("Name (group/name)", () => value.Name, name =>
-                {
-                    value.Name = name;
-                    _valueNamesRevision++;
-                    _dirty = true;
-                }),
+                // Removing acts on the whole Value, so it sits with its name rather than with the Component buttons.
+                UI.Row(
+                    // "group/name" files the Value under a tab named after the group, as presets are.
+                    UI.Field("Name (group/name)", () => value.Name, name =>
+                    {
+                        value.Name = name;
+                        _valueNamesRevision++;
+                        _dirty = true;
+                    }).SetFlexGrow(1),
+                    remove),
                 PaneTitle("Components"),
                 UI.Column(value.Components.Select(component => ComponentFold(value, component))),
                 UI.Row(
                     UI.Button("+ ADSR", () => AddComponent(value, ModulatorKind.Adsr)),
-                    UI.Button("+ LFO", () => AddComponent(value, ModulatorKind.Lfo)),
-                    remove));
+                    UI.Button("+ LFO", () => AddComponent(value, ModulatorKind.Lfo))));
         }
 
         private Element ComponentFold(PresetValue value, PresetComponent component)
