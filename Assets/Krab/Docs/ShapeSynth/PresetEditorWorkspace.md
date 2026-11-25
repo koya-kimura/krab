@@ -6,7 +6,7 @@
 
 Settings → ShapeSynth → Authoring → **Preset Editor - Value Gallery**。共通Valueを全て、小さな出力グラフ（Valuesウィンドウと同じ描き方。Componentは細線、合計は白の太線）で6列に並べる。
 
-- 各セルの下の名前ボタンで、そのValueをValuesウィンドウで選択する（選択中は青）。
+- 各セルの下にValueの名前を表示する。
 - Play／Loop／Restart／Beatで縦線のカーソルを動かす。Loopはグラフの幅（4拍）で折り返す。BPMはVisual・Galleryと共通。カーソルの時計はGalleryとは別。
 - Valuesウィンドウでの編集（Componentの値・追加・削除、Valueの追加・削除・名前）はその場で反映される。保存はこれまでどおりSave。
 

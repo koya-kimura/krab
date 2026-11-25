@@ -19,8 +19,8 @@ namespace Krab.ShapeSynth.PresetEditor
         private float _valueGalleryBeat;
 
         /// <summary>
-        /// Every shared Value as a small signal graph, like Gallery does for presets. The name button selects the
-        /// Value in the Values window. Graphs follow edits; the Beat cursor runs on its own clock.
+        /// Every shared Value as a small signal graph with its name, like Gallery does for presets. Graphs follow
+        /// edits; the Beat cursor runs on its own clock.
         /// </summary>
         private Element BuildValueGalleryWindow()
         {
@@ -64,10 +64,7 @@ namespace Krab.ShapeSynth.PresetEditor
         private Element ValueGalleryCell(PresetValue value)
         {
             var graph = new PresetSignalGraph(() => value, () => _valueGalleryBeat, ValueGalleryGraphHeight);
-            var select = UI.Button(UI.Label(() => value.Name), () => SelectValue(value.Id));
-            select.RegisterUpdateCallback(element =>
-                element.Style.BackgroundColor = value.Id == _selectedValueId ? PresetEditorPalette.Selected : null);
-            return UI.Column(graph.CreateElement(), select).SetWidth(ValueGalleryCellWidth);
+            return UI.Column(graph.CreateElement(), UI.Label(() => value.Name)).SetWidth(ValueGalleryCellWidth);
         }
 
         private void UpdateValueGallery()
