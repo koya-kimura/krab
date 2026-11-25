@@ -81,7 +81,7 @@ BPMを共有すればグルーブを作れる足場があり、その上はフ�
 - 同じValueを複数のサイズ・位置・回転・Opacity等へBind。振幅や符号はBase／Depth／Flip、時間差はDelayで扱う。
 - 波形・周期・位相が異なる場合だけ別Valueを用意する。ValueはDocument単位の所有であり、プリセット間を動的に共有するライブラリではない。
 - Circle、Rectangle、標準三角形とGroupの組み合わせ。頂点編集の新機能は追加していない。
-- 原本は [Samples/Presets](../../ShapeSynth/Samples/Presets/README.md)。現在の環境の実行時保存先にも登録済み。
+- 2026-11-25にVisualを作り直すため削除した。Valueは共通ライブラリとして残している。
 
 [追加計画](../ShapeSynth/PresetCollectionPlan.md)と原本READMEに詳細・検証を残した。
 
