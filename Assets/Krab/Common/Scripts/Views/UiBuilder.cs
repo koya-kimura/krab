@@ -28,7 +28,8 @@ namespace Krab.Common.Views
 
         private void Update()
         {
-            if (_toggleUIAction.WasPressedThisFrame()) _root.enabled = !_root.enabled;
+            // The toggle key is a plain letter; typing it into a text field must not close the UI.
+            if (_toggleUIAction.WasPressedThisFrame() && !_root.WillUseKeyInput()) _root.enabled = !_root.enabled;
             if (_prefsSaveAction.WasPressedThisFrame()) SaveAll();
         }
 
@@ -70,7 +71,7 @@ namespace Krab.Common.Views
                 .ThenBy(group => group.Key, StringComparer.Ordinal)
                 .Select(group => (group.Key, (Element)UI.Page(CreateCategory(group.ToList(), 1))));
 
-            return UI.Window(_title, UI.Tabs(tabs).SetWidth(360f), UI.Button("Save", Prefs.Save)).SetClosable(false);
+            return UI.Window(_title, UI.Tabs(tabs).SetWidth(360f), UI.Button("Save", SaveAll)).SetClosable(false);
         }
 
         private static IEnumerable<Element> CreateCategory(List<TargetEntry> entries, int depth)
