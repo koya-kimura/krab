@@ -266,7 +266,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 var lifetime = components.Where(model => model.Kind == ModulatorKind.Adsr)
                     .Max(model => model.Attack + model.Decay + model.SustainTime + model.Release);
                 var delay = document.Nodes().Max(node => PresetCopyPattern.MaxDelayBeats(node.Layout));
-                LoopBeats = Math.Clamp(lifetime + delay, 0.25, PresetSignalSampler.GraphBeats);
+                LoopBeats = Math.Clamp(lifetime + delay, 0.25, PresetSignalSampler.MaxPreviewBeats);
             }
 
             public string Name { get; }

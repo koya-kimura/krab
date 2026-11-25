@@ -18,7 +18,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private PreviewSignal[] _previewSignals = Array.Empty<PreviewSignal>();
         private Dictionary<PresetComponent, PreviewSignal> _signalByComponent = new();
-        private float _loopBeats = PresetSignalSampler.GraphBeats;
+        private float _loopBeats = PresetSignalSampler.MaxPreviewBeats;
         private bool _refreshPreview;
         private double _previewDue;
         private bool _playing;
@@ -43,14 +43,14 @@ namespace Krab.ShapeSynth.PresetEditor
                 .Where(model => model.Kind == ModulatorKind.Adsr)
                 .Select(model => model.Attack + model.Decay + model.SustainTime + model.Release)
                 .Where(value => !double.IsNaN(value) && !double.IsInfinity(value) && value > 0)
-                .DefaultIfEmpty(PresetSignalSampler.GraphBeats)
+                .DefaultIfEmpty(PresetSignalSampler.MaxPreviewBeats)
                 .Max();
             var delay = Document.Nodes()
                 .Where(node => node.Layout != null && node.Layout.Delay > 0)
                 .Select(node => PresetCopyPattern.MaxDelayBeats(node.Layout))
                 .DefaultIfEmpty(0)
                 .Max();
-            return Mathf.Clamp((float)(lifetime + delay), 0.25f, PresetSignalSampler.GraphBeats);
+            return Mathf.Clamp((float)(lifetime + delay), 0.25f, PresetSignalSampler.MaxPreviewBeats);
         }
 
         /// <summary>Compiles the document and shows it with every Value sampled at the current Beat.</summary>
@@ -95,7 +95,7 @@ namespace Krab.ShapeSynth.PresetEditor
         /// <summary>Scrubs, or seeks while playing, without recompiling.</summary>
         public void SetBeat(float beat)
         {
-            _beat = Mathf.Clamp(beat, 0, PresetSignalSampler.GraphBeats);
+            _beat = Mathf.Clamp(beat, 0, PresetSignalSampler.MaxPreviewBeats);
             UpdatePreviewSignals();
         }
 
@@ -112,7 +112,7 @@ namespace Krab.ShapeSynth.PresetEditor
                     LoopButton(),
                     UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value))),
                 // Own row: sharing one with labeled fields pushed the slider past the edge.
-                UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.GraphBeats));
+                UI.Slider("Beat", () => _beat, SetBeat, 0f, PresetSignalSampler.MaxPreviewBeats));
         }
 
         /// <summary>A compact toggle button; highlighted while Loop is on.</summary>

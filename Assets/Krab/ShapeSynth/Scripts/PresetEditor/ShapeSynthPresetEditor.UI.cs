@@ -23,7 +23,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         /// <summary>
         /// Authoring and gallery windows opened from the shared Settings window. Visual owns the document and
-        /// playback, Values edits its signals, and Gallery compares saved presets without replacing the draft.
+        /// playback, Values edits its signals, Gallery compares saved presets without replacing the draft, and Value Gallery lists every shared Value as a graph.
         /// The edited preset stays in the background output. Each window can scroll in both directions.
         /// </summary>
         public IReadOnlyList<(string Name, Element Content)> CreateWindows()
@@ -33,7 +33,8 @@ namespace Krab.ShapeSynth.PresetEditor
             {
                 ("Visual", BuildVisualWindow()),
                 ("Values", BuildValuesWindow()),
-                ("Gallery", BuildGalleryWindow())
+                ("Gallery", BuildGalleryWindow()),
+                ("Value Gallery", BuildValueGalleryWindow())
             };
         }
 

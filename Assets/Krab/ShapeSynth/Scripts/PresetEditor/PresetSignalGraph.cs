@@ -15,7 +15,11 @@ namespace Krab.ShapeSynth.PresetEditor
     /// <summary>Samples authoring settings through the Core signal instances. Seconds equal beats at 60 BPM.</summary>
     public static class PresetSignalSampler
     {
-        public const float GraphBeats = 8;
+        /// <summary>The beats a Value graph shows.</summary>
+        public const float GraphBeats = 4;
+
+        /// <summary>The longest preset loop and Beat position the previews use; longer than the graphs.</summary>
+        public const float MaxPreviewBeats = 8;
 
         private static readonly VoiceTime OneBeatPerSecond = new(0, 60);
 
@@ -54,8 +58,9 @@ namespace Krab.ShapeSynth.PresetEditor
     /// </summary>
     public sealed class PresetSignalGraph
     {
+        public const float DefaultHeight = 180;
+
         private const int Samples = 180;
-        private const float Height = 180;
 
         private static readonly Color Background = new(0.07f, 0.08f, 0.1f);
         private static readonly Color Grid = new(1, 1, 1, 0.06f);
@@ -65,6 +70,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private readonly Func<PresetValue> _value;
         private readonly Func<float> _cursorBeat;
+        private readonly float _height;
 
         private VisualElement _view;
         private VisualElement _cursor;
@@ -73,15 +79,16 @@ namespace Krab.ShapeSynth.PresetEditor
         private double[] _sum;
         private double _scale = 1;
 
-        public PresetSignalGraph(Func<PresetValue> value, Func<float> cursorBeat)
+        public PresetSignalGraph(Func<PresetValue> value, Func<float> cursorBeat, float height = DefaultHeight)
         {
             _value = value ?? throw new ArgumentNullException(nameof(value));
             _cursorBeat = cursorBeat ?? throw new ArgumentNullException(nameof(cursorBeat));
+            _height = height;
         }
 
         public Element CreateElement()
         {
-            var box = UI.Space().SetHeight(Height).SetMinHeight(Height).SetFlexShrink(0);
+            var box = UI.Space().SetHeight(_height).SetMinHeight(_height).SetFlexShrink(0);
             box.RegisterUpdateCallback(element =>
             {
                 Attach(UIToolkitBuilder.Instance.GetUIObj(element));
@@ -193,7 +200,13 @@ namespace Krab.ShapeSynth.PresetEditor
             for (var i = 1; i < 6; i++)
             {
                 Line(painter, new Vector2(0, rect.height * i / 6), new Vector2(rect.width, rect.height * i / 6));
-                Line(painter, new Vector2(rect.width * i / 6, 0), new Vector2(rect.width * i / 6, rect.height));
+            }
+
+            // One vertical line per beat.
+            for (var beat = 1; beat < PresetSignalSampler.GraphBeats; beat++)
+            {
+                var x = rect.width * beat / PresetSignalSampler.GraphBeats;
+                Line(painter, new Vector2(x, 0), new Vector2(x, rect.height));
             }
 
             if (_sum == null) return;

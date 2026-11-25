@@ -2,6 +2,18 @@
 
 2026-11-25：Valueは全プリセット共通の部品になった（[共通Valueライブラリ](SharedValueLibrary.md)）。以下の「Valueはプリセットごと」「SchemaVersion 5」の記述は当時のもの。
 
+## Value Gallery（2026-11-25追加）
+
+Settings → ShapeSynth → Authoring → **Preset Editor - Value Gallery**。共通Valueを全て、小さな出力グラフ（Valuesウィンドウと同じ描き方。Componentは細線、合計は白の太線）で6列に並べる。
+
+- 各セルの下の名前ボタンで、そのValueをValuesウィンドウで選択する（選択中は青）。
+- Play／Loop／Restart／Beatで縦線のカーソルを動かす。Loopはグラフの幅（4拍）で折り返す。BPMはVisual・Galleryと共通。カーソルの時計はGalleryとは別。
+- Valuesウィンドウでの編集（Componentの値・追加・削除、Valueの追加・削除・名前）はその場で反映される。保存はこれまでどおりSave。
+
+確認：Unityでコンパイル成功。UIの操作と見た目は未確認。
+
+2026-11-25：Visualを作り直すため、保存済みのプリセット31個（実行時の保存先）と `Samples/Presets/` の原本を削除した。バックアップは残していない。共通Value（`Values.json`、36個）は残している。
+
 ## Gallery（2026-11-22追加）
 
 `Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → **Preset Editor - Gallery** を開く。Visual／Valuesと同じSceneから利用できる。Sceneへの追加設定は不要。
@@ -34,7 +46,7 @@
   - 単位: Position / Distance / Size / Spacing / Radius は `px / xW / xH / xMin / xMax`（画面基準は倍率。0.1 xW = 画面幅 × 0.1。保存値をそのまま表示・入力）、Rotation / Direction / Hue は `deg / turn`、Scaleは `x`、Opacity / Color Mixは `0-1` 固定。単位を変えるとBaseとDepthを換算し、出力を変えない。保存形式は変更せず、`PresetUnits` が既存のReference / Multiplier / AbsoluteValueへ対応付ける（画面基準→Canvas系Reference、turn→Absolute×Multiplier 360、AbsoluteValueは常に1）。Reference / Multiplier / Absolute ValueはUIに出さない。
   - Bind列: `None` と全Valueのプルダウン（RosettaUI Dropdown）。Noneで解除、Valueを選ぶとDepthは種類ごとの既定値（Position 100、Rotation 90deg/0.25turn、Hue 360deg/1turnなど）で接続。別のValueへ切り替えたときはDepthを維持する。Value追加・削除・名前変更で選択肢を作り直す。Bind用の別ウインドウは廃止。
   - 必要な項目だけを出す: Fill ON時のみColor / Color Mix / Hue Shift、Color MixのBaseが0以外かValue接続中のみTo Color、Stroke ON時のみStroke Width / Stroke Color、LayoutはKindに応じた項目のみ。
-- Valuesタブ: Value一覧（選択中は青）と `+ Value`。Valueは複数のComponent（ADSR / LFO、Weight付き）の合成で、信号は `Σ Weight × Component`。出力グラフ（0–6 beat）には選択ValueのComponentを細線（ADSRは青、LFOは橙、Weight込み）、合計を白の太線で描き、Beat位置に縦線を引く。縦軸は±1を基本に、合計がはみ出すと自動で広げる。その下にName、各ComponentのFold（Weight、ADSR 5項目 / LFO 3項目、Remove Component）、`+ ADSR` / `+ LFO`、Remove Value（どのParameterにも接続されていないときだけ有効）。
+- Valuesタブ: Value一覧（選択中は青）と `+ Value`。Valueは複数のComponent（ADSR / LFO、Weight付き）の合成で、信号は `Σ Weight × Component`。出力グラフ（2026-11-25から0–4 beat、1拍ごとに縦の補助線）には選択ValueのComponentを細線（ADSRは青、LFOは橙、Weight込み）、合計を白の太線で描き、Beat位置に縦線を引く。縦軸は±1を基本に、合計がはみ出すと自動で広げる。その下にName、各ComponentのFold（Weight、ADSR 5項目 / LFO 3項目、Remove Component）、`+ ADSR` / `+ LFO`、Remove Value（どのParameterにも接続されていないときだけ有効）。
 - 保存形式はSchemaVersion 5（`Values[].Components[]`、Bindingは `ValueId`）。旧版からの移行はしない。CompilerはBound Valueを「Componentごとに Depth × Weight のBinding」へ展開するので、Runtime（`ParameterDefinition` の合算）は変更していない。
 - Visual側でValueを新規作成する機能、Static / Animatedモード、Preview Zoom、UI倍率、右クリックメニュー、未保存確認、Open一覧ブラウザ、ステータスバーは削除した。
 - 各ペインの先頭に Hierarchy / Inspector / Values / Output の見出しだけを置く。状態を示す色は `PresetEditorPalette` にまとめ、RosettaUIの `Style.Color` / `Style.BackgroundColor` だけで付ける。記号はRosettaUI既定フォントにあるもの（○ ◻ ▲ ■ ● ◆ ▼ ►）に限る。

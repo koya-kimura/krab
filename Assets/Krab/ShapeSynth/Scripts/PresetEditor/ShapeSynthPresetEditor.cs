@@ -51,6 +51,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
             RefreshSavedPresetsWhenFilesChange();
             UpdateGallery();
+            UpdateValueGallery();
             AdvancePlayback(Time.unscaledDeltaTime);
             if (_refreshPreview && Time.realtimeSinceStartupAsDouble >= _previewDue) Preview();
         }
