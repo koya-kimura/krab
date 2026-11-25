@@ -25,7 +25,7 @@ Settings → ShapeSynth → Authoring → **Preset Editor - Value Gallery**。�
 
 `Assets/Krab/ShapeSynth/Samples/ShapeSynthPresetEditor.unity` を開いてPlayし、Settings → ShapeSynth → Authoring → **Preset Editor - Gallery** を開く。Visual／Valuesと同じSceneから利用できる。Sceneへの追加設定は不要。
 
-- 保存済みプリセットを名前順で6列に並べ、各セルで同時に動かす。現在の30個は5行。セルの下にプリセット名を表示する。
+- 保存済みプリセットを名前順で6列に並べ、各セルで同時に動かす（2026-11-26：最後の行が6個に満たないとき、セルが横に引き伸ばされて間が空いていたのを、セル幅を固定して直した）。現在の30個は5行。セルの下にプリセット名を表示する。
 - Playで進行／停止、Loopで各プリセットの長さ（ADSR＋最大Delay、既存Previewと同じ上限）で反復。Restartは経過Beatを0に戻す。Beat欄への数値入力で任意位置を確認できる。
 - BPMはVisual側と共通。Galleryの再生位置・Play／LoopはVisualとは独立。SeedでRandの比較条件を変えられる。
 - 比較対象は保存済みデータ。Visual／Valuesで編集中の未保存Documentを置き換えたり、自動保存したりしない。Saveすると一覧の変更が反映される。

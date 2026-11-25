@@ -68,8 +68,10 @@ namespace Krab.ShapeSynth.PresetEditor
                 view.uv = new Rect((float)column / PresetGridRenderer.Columns,
                     1f - (float)(row + 1) / rows, 1f / PresetGridRenderer.Columns, 1f / rows);
             });
+            // A fixed cell width: otherwise a short last row stretches its cells and leaves gaps between them.
             return UI.Column(image,
-                UI.Label(PresetPath.Parse(preset.Name).Title).SetWidth(GalleryCellWidth));
+                    UI.Label(PresetPath.Parse(preset.Name).Title).SetWidth(GalleryCellWidth))
+                .SetWidth(GalleryCellWidth).SetFlexGrow(0);
         }
 
         private void UpdateGallery()
