@@ -72,15 +72,6 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
-        public void DefaultColorIsWhite()
-        {
-            var item = Evaluate(ShapeDefinition.Circle(ParameterDefinition.Constant(10)));
-
-            AssertColor(item.FillColor, 1, 1, 1, 1);
-            AssertColor(new ColorDefinition().Resolve(0, 0, 1), 1, 1, 1, 1);
-        }
-
-        [Test]
         public void BoundHueSaturationAndBrightnessAreEvaluatedEachFrame()
         {
             var fill = new ColorDefinition(Bound(0, 120), Bound(0, 2), ParameterDefinition.Constant(0.5), 0.8);

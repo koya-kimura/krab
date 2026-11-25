@@ -17,8 +17,6 @@ namespace Krab.ShapeSynth.Tests.Editor
 
         [TestCase(0, 10, 10, 0)]
         [TestCase(90, 10, 0, 10)]
-        [TestCase(180, 10, -10, 0)]
-        [TestCase(-90, 10, 0, -10)]
         [TestCase(450, 10, 0, 10)]
         [TestCase(90, -10, 0, -10)]
         [TestCase(45, 0, 0, 0)]

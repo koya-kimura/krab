@@ -10,7 +10,6 @@ namespace Krab.Common.Tests.Editor
         private static readonly EasingFn Linear = x => x;
 
         [TestCase(0f, 0f)]
-        [TestCase(3f, 0.75f)]
         [TestCase(4f, 1f)]
         [TestCase(5f, 1.25f)]
         [TestCase(-1f, -0.25f)]

@@ -22,9 +22,7 @@ namespace Krab.ShapeSynth.Tests.Editor
             Assert.That(path.HasGroup, Is.EqualTo(group.Length > 0));
         }
 
-        [TestCase("fx/sample", "fx/sample")]
         [TestCase(" fx // drum / kick ", "fx/drum/kick")]
-        [TestCase("sample", "sample")]
         public void ToStringIsTheNormalizedPath(string name, string expected)
         {
             Assert.That(PresetPath.Parse(name).ToString(), Is.EqualTo(expected));

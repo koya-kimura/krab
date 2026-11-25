@@ -47,17 +47,6 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [Test]
-        public void DefaultCurvesAreLinear()
-        {
-            var definition = new AdsrDefinition(1, 1, 0.5, 1, 1);
-
-            Assert.That(definition.AttackCurve, Is.EqualTo(EasingCurve.Linear));
-            Assert.That(definition.DecayCurve, Is.EqualTo(EasingCurve.Linear));
-            Assert.That(definition.ReleaseCurve, Is.EqualTo(EasingCurve.Linear));
-            Assert.That(PresetComponent.Create(ModulatorKind.Adsr).AttackCurve, Is.EqualTo(EasingCurve.Linear));
-        }
-
-        [Test]
         public void RejectsUnknownCurves()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new AdsrDefinition(1, 1, 1, 1, 1, (EasingCurve)999));

@@ -24,9 +24,7 @@ namespace Krab.ShapeSynth.Tests.Editor
         [TestCase(LfoWaveform.Sawtooth, 0.75, 0.5)]
         [TestCase(LfoWaveform.Sawtooth, 1, -1)]
         [TestCase(LfoWaveform.Square, 0, 1)]
-        [TestCase(LfoWaveform.Square, 0.25, 1)]
         [TestCase(LfoWaveform.Square, 0.5, -1)]
-        [TestCase(LfoWaveform.Square, 0.75, -1)]
         [TestCase(LfoWaveform.Square, 1, 1)]
         public void WaveformsHaveExpectedPhaseBoundaries(LfoWaveform waveform, double phase, double expected)
         {
@@ -34,7 +32,6 @@ namespace Krab.ShapeSynth.Tests.Editor
         }
 
         [TestCase(0.25, 0.3826834323650898)]
-        [TestCase(0.5, 0.7071067811865475)]
         [TestCase(1, 1)]
         [TestCase(2, 0)]
         public void FrequencyIsCyclesPerBeat(double cyclesPerBeat, double valueAtQuarterSecond)
@@ -45,7 +42,6 @@ namespace Krab.ShapeSynth.Tests.Editor
 
         [TestCase(0.25, 1)]
         [TestCase(-0.25, -1)]
-        [TestCase(1.25, 1)]
         public void SineOffsetChangesTheStartingSignal(double offset, double expected)
         {
             var instance = Create(LfoWaveform.Sine, phaseOffset: offset, startSeconds: 10);

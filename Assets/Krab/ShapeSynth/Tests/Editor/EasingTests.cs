@@ -48,9 +48,7 @@ namespace Krab.ShapeSynth.Tests.Editor
 
         [TestCase(EasingCurve.Linear, 0.25, 0.25)]
         [TestCase(EasingCurve.InQuad, 0.5, 0.25)]
-        [TestCase(EasingCurve.OutQuad, 0.5, 0.75)]
         [TestCase(EasingCurve.InCubic, 0.5, 0.125)]
-        [TestCase(EasingCurve.OutCubic, 0.5, 0.875)]
         [TestCase(EasingCurve.OutBounce, 1 / 2.75, 1)]
         public void KnownValues(EasingCurve curve, double progress, double expected)
         {

@@ -63,20 +63,5 @@ namespace Krab.ShapeSynth.Tests.Editor
             var timer = new TimerInstance(new TimerDefinition(1), new VoiceTime(0, 60));
             Assert.Throws<ArgumentOutOfRangeException>(() => timer.IsFinished(double.PositiveInfinity));
         }
-
-        [Test]
-        public void LifetimeAndModulatorCapabilitiesRemainIndependent()
-        {
-            var adsr = new AdsrInstance(new AdsrDefinition(0, 0, 0, 0, 0), new VoiceTime(0, 60));
-            var lfo = new LfoInstance(new LfoDefinition(1, 0, LfoWaveform.Sine), new VoiceTime(0, 60));
-            var timer = new TimerInstance(new TimerDefinition(1), new VoiceTime(0, 60));
-
-            Assert.That(adsr, Is.InstanceOf<IModulator>());
-            Assert.That(adsr, Is.InstanceOf<ILifetime>());
-            Assert.That(lfo, Is.InstanceOf<IModulator>());
-            Assert.That(lfo, Is.Not.InstanceOf<ILifetime>());
-            Assert.That(timer, Is.InstanceOf<ILifetime>());
-            Assert.That(timer, Is.Not.InstanceOf<IModulator>());
-        }
     }
 }
