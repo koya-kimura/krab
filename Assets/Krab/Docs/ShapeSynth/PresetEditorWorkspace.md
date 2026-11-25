@@ -14,7 +14,7 @@
 Settings → ShapeSynth → Authoring → **Preset Editor - Value Gallery**。共通Valueを全て、小さな出力グラフ（Valuesウィンドウと同じ描き方。Componentは細線、合計は白の太線）で6列に並べる。
 
 - 各セルの下にValueの名前を表示する。
-- Play／Loop／Restart／Beatで縦線のカーソルを動かす。Loopはグラフの幅（4拍）で折り返す。BPMはVisual・Galleryと共通。カーソルの時計はGalleryとは別。
+- 縦線のカーソルは、Valuesウィンドウ・Bindウィンドウのグラフと同じく、VisualのPlay／Loop／Beat（プレビューの時刻）に従う（2026-11-26から。Value Gallery独自の再生操作は廃止）。4拍より先ではグラフの右端に留まる。
 - Valuesウィンドウでの編集（Componentの値・追加・削除、Valueの追加・削除・名前）はその場で反映される。保存はこれまでどおりSave。
 
 確認：Unityでコンパイル成功。UIの操作と見た目は未確認。

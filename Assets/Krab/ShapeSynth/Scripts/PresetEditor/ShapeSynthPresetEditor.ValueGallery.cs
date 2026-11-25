@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Presets;
 using RosettaUI;
-using UnityEngine;
 
 namespace Krab.ShapeSynth.PresetEditor
 {
@@ -14,25 +13,17 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float ValueGalleryGraphHeight = 90;
         private const float ValueGalleryGap = 16;
 
-        private bool _valueGalleryPlaying = true;
-        private bool _valueGalleryLoop = true;
-        private float _valueGalleryBeat;
         private string _valueGalleryTab;
 
         /// <summary>
         /// Every shared Value as a small signal graph with its name, like Gallery does for presets, in one tab per
-        /// "group/name" group. Graphs follow edits; the Beat cursor runs on its own clock.
+        /// "group/name" group. Graphs follow edits. Like every Value graph, the Beat cursor follows the Visual
+        /// window's playback, so all the graphs and the preview show the same moment.
         /// </summary>
         private Element BuildValueGalleryWindow()
         {
             return Scrollable(
                 BuildValueMessages(),
-                UI.Row(
-                    UI.Toggle("Play", () => _valueGalleryPlaying),
-                    UI.Toggle("Loop", () => _valueGalleryLoop),
-                    UI.Button("Restart", () => _valueGalleryBeat = 0),
-                    UI.Field("BPM", () => _bpm, value => _bpm = Mathf.Max(0, value))),
-                UI.Field("Beat", () => _valueGalleryBeat, value => _valueGalleryBeat = Mathf.Max(0, value)),
                 UI.DynamicElementOnStatusChanged(
                     () => (_documentRevision, _valuesRevision, _valueNamesRevision),
                     _ => BuildValueGalleryTabs()));
@@ -74,19 +65,8 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private Element ValueGalleryCell(PresetValue value)
         {
-            var graph = new PresetSignalGraph(() => value, () => _valueGalleryBeat, ValueGalleryGraphHeight);
+            var graph = new PresetSignalGraph(() => value, () => _beat, ValueGalleryGraphHeight);
             return UI.Column(graph.CreateElement(), UI.Label(() => DisplayName(value))).SetWidth(ValueGalleryCellWidth);
-        }
-
-        private void UpdateValueGallery()
-        {
-            if (!_valueGalleryPlaying) return;
-
-            _valueGalleryBeat += Time.unscaledDeltaTime * _bpm / 60f;
-            if (_valueGalleryLoop && _valueGalleryBeat >= PresetSignalSampler.GraphBeats)
-            {
-                _valueGalleryBeat %= PresetSignalSampler.GraphBeats;
-            }
         }
     }
 }

@@ -110,7 +110,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private Element BindPickerCell(PresetParameter parameter, PresetValue value)
         {
-            var graph = new PresetSignalGraph(() => value, () => _valueGalleryBeat, BindPickerGraphHeight);
+            var graph = new PresetSignalGraph(() => value, () => _beat, BindPickerGraphHeight);
             var choose = UI.Button(UI.Label(() => DisplayName(value)),
                 () => BindValue(parameter, _bindInitialDepth, value));
             choose.RegisterUpdateCallback(element => element.Style.BackgroundColor =
