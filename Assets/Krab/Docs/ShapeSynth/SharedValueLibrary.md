@@ -41,7 +41,8 @@ Compileでモジュレーターになるのは、そのプリセットがバイ�
 - プリセットのJSONに `LocalValues` を持つ。ローカルValueは `Values.json` には入らず、編集しても他のプリセットは変わらない。IDは共有Valueと重ならない（重なるとValidateで拒否）。バインドはどちらのValueもIDで指す。
 - SchemaVersion 6のプリセットは「ローカルValueのない7」としてそのまま読み込む（内容の変換はない）。次にSaveしたときに7で書かれる。
 - **Bindウィンドウ**：InspectorのBind列はボタンになり、押すと「Preset Editor - Bind」が開く。ValueをグラフでタブごとにValue Galleryと同じ形で並べ、名前のボタンでバインドする。**None**で外す。この画面では値を編集しない。
-- **Copy & Bind**：今バインドしているValueをローカルValueとして複製し、バインドを付け替える（Depthはそのまま）。複製はValuesウィンドウで選択されるので、そこで直す。
+- **Copy & Bind**：今バインドしているValueをローカルValueとして複製し、バインドを付け替える（Depthはそのまま）。
+- **編集の場所**：バインド中のValueがローカルなら、Bindウィンドウの上部にそのグラフと編集欄（Name、各Component、+ ADSR／+ LFO）が出て、その場で直せる（このプリセットだけが変わる）。共有のValueはBindウィンドウでは直せず、Valuesウィンドウで直すか、Copy & Bindしてから直す。
 - Valuesウィンドウ・Value Gallery・Bindは、ローカルValueがあるとき先頭に **This Preset** タブを出す。This Presetタブで `+ Value` を押すとローカルValueを足す。Duplicateは、共有なら共有に、ローカルならローカルに複製する。
 - Valuesウィンドウでは、Nameの下に「This preset only.」か、共有のValueなら「Shared. Editing changes N preset(s): …」（使っているプリセット名）を出す。
 - 似たローカルValueを共有ライブラリへまとめる操作は、まだない（今後、AIで候補を出して人が確認する形を検討）。

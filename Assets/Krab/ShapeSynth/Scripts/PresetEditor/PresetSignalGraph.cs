@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Krab.ShapeSynth.Core.Modulation;
 using Krab.ShapeSynth.Core.Presets;
@@ -68,6 +69,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private static readonly Color Sum = new(0.95f, 0.95f, 0.95f);
         private static readonly Color Cursor = new(1, 1, 1, 0.35f);
 
+        // RosettaUI reuses views when it rebuilds, so a new graph can be given a view an older graph still draws on.
+        private static readonly ConditionalWeakTable<VisualElement, PresetSignalGraph> Owners = new();
+
         private readonly Func<PresetValue> _value;
         private readonly Func<float> _cursorBeat;
         private readonly float _height;
@@ -102,9 +106,15 @@ namespace Krab.ShapeSynth.PresetEditor
         {
             if (view == null || view == _view) return;
 
-            if (_view != null) _view.generateVisualContent -= Draw;
-            _cursor?.RemoveFromHierarchy();
+            Detach();
+            // One graph per view: the previous owner stops drawing, so its curve does not stay under this one.
+            if (Owners.TryGetValue(view, out var previous))
+            {
+                previous.Detach();
+                Owners.Remove(view);
+            }
 
+            Owners.Add(view, this);
             _view = view;
             _view.style.backgroundColor = Background;
             _view.generateVisualContent += Draw;
@@ -116,6 +126,18 @@ namespace Krab.ShapeSynth.PresetEditor
             _cursor.style.backgroundColor = Cursor;
             _view.Add(_cursor);
             _signature = null;
+        }
+
+        private void Detach()
+        {
+            if (_view == null) return;
+
+            _view.generateVisualContent -= Draw;
+            _view.MarkDirtyRepaint();
+            if (Owners.TryGetValue(_view, out var owner) && owner == this) Owners.Remove(_view);
+            _cursor?.RemoveFromHierarchy();
+            _view = null;
+            _cursor = null;
         }
 
         private void RepaintIfChanged()
