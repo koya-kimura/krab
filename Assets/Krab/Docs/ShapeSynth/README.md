@@ -4,6 +4,7 @@
 
 - [ユーザープリセットの演奏UI](UserPresetPerformance.md)
 - [8スロットルーパー](Looper.md)
+- [Motionプリセット（12原則）](MotionPresets.md)
 - [Preset Editor](PresetEditorWorkspace.md)
 - [共通Valueライブラリ](SharedValueLibrary.md)
 - [検証Sceneの操作手順](../../ShapeSynth/Samples/README.md)
