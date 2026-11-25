@@ -2,6 +2,11 @@
 
 2026-11-25：Valueは全プリセット共通の部品になった（[共通Valueライブラリ](SharedValueLibrary.md)）。以下の「Valueはプリセットごと」「SchemaVersion 5」の記述は当時のもの。
 
+## Galleryのスクロールとパラメータ表示（2026-11-26）
+
+- グリッドは高さ520の中でスクロールする。プリセットが増えてもウィンドウが画面より高くならない。
+- セルの名前（ボタン）を押すと、グリッドの右にそのプリセットのパラメータを読み取り専用で表示する。Nodeの種類・Anchor・Fill/Stroke・Layout（数、Delayと順番、FaceOutward）と、新しいNodeの既定値と違うParameterだけを「Base 単位 Rand ±… Steps … + Depth × Value名 Flip …」の形で並べる。ローカルValueはADSR/LFOの中身も出す。編集はVisualウィンドウで行う。
+
 ## プレビューのSeed（2026-11-26）
 
 Rand（とSteps）の結果は、ループのたびに変わる。Visualのプレビューは、Loopで先頭へ戻るたびにSeedを1つ進める（編集しただけでは変わらないので、調整中に値が飛ばない）。Galleryは、セルごとに「何回目のループか」をSeedに足す。GalleryのSeed欄は廃止した。

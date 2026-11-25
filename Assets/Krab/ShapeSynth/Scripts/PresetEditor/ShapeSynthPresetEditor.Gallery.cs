@@ -13,6 +13,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float GalleryCellWidth = 180;
         private const float GalleryCellHeight = GalleryCellWidth * 9 / 16;
 
+        // The grid scrolls inside this height, so a long list does not make the window taller than the screen.
+        private const float GalleryGridHeight = 520;
+
         private PresetGridRenderer _galleryRenderer;
         private bool _galleryNeedsReload = true;
         private bool _galleryPlaying = true;
@@ -32,7 +35,11 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.Field("Beat", () => _galleryBeat, value => _galleryBeat = Mathf.Max(0, value)),
                 UI.DynamicElementIf(() => _galleryError != null,
                     () => UI.Label(() => _galleryError).SetColor(PresetEditorPalette.Error)),
-                UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildGalleryGrid()));
+                UI.Row(
+                    UI.ScrollViewVertical(GalleryGridHeight,
+                        UI.DynamicElementOnStatusChanged(() => _savedRevision, _ => BuildGalleryGrid())),
+                    UI.DynamicElementOnStatusChanged(() => (_galleryDetailsId, _savedRevision),
+                        _ => BuildGalleryDetails())));
             content.RegisterUpdateCallback(_ => _galleryLastVisible = Time.unscaledTimeAsDouble);
             return content;
         }
@@ -67,9 +74,12 @@ namespace Krab.ShapeSynth.PresetEditor
                     1f - (float)(row + 1) / rows, 1f / PresetGridRenderer.Columns, 1f / rows);
             });
             // A fixed cell width: otherwise a short last row stretches its cells and leaves gaps between them.
-            return UI.Column(image,
-                    UI.Label(PresetPath.Parse(preset.Name).Title).SetWidth(GalleryCellWidth))
-                .SetWidth(GalleryCellWidth).SetFlexGrow(0);
+            // The name button shows this preset's parameters next to the grid.
+            var name = UI.Button(UI.Label(PresetPath.Parse(preset.Name).Title), () => _galleryDetailsId = preset.Id)
+                .SetWidth(GalleryCellWidth);
+            name.RegisterUpdateCallback(element => element.Style.BackgroundColor =
+                preset.Id == _galleryDetailsId ? PresetEditorPalette.Selected : null);
+            return UI.Column(image, name).SetWidth(GalleryCellWidth).SetFlexGrow(0);
         }
 
         private void UpdateGallery()
