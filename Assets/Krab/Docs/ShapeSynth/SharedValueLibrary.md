@@ -51,7 +51,7 @@ Compileでモジュレーターになるのは、そのプリセットがバイ�
 
 Valueの名前は、プリセットと同じ `group/name` の形で書ける（`PresetPath`）。保存形式は変えていない。名前の最初の `/` までがグループ。
 
-- Valuesウィンドウの一覧とValue Galleryは、グループごとのタブに分かれる。並びはPerformanceのタブと同じで、グループ名の順、`/` のない名前は最後の **Ungrouped**。タブの中は名前の残りの部分の順。並べ替えは `PresetPathGroups.Of`（Core、EditModeテストあり）。
+- Valuesウィンドウの一覧は、グループごとのタブに分かれる（Value Galleryはタブにせず、全グループを見出し付きで縦に並べる）。並びはPerformanceのタブと同じで、グループ名の順、`/` のない名前は最後の **Ungrouped**。タブの中は名前の残りの部分の順。並べ替えは `PresetPathGroups.Of`（Core、EditModeテストあり）。
 - 一覧とギャラリーには名前の残りの部分だけを出す。Bindのプルダウンには `group/name` の全体を、同じ並びで出す。
 - Valuesウィンドウで名前や選択が変わると、選択中のValueのグループのタブを開く。`+ Value` はグループなしの「New Value」（同名があれば「New Value 2」…）を足し、Ungroupedのタブを開く。
 - ADSRの代表形16個は、グラフの形を一通り揃えたグループとして **All Shapes** に入れた（例：`All Shapes/Rise`）。

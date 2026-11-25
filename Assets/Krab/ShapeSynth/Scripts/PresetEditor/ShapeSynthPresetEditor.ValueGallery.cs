@@ -13,11 +13,9 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float ValueGalleryGraphHeight = 90;
         private const float ValueGalleryGap = 16;
 
-        private string _valueGalleryTab;
-
         /// <summary>
-        /// Every shared Value as a small signal graph with its name, like Gallery does for presets, in one tab per
-        /// "group/name" group. Graphs follow edits. Like every Value graph, the Beat cursor follows the Visual
+        /// Every Value as a small signal graph with its name, like Gallery does for presets, grouped by
+        /// "group/name". Graphs follow edits. Like every Value graph, the Beat cursor follows the Visual
         /// window's playback, so all the graphs and the preview show the same moment.
         /// </summary>
         private Element BuildValueGalleryWindow()
@@ -26,18 +24,21 @@ namespace Krab.ShapeSynth.PresetEditor
                 BuildValueMessages(),
                 UI.DynamicElementOnStatusChanged(
                     () => (_documentRevision, _valuesRevision, _valueNamesRevision),
-                    _ => BuildValueGalleryTabs()));
+                    _ => BuildValueGallerySections()));
         }
 
-        /// <summary>One tab per Value group, as the Values window and the Performance tabs.</summary>
-        private Element BuildValueGalleryTabs()
+        /// <summary>
+        /// Every group at once, one after another under its name, so the whole library can be looked over without
+        /// switching tabs. The order is the tab order of the Values window.
+        /// </summary>
+        private Element BuildValueGallerySections()
         {
             if (!Document.AllValues().Any()) return UI.Label("No values.");
 
-            return ValueTabs(
-                values => BuildValueGalleryGrid(values, ValueGalleryCell),
-                _valueGalleryTab,
-                tab => _valueGalleryTab = tab);
+            return UI.Column(Gapped(ValueTabsContent().Select(section => (Element)UI.Column(
+                    PaneTitle(section.Tab),
+                    BuildValueGalleryGrid(section.Values, ValueGalleryCell))),
+                () => UI.Space().SetHeight(ValueGalleryGap * 2)));
         }
 
         /// <summary>Values in rows of six with gaps; Value Gallery and the Bind picker share it.</summary>
