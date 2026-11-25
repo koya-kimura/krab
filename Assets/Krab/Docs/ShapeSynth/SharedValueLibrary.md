@@ -42,6 +42,10 @@ Compileでモジュレーターになるのは、そのプリセットがバイ�
 - 並び順は、ADSRの代表形16個（Rise〜Hold）を先頭に、残りをプリセット名順の初出順にした。
 - 変換は一度だけのスクリプトで行い、製品コードには移行処理を置いていない。別の環境の古いプリセットは読み込めない。
 
+## 2026-11-25：ADSRの代表形16個だけにした
+
+Visualの作り直しに合わせて、共通ValueをADSRの代表形16個（Rise、Rise Hold、Rise Step Hold、Rise Fall、Rise Step Fall、Rise Hold Fall、Rise Step Hold Fall、Rise Settle Hold、Rise Two-Step Fall、Rise Settle Hold Fall、Fall、Hold Fall、Fall Hold、Two-Step Fall、Fall Hold Fall、Hold）に絞った。それ以外の20個（Hit、Gate、Travel、LFOなど）は削除した。16個の設定は、代表形の比較資料（手元のHTML、未公開）と一致することを確認した。`Values.json` はGit管理外のため、変更はこの記録だけ残る。
+
 ## 検証
 
 - Unity Editorでコンパイル成功。EditModeテスト388件成功・失敗0（ShapeSynthは250件。共通Valueの保存・共有・編集の反映・欠けたValue・読めないライブラリ・不正なValueを保存しないこと、未使用Valueがモジュレーターにならないこと、Newの既定ADSRを追加したテストを含む）。
