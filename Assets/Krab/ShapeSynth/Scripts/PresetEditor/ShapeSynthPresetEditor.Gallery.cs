@@ -15,8 +15,6 @@ namespace Krab.ShapeSynth.PresetEditor
         private const float GalleryCellWidth = 180;
         private const float GalleryCellHeight = GalleryCellWidth * 9 / 16;
 
-        // The grid scrolls inside this height, so a long list does not make the window taller than the screen.
-        private const float GalleryGridHeight = 520;
 
         // Only one page is compiled and drawn at a time, so the cell RenderTexture and the per-frame evaluation
         // stay the size of one page however many presets are saved.
@@ -68,7 +66,8 @@ namespace Krab.ShapeSynth.PresetEditor
                     UI.Button("◀", () => SetGalleryPage(_galleryPage - 1)),
                     UI.Label(() => $"Page {GalleryPage() + 1} / {GalleryPageCount()}  ({_savedPresets.Count} presets)"),
                     UI.Button("▶", () => SetGalleryPage(_galleryPage + 1))),
-                UI.ScrollViewVertical(GalleryGridHeight,
+                // A page is small enough to show whole, so the grid is not put in a scroll view.
+                UI.Column(
                     UI.DynamicElementOnStatusChanged(
                         () => (_savedRevision, GalleryPage(), _gallerySort,
                             _gallerySort == GallerySort.Rating ? _ratingsRevision : 0),
@@ -110,9 +109,11 @@ namespace Krab.ShapeSynth.PresetEditor
         /// <summary>Five ○ buttons; the first n show ● for a rating of n.</summary>
         private Element RatingRow(PresetDocument preset)
         {
+            // Margins and padding are removed so the five buttons fit the width of the name button.
             return UI.Row(Enumerable.Range(1, PresetRepository.MaxRating).Select(n =>
-                (Element)UI.Button(UI.Label(() => Rating(preset) >= n ? "●" : "○"), () => SetRating(preset, n))
-                    .SetWidth(GalleryCellWidth / PresetRepository.MaxRating)));
+                    (Element)Compact(UI.Button(UI.Label(() => Rating(preset) >= n ? "●" : "○"),
+                        () => SetRating(preset, n))).SetWidth(GalleryCellWidth / PresetRepository.MaxRating)))
+                .SetWidth(GalleryCellWidth);
         }
 
         private int GalleryPageCount() => Math.Max(1, (_savedPresets.Count + GalleryPageSize - 1) / GalleryPageSize);

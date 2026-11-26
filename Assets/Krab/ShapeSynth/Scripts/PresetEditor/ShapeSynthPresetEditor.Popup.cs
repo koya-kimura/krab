@@ -54,6 +54,23 @@ namespace Krab.ShapeSynth.PresetEditor
             return element;
         }
 
+        /// <summary>A button without margins, padding or minimum width, for small icon-like buttons in a row.</summary>
+        private static T Compact<T>(T element) where T : Element
+        {
+            element.RegisterUpdateCallback(e =>
+            {
+                if (UIToolkitBuilder.Instance.GetUIObj(e) is not VisualElement view) return;
+
+                view.style.marginLeft = 0;
+                view.style.marginRight = 0;
+                view.style.paddingLeft = 0;
+                view.style.paddingRight = 0;
+                view.style.minWidth = 0;
+                view.style.unityTextAlign = TextAnchor.MiddleCenter;
+            });
+            return element;
+        }
+
         private static void Clip(VisualElement view)
         {
             view.style.unityTextAlign = TextAnchor.MiddleLeft;
