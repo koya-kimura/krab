@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Krab.Common.Midi.Bindings;
 using Krab.Common.Midi.Core;
 using Krab.Common.Midi.Devices.ApcMiniMk2;
+using Krab.Common.Midi.Devices.Mpd218;
 using PrefsGUI;
 using RosettaUI;
 using RosettaUI.Reactive;
@@ -62,13 +63,13 @@ namespace Krab.Common.Midi.Views
             }));
 
             var launcher = UI.WindowLauncher(
-                UI.Label(() => _bindings.GetControl(paramId).HasValue ? "MIDI ●" : "MIDI"),
+                UI.Label(() => _bindings.GetBinding(paramId)?.HasControl == true ? "MIDI ●" : "MIDI"),
                 window).SetWidth(70f);
             launcher.RegisterUpdateCallback(element => element.Interactable = _bindings.GetBinding(paramId) != null);
             return launcher;
         }
 
-        private void OnBindingChanged(string paramId, MidiControl? _)
+        private void OnBindingChanged(string paramId)
         {
             if (_bindings.GetBinding(paramId) != null) return;
 
@@ -87,32 +88,41 @@ namespace Krab.Common.Midi.Views
 
             return UI.Column(
                 UI.Label($"Action: {binding.Action.DisplayName}"),
-                UI.Label(() => $"Control: {DescribeControl(_bindings.GetControl(paramId))}"),
+                CreateControlRow(paramId, "APC mini mk2", MidiDeviceKind.ApcMiniMk2),
+                CreateControlRow(paramId, "MPD218", MidiDeviceKind.Mpd218),
                 UI.Label(() => _bindings.LearningParamId == paramId
-                    ? "Learning: press a control on the device or simulator"
+                    ? "Learning: press a control on a device or simulator"
                     : ""),
                 UI.Row(
                     UI.Button("Learn", () => _bindings.Learn(paramId)),
                     UI.Button("Cancel", _bindings.CancelLearn)
                         .RegisterUpdateCallback(element =>
-                            element.Interactable = _bindings.LearningParamId == paramId),
-                    UI.Button("Clear", () => _bindings.Unbind(paramId))),
+                            element.Interactable = _bindings.LearningParamId == paramId)),
                 UI.DynamicElementIf(
-                    () => IsRgbPadOrUnassigned(_bindings.GetControl(paramId)),
+                    () => SupportsLedColor(binding),
                     () => UI.Field("Pad LED color", () => binding.LedColor.Get(),
                         color => binding.LedColor.Set(color))),
                 UI.DynamicElementIf(
-                    () => !IsRgbPadOrUnassigned(_bindings.GetControl(paramId)),
-                    () => UI.Label("LED color is available for RGB pads and the simulated Shift button.")),
+                    () => !SupportsLedColor(binding),
+                    () => UI.Label("LED color is available for pads and the simulated Shift button.")),
                 UI.Button("Save", Prefs.Save));
         }
 
-        private static bool IsRgbPadOrUnassigned(MidiControl? control)
+        private Element CreateControlRow(string paramId, string deviceName, MidiDeviceKind device)
         {
-            return !control.HasValue ||
-                   control.Value.Type == MidiMessageType.Note &&
-                   (ApcMiniMk2.TryGetPadPosition(control.Value.Number, out _, out _) ||
-                    control.Value.Number == ApcMiniMk2.ShiftButton);
+            return UI.Row(
+                UI.Label(() => $"{deviceName}: {DescribeControl(_bindings.GetControl(paramId, device))}"),
+                UI.Button("Clear", () => _bindings.Unbind(paramId, device)).SetWidth(60f));
+        }
+
+        private static bool SupportsLedColor(MidiBinding binding)
+        {
+            if (!binding.HasControl) return true;
+
+            if (binding.GetControl(MidiDeviceKind.Mpd218) is { Type: MidiMessageType.Note }) return true;
+
+            return binding.GetControl(MidiDeviceKind.ApcMiniMk2) is { Type: MidiMessageType.Note } apc &&
+                   (ApcMiniMk2.TryGetPadPosition(apc.Number, out _, out _) || apc.Number == ApcMiniMk2.ShiftButton);
         }
 
         private static string DescribeControl(MidiControl? control)
@@ -120,6 +130,8 @@ namespace Krab.Common.Midi.Views
             if (!control.HasValue) return "Unassigned";
 
             var value = control.Value;
+            if (value.Device == MidiDeviceKind.Mpd218) return Mpd218.Describe(value);
+
             if (value.Type == MidiMessageType.Note)
             {
                 if (ApcMiniMk2.TryGetPadPosition(value.Number, out var x, out var y))

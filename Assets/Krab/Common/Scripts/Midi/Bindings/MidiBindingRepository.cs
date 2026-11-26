@@ -7,28 +7,32 @@ namespace Krab.Common.Midi.Bindings
 {
     public sealed class MidiBindingRepository
     {
-        private readonly Dictionary<string, Entry> _entries = new();
+        private readonly Dictionary<(string, MidiDeviceKind), Entry> _entries = new();
+        private readonly Dictionary<string, PrefsColor> _ledColors = new();
 
-        public MidiControl? Load(string paramId)
+        public MidiControl? Load(string paramId, MidiDeviceKind device)
         {
-            var entry = GetEntry(paramId);
+            var entry = GetEntry(paramId, device);
 
             var type = entry.Type.Get();
             var number = entry.Number.Get();
             if (type < 0 || number < 0) return null;
 
-            return new MidiControl((MidiMessageType)type, entry.Channel.Get(), number);
+            return new MidiControl((MidiMessageType)type, entry.Channel.Get(), number, device);
         }
 
         public PrefsColor GetLedColor(string paramId, Color defaultColor)
         {
-            var entry = GetEntry(paramId);
-            return entry.LedColor ??= new PrefsColor($"Midi.Binding.{paramId}.LedColor", defaultColor);
+            if (_ledColors.TryGetValue(paramId, out var color)) return color;
+
+            color = new PrefsColor($"Midi.Binding.{paramId}.LedColor", defaultColor);
+            _ledColors.Add(paramId, color);
+            return color;
         }
 
-        public void Save(string paramId, MidiControl? control)
+        public void Save(string paramId, MidiDeviceKind device, MidiControl? control)
         {
-            var entry = GetEntry(paramId);
+            var entry = GetEntry(paramId, device);
 
             if (!control.HasValue)
             {
@@ -42,15 +46,23 @@ namespace Krab.Common.Midi.Bindings
             entry.Number.Set(control.Value.Number);
         }
 
-        private Entry GetEntry(string paramId)
+        private Entry GetEntry(string paramId, MidiDeviceKind device)
         {
-            if (!_entries.TryGetValue(paramId, out var entry))
+            if (!_entries.TryGetValue((paramId, device), out var entry))
             {
-                entry = new Entry(paramId);
-                _entries.Add(paramId, entry);
+                entry = new Entry(GetPrefix(paramId, device));
+                _entries.Add((paramId, device), entry);
             }
 
             return entry;
+        }
+
+        // APC mini mk2 keeps the keys saved before multi-device support.
+        private static string GetPrefix(string paramId, MidiDeviceKind device)
+        {
+            return device == MidiDeviceKind.ApcMiniMk2
+                ? $"Midi.Binding.{paramId}"
+                : $"Midi.Binding.{paramId}.{device}";
         }
 
         private sealed class Entry
@@ -58,12 +70,9 @@ namespace Krab.Common.Midi.Bindings
             public readonly PrefsInt Channel;
             public readonly PrefsInt Number;
             public readonly PrefsInt Type;
-            public PrefsColor LedColor;
 
-            public Entry(string paramId)
+            public Entry(string prefix)
             {
-                var prefix = $"Midi.Binding.{paramId}";
-
                 Type = new PrefsInt($"{prefix}.Type", -1);
                 Channel = new PrefsInt($"{prefix}.Channel");
                 Number = new PrefsInt($"{prefix}.Number", -1);

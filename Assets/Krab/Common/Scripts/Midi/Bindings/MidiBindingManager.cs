@@ -9,6 +9,8 @@ namespace Krab.Common.Midi.Bindings
 {
     public sealed class MidiBindingManager : IDisposable
     {
+        private static readonly MidiDeviceKind[] Devices = (MidiDeviceKind[])Enum.GetValues(typeof(MidiDeviceKind));
+
         private readonly Dictionary<string, MidiBinding> _bindings = new();
         private readonly Dictionary<string, ActionRegistration> _actions = new();
         private readonly HashSet<IMidiActionRuntime> _runtimes =
@@ -30,7 +32,7 @@ namespace Krab.Common.Midi.Bindings
             _stateRepository = stateRepository ?? new MidiActionStateRepository();
         }
 
-        public event Action<string, MidiControl?> BindingChanged;
+        public event Action<string> BindingChanged;
         public IEnumerable<MidiBinding> Bindings => _bindings.Values;
         public string LearningParamId => _learningParamId;
 
@@ -241,30 +243,23 @@ namespace Krab.Common.Midi.Bindings
             _learningParamId = null;
         }
 
+        /// <summary>Assigns the control to its device's slot; other devices' controls stay assigned.</summary>
         public void Bind(string paramId, MidiControl control)
         {
             if (!_bindings.TryGetValue(paramId, out var binding)) return;
 
             foreach (var other in _bindings.Values)
             {
-                if (other.ParamId == paramId || other.Control != control) continue;
-                other.Control = null;
-                _repository.Save(other.ParamId, null);
-                BindingChanged?.Invoke(other.ParamId, null);
+                if (other.ParamId == paramId || !other.Matches(control)) continue;
+                SetControl(other, control.Device, null);
             }
 
-            binding.Control = control;
-            _repository.Save(paramId, control);
-            BindingChanged?.Invoke(paramId, control);
+            SetControl(binding, control.Device, control);
         }
 
-        public void Unbind(string paramId)
+        public void Unbind(string paramId, MidiDeviceKind device)
         {
-            if (!_bindings.TryGetValue(paramId, out var binding)) return;
-
-            binding.Control = null;
-            _repository.Save(paramId, null);
-            BindingChanged?.Invoke(paramId, null);
+            if (_bindings.TryGetValue(paramId, out var binding)) SetControl(binding, device, null);
         }
 
         public void Unregister(string paramId)
@@ -289,9 +284,9 @@ namespace Krab.Common.Midi.Bindings
             RebuildRuntimeSets();
         }
 
-        public MidiControl? GetControl(string paramId)
+        public MidiControl? GetControl(string paramId, MidiDeviceKind device)
         {
-            return _bindings.TryGetValue(paramId, out var binding) ? binding.Control : null;
+            return _bindings.TryGetValue(paramId, out var binding) ? binding.GetControl(device) : null;
         }
 
         public MidiBinding GetBinding(string paramId)
@@ -313,7 +308,8 @@ namespace Krab.Common.Midi.Bindings
 
             foreach (var binding in _bindings.Values)
             {
-                if (binding.Control != message.Control) continue;
+                if (!binding.Matches(message.Control)) continue;
+
                 binding.Action.Execute(message);
                 break;
             }
@@ -346,20 +342,37 @@ namespace Krab.Common.Midi.Bindings
             if (_bindings.ContainsKey(bindingId))
                 throw new InvalidOperationException($"Already registered: {bindingId}");
 
-            var loadedControl = _repository.Load(bindingId);
-            if (loadedControl.HasValue)
+            var binding = new MidiBinding(bindingId, action, _repository.GetLedColor(bindingId, Color.cyan));
+            foreach (var device in Devices)
             {
-                foreach (var registered in _bindings.Values)
+                var loadedControl = _repository.Load(bindingId, device);
+                if (loadedControl is { } control && IsBound(control))
                 {
-                    if (registered.Control != loadedControl) continue;
                     loadedControl = null;
-                    _repository.Save(bindingId, null);
-                    break;
+                    _repository.Save(bindingId, device, null);
                 }
+
+                binding.SetControl(device, loadedControl);
             }
 
-            _bindings.Add(bindingId, new MidiBinding(bindingId, action,
-                _repository.GetLedColor(bindingId, Color.cyan)) { Control = loadedControl });
+            _bindings.Add(bindingId, binding);
+        }
+
+        private bool IsBound(MidiControl control)
+        {
+            foreach (var registered in _bindings.Values)
+            {
+                if (registered.Matches(control)) return true;
+            }
+
+            return false;
+        }
+
+        private void SetControl(MidiBinding binding, MidiDeviceKind device, MidiControl? control)
+        {
+            binding.SetControl(device, control);
+            _repository.Save(binding.ParamId, device, control);
+            BindingChanged?.Invoke(binding.ParamId);
         }
 
         private void RemoveBinding(string bindingId)
@@ -367,7 +380,7 @@ namespace Krab.Common.Midi.Bindings
             if (!_bindings.Remove(bindingId)) return;
 
             if (_learningParamId == bindingId) CancelLearn();
-            BindingChanged?.Invoke(bindingId, null);
+            BindingChanged?.Invoke(bindingId);
         }
 
         private void RebuildRuntimeSets()

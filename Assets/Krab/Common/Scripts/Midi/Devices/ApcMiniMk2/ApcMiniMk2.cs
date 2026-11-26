@@ -6,6 +6,7 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
     /// <summary>APC mini mk2 input numbers used by the application.</summary>
     public static class ApcMiniMk2
     {
+        public const string ProductName = "APC mini mk2";
         public const int GridSize = 8;
         public const int PageCount = 8;
         public const int GlobalPage = -1;
@@ -21,6 +22,12 @@ namespace Krab.Common.Midi.Devices.ApcMiniMk2
         public const int ChannelFaderCount = 8;
         public const int FaderCount = 9;
         public const int MasterFaderIndex = 8;
+
+        public static bool IsProduct(string productName)
+        {
+            return !string.IsNullOrEmpty(productName) &&
+                   productName.IndexOf(ProductName, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
 
         public static int GetPadNote(int x, int y)
         {

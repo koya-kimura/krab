@@ -13,6 +13,7 @@ namespace Krab.Common.Midi.Core
         public MidiMessageType Type { get; }
         public int Channel { get; }
         public int Number { get; }
+        public MidiDeviceKind Device { get; }
 
         /// <summary>
         /// MIDI channel, or a device adapter's logical page when the hardware does not
@@ -20,16 +21,19 @@ namespace Krab.Common.Midi.Core
         /// </summary>
         public int Page => Channel;
 
-        public MidiControl(MidiMessageType type, int channel, int number)
+        public MidiControl(MidiMessageType type, int channel, int number,
+            MidiDeviceKind device = MidiDeviceKind.ApcMiniMk2)
         {
             Type = type;
             Channel = channel;
             Number = number;
+            Device = device;
         }
 
         public bool Equals(MidiControl other)
         {
-            return Type == other.Type && Channel == other.Channel && Number == other.Number;
+            return Type == other.Type && Channel == other.Channel && Number == other.Number &&
+                   Device == other.Device;
         }
 
         public override bool Equals(object obj)
@@ -44,6 +48,7 @@ namespace Krab.Common.Midi.Core
                 var hash = (int)Type;
                 hash = (hash * 397) ^ Channel;
                 hash = (hash * 397) ^ Number;
+                hash = (hash * 397) ^ (int)Device;
                 return hash;
             }
         }
