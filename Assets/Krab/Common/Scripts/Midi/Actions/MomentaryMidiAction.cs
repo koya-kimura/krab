@@ -16,6 +16,9 @@ namespace Krab.Common.Midi.Actions
         }
 
         public bool IsActive => _param.Value;
+
+        /// <summary>Velocity (0-1) of the latest press. APC mini mk2 pads and simulators always send 1.</summary>
+        public float Velocity { get; private set; }
         public MidiActionKind Kind => MidiActionKind.Momentary;
         public string DisplayName => "Momentary (one frame)";
         public IMidiActionRuntime Runtime => this;
@@ -25,6 +28,7 @@ namespace Krab.Common.Midi.Actions
             if (!message.IsPressed) return;
 
             _pressedFrame = Time.frameCount;
+            Velocity = message.Value;
             _param.SetValue(true);
         }
 
@@ -41,6 +45,7 @@ namespace Krab.Common.Midi.Actions
         public void ResetTransientState()
         {
             _pressedFrame = -1;
+            Velocity = 0f;
             _param.SetValue(false);
         }
 

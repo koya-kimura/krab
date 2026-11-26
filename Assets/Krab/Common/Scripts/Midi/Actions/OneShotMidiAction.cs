@@ -15,14 +15,24 @@ namespace Krab.Common.Midi.Actions
         }
 
         public bool IsActive => _param.Value;
+
+        /// <summary>Velocity (0-1) of the latest press. APC mini mk2 pads and simulators always send 1.</summary>
+        public float Velocity { get; private set; }
         public MidiActionKind Kind => MidiActionKind.OneShot;
         public string DisplayName => "OneShot (held)";
         public IMidiActionRuntime Runtime => null;
 
         public void Execute(MidiMessage message)
         {
-            if (message.IsPressed) _param.SetValue(true);
-            else if (message.IsReleased) _param.SetValue(false);
+            if (message.IsPressed)
+            {
+                Velocity = message.Value;
+                _param.SetValue(true);
+            }
+            else if (message.IsReleased)
+            {
+                _param.SetValue(false);
+            }
         }
 
         public Color ResolveLedColor(Color configuredColor)
@@ -32,6 +42,7 @@ namespace Krab.Common.Midi.Actions
 
         public void ResetTransientState()
         {
+            Velocity = 0f;
             _param.SetValue(false);
         }
 
