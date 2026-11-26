@@ -18,7 +18,7 @@ namespace Krab.ShapeSynth.PresetEditor
 
         // Only one page is compiled and drawn at a time, so the cell RenderTexture and the per-frame evaluation
         // stay the size of one page however many presets are saved.
-        private const int GalleryPageSize = 36;
+        private const int GalleryPageSize = 24;
 
         private int _galleryPage;
 
