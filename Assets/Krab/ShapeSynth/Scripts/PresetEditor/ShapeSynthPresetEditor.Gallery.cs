@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Krab.ShapeSynth.Core.Presets;
+using Krab.ShapeSynth.Unity.Persistence;
 using RosettaUI;
 using RosettaUI.UIToolkit.Builder;
 using UnityEngine;
@@ -22,6 +24,22 @@ namespace Krab.ShapeSynth.PresetEditor
 
         private int _galleryPage;
 
+        private enum GallerySort
+        {
+            Name,
+            Group,
+            Rating
+        }
+
+        private static readonly string[] GallerySortNames = Enum.GetNames(typeof(GallerySort));
+
+        private GallerySort _gallerySort;
+        private Dictionary<string, int> _ratings;
+        private int _ratingsRevision;
+
+        // Ratings live in their own file and are saved on each click, apart from presets and Cmd+S.
+        private Dictionary<string, int> Ratings => _ratings ??= Repository.LoadRatings();
+
         private PresetGridRenderer _galleryRenderer;
         private bool _galleryNeedsReload = true;
         private bool _galleryPlaying = true;
@@ -42,20 +60,60 @@ namespace Krab.ShapeSynth.PresetEditor
                 UI.DynamicElementIf(() => _galleryError != null,
                     () => UI.Label(() => _galleryError).SetColor(PresetEditorPalette.Error)),
                 UI.Row(
+                    Choice("Sort", () => (int)_gallerySort, value =>
+                    {
+                        _gallerySort = (GallerySort)value;
+                        SetGalleryPage(0);
+                    }, GallerySortNames).SetWidth(200),
                     UI.Button("◀", () => SetGalleryPage(_galleryPage - 1)),
                     UI.Label(() => $"Page {GalleryPage() + 1} / {GalleryPageCount()}  ({_savedPresets.Count} presets)"),
                     UI.Button("▶", () => SetGalleryPage(_galleryPage + 1))),
                 UI.ScrollViewVertical(GalleryGridHeight,
-                    UI.DynamicElementOnStatusChanged(() => (_savedRevision, GalleryPage()), _ => BuildGalleryGrid())));
+                    UI.DynamicElementOnStatusChanged(
+                        () => (_savedRevision, GalleryPage(), _gallerySort,
+                            _gallerySort == GallerySort.Rating ? _ratingsRevision : 0),
+                        _ => BuildGalleryGrid())));
             content.RegisterUpdateCallback(_ => _galleryLastVisible = Time.unscaledTimeAsDouble);
             return content;
         }
 
-        /// <summary>The presets of the current page, in name order.</summary>
-        private PresetDocument[] GalleryPresets() =>
-            _savedPresets.OrderBy(preset => preset.Name, StringComparer.Ordinal)
-                .ThenBy(preset => preset.Id, StringComparer.Ordinal)
+        /// <summary>
+        /// The presets of the current page. Name sorts by the part after the group (so numbers run across groups),
+        /// Group by group then name, Rating by most ○ first then name.
+        /// </summary>
+        private PresetDocument[] GalleryPresets()
+        {
+            IOrderedEnumerable<PresetDocument> sorted = _gallerySort switch
+            {
+                GallerySort.Group => _savedPresets.OrderBy(p => PresetPath.Parse(p.Name).Group, StringComparer.Ordinal)
+                    .ThenBy(p => PresetPath.Parse(p.Name).Title, StringComparer.Ordinal),
+                GallerySort.Rating => _savedPresets.OrderByDescending(Rating)
+                    .ThenBy(p => PresetPath.Parse(p.Name).Title, StringComparer.Ordinal),
+                _ => _savedPresets.OrderBy(p => PresetPath.Parse(p.Name).Title, StringComparer.Ordinal)
+            };
+            return sorted.ThenBy(p => p.Id, StringComparer.Ordinal)
                 .Skip(GalleryPage() * GalleryPageSize).Take(GalleryPageSize).ToArray();
+        }
+
+        private int Rating(PresetDocument preset) => Ratings.TryGetValue(preset.Id, out var rating) ? rating : 0;
+
+        /// <summary>Pressing the current rating again clears it.</summary>
+        private void SetRating(PresetDocument preset, int rating)
+        {
+            if (Rating(preset) == rating) Ratings.Remove(preset.Id);
+            else Ratings[preset.Id] = rating;
+
+            _ratingsRevision++;
+            GuardValues(() => Repository.SaveRatings(Ratings));
+        }
+
+        /// <summary>Five ○ buttons; the first n show ● for a rating of n.</summary>
+        private Element RatingRow(PresetDocument preset)
+        {
+            return UI.Row(Enumerable.Range(1, PresetRepository.MaxRating).Select(n =>
+                (Element)UI.Button(UI.Label(() => Rating(preset) >= n ? "●" : "○"), () => SetRating(preset, n))
+                    .SetWidth(GalleryCellWidth / PresetRepository.MaxRating)));
+        }
 
         private int GalleryPageCount() => Math.Max(1, (_savedPresets.Count + GalleryPageSize - 1) / GalleryPageSize);
 
@@ -101,7 +159,7 @@ namespace Krab.ShapeSynth.PresetEditor
                 .SetWidth(GalleryCellWidth);
             name.RegisterUpdateCallback(element => element.Style.BackgroundColor =
                 preset.Id == _galleryDetailsId ? PresetEditorPalette.Selected : null);
-            return UI.Column(image, name).SetWidth(GalleryCellWidth).SetFlexGrow(0);
+            return UI.Column(image, name, RatingRow(preset)).SetWidth(GalleryCellWidth).SetFlexGrow(0);
         }
 
         private void UpdateGallery()

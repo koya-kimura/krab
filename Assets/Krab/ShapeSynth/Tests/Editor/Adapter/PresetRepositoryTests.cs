@@ -458,5 +458,20 @@ namespace Krab.ShapeSynth.Tests.Editor.Adapter
             Assert.That(loaded.LocalValues, Is.Empty);
             Assert.That(loaded.BoundValues().Single().Id, Is.EqualTo(document.Values[0].Id));
         }
+    
+        [Test]
+        public void RatingsRoundTripApartFromPresetsAndIgnoreBadEntries()
+        {
+            var repository = new PresetRepository(_directory);
+            Assert.That(repository.LoadRatings(), Is.Empty);
+
+            repository.SaveRatings(new Dictionary<string, int> { ["a"] = 3, ["b"] = 0, ["c"] = 9 });
+
+            Assert.That(repository.LoadRatings(), Is.EqualTo(new Dictionary<string, int> { ["a"] = 3 }));
+            Assert.That(Directory.Exists(_directory) && Directory.GetFiles(_directory).Length > 0, Is.False);
+
+            File.WriteAllText(repository.RatingsPath, "{ not json");
+            Assert.That(repository.LoadRatings(), Is.Empty);
+        }
     }
 }

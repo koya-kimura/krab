@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Krab.ShapeSynth.Core.Presets;
 using Newtonsoft.Json;
@@ -31,6 +32,44 @@ namespace Krab.ShapeSynth.Unity.Persistence
         public string DirectoryPath { get; }
 
         public string ValuesPath { get; }
+
+        public const string RatingsFileName = "Ratings.json";
+        public const int MaxRating = 5;
+
+        /// <summary>Gallery ratings by preset ID, next to the Value library. Kept apart from the presets.</summary>
+        public string RatingsPath =>
+            System.IO.Path.Combine(System.IO.Path.GetDirectoryName(ValuesPath) ?? string.Empty, RatingsFileName);
+
+        /// <summary>Ratings (1–5) by preset ID; a missing or unreadable file is no ratings.</summary>
+        public Dictionary<string, int> LoadRatings()
+        {
+            try
+            {
+                if (!File.Exists(RatingsPath)) return new Dictionary<string, int>();
+
+                var file = JsonConvert.DeserializeObject<RatingsFile>(File.ReadAllText(RatingsPath));
+                return (file?.Ratings ?? new Dictionary<string, int>())
+                    .Where(pair => pair.Value >= 1 && pair.Value <= MaxRating)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value);
+            }
+            catch (Exception exception) when (exception is JsonException || exception is IOException)
+            {
+                return new Dictionary<string, int>();
+            }
+        }
+
+        /// <summary>Writes the ratings; 0 or out-of-range entries are left out.</summary>
+        public void SaveRatings(IReadOnlyDictionary<string, int> ratings)
+        {
+            if (ratings == null) throw new ArgumentNullException(nameof(ratings));
+
+            var file = new RatingsFile
+            {
+                Ratings = ratings.Where(pair => pair.Value >= 1 && pair.Value <= MaxRating)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value)
+            };
+            WriteAtomically(RatingsPath, JsonConvert.SerializeObject(file, Formatting.Indented));
+        }
 
         public bool Exists(string id)
         {
@@ -292,6 +331,13 @@ namespace Krab.ShapeSynth.Unity.Persistence
         {
             PresetDocument.RequireId(id);
             return System.IO.Path.Combine(DirectoryPath, id + ".json");
+        }
+
+        [Serializable]
+        private sealed class RatingsFile
+        {
+            public int SchemaVersion = 1;
+            public Dictionary<string, int> Ratings = new();
         }
 
         [Serializable]
