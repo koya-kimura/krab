@@ -1,0 +1,155 @@
+// Generates presets by random binding, keeps only the ones that pass numeric checks, and saves them as "Gen/…".
+// One Shape node each (Layout copies allowed), white, shared Values only. Deterministic (fixed seed); names that
+// already exist are skipped, so it can be re-run.
+var repository = new Krab.ShapeSynth.Unity.Persistence.PresetRepository();
+var values = repository.LoadValues();
+var existing = new System.Collections.Generic.HashSet<string>(repository.List(out _).Select(p => p.Name));
+var rng = new System.Random(20261129);
+const int Target = 100;
+T Pick<T>(System.Collections.Generic.IReadOnlyList<T> items) => items[rng.Next(items.Count)];
+double Range(double a, double b) => a + rng.NextDouble() * (b - a);
+
+var envelopes = values.Where(v => v.Name.StartsWith("Eased/") || v.Name.StartsWith("Motion/") || v.Name == "ADSR/Fast")
+    .Where(v => v.Components.All(c => c.Kind == Krab.ShapeSynth.Core.Presets.ModulatorKind.Adsr)).ToList();
+var motions = values.Where(v => v.Name.StartsWith("Eased/") || v.Name.StartsWith("Motion/") || v.Name.StartsWith("LFO/")).ToList();
+var canvas = new Krab.ShapeSynth.Core.Evaluation.ReferenceContext(1920, 1080);
+var signatures = new System.Collections.Generic.List<double[]>();
+var log = new System.Collections.Generic.List<string>();
+int saved = 0, tried = 0;
+var reasons = new System.Collections.Generic.Dictionary<string, int>();
+void Reject(string why) { reasons[why] = reasons.TryGetValue(why, out var n) ? n + 1 : 1; }
+
+double[] Measure(Krab.ShapeSynth.Core.Presets.PresetDocument document, out string why)
+{
+    why = null;
+    try {
+    Krab.ShapeSynth.Core.Presets.PresetCompiler.Compile(document);
+    var components = Krab.ShapeSynth.Core.Presets.PresetCompiler.Components(document).ToArray();
+    var lifetime = components.Where(c => c.Kind == Krab.ShapeSynth.Core.Presets.ModulatorKind.Adsr).Max(c => c.Attack + c.Decay + c.SustainTime + c.Release)
+        + document.Nodes().Max(node => Krab.ShapeSynth.Core.Presets.PresetCopyPattern.MaxDelayBeats(node.Layout));
+    if (lifetime < 0.5 || lifetime > 4) { why = "length"; return null; }
+
+    var group = Krab.ShapeSynth.Core.Presets.PresetCompiler.CompileGroup(document);
+    var time = new Krab.ShapeSynth.Core.Runtime.VoiceTime(0, 60);
+    var signals = components.Select(c => Krab.ShapeSynth.Core.Presets.PresetCompiler.ModulatorDefinition(c).Create(time)).ToArray();
+    var evaluator = new Krab.ShapeSynth.Core.Evaluation.HierarchyEvaluator(group, signals, 7);
+    const int samples = 24;
+    var signature = new double[samples * 3];
+    double inside = 0, total = 0, visible = 0, motion = 0;
+    double[] previous = null;
+    for (var i = 0; i < samples; i++)
+    {
+        var items = evaluator.Evaluate(lifetime * (i + 0.5) / samples, canvas);
+        double cx = 0, cy = 0, size = 0, alpha = 0;
+        foreach (var item in items)
+        {
+            var c = item.WorldTransform.TransformPoint(new Krab.ShapeSynth.Core.Geometry.Point2(0, 0));
+            var e = item.WorldTransform.TransformPoint(new Krab.ShapeSynth.Core.Geometry.Point2(System.Math.Max(item.Width, 1) / 2, System.Math.Max(item.Height, 1) / 2));
+            var r = System.Math.Sqrt((e.X - c.X) * (e.X - c.X) + (e.Y - c.Y) * (e.Y - c.Y));
+            total++;
+            if (System.Math.Abs(c.X) <= 960 && System.Math.Abs(c.Y) <= 540) inside++;
+            cx += c.X; cy += c.Y; size += r; alpha += item.Opacity;
+        }
+
+        var n = System.Math.Max(1, items.Count);
+        var frame = new[] { cx / n / 960, cy / n / 540, size / n / 540 };
+        if (alpha / n > 0.2) visible++;
+        if (previous != null) motion += System.Math.Abs(frame[0] - previous[0]) + System.Math.Abs(frame[1] - previous[1]) + System.Math.Abs(frame[2] - previous[2]);
+        previous = frame;
+        signature[i * 3] = frame[0]; signature[i * 3 + 1] = frame[1]; signature[i * 3 + 2] = frame[2];
+    }
+
+    if (total == 0 || inside / total < 0.85) { why = "offscreen"; return null; }
+    if (visible < samples * 0.3) { why = "invisible"; return null; }
+    if (motion < 0.08) { why = "still"; return null; }
+    if (motion > 6) { why = "jitter"; return null; }
+
+    return signature;
+    } catch (System.Exception) { why = "invalid"; return null; }
+}
+
+string[] targets = { "PositionX", "PositionY", "Rotation", "Scale", "ScaleX", "ScaleY", "Size", "Spread" };
+// The first Gen batch (the 100 lowest Gen numbers) is replaced in place: same IDs and numbers, new content.
+var replace = repository.List(out _).Where(p => p.Name.StartsWith("Gen/")).OrderBy(p => p.Name, System.StringComparer.Ordinal).Take(100).ToList();
+var replaceIds = new System.Collections.Generic.HashSet<string>(replace.Select(p => p.Id));
+// Signatures of the presets that stay, so new ones do not repeat them.
+foreach (var old in repository.List(out _).Where(p => !replaceIds.Contains(p.Id))) { var sig = Measure(old, out _); if (sig != null) signatures.Add(sig); }
+var startCount = signatures.Count;
+while (saved < Target && tried < 8000)
+{
+    tried++;
+    var root = Krab.ShapeSynth.Core.Presets.PresetNode.Create(Krab.ShapeSynth.Core.Presets.PresetNodeKind.Group); root.Name = "Root Group";
+    var s = Krab.ShapeSynth.Core.Presets.PresetNode.Create(rng.NextDouble() < 0.5 ? Krab.ShapeSynth.Core.Presets.PresetNodeKind.Rectangle : Krab.ShapeSynth.Core.Presets.PresetNodeKind.Circle);
+    s.Name = s.Kind.ToString();
+    root.Children.Add(s);
+    var document = new Krab.ShapeSynth.Core.Presets.PresetDocument { Id = Krab.ShapeSynth.Core.Presets.PresetDocument.NewId(), Name = "draft", RootGroup = root, Values = values };
+
+    // Shape and placement.
+    var big = rng.NextDouble() < 0.3;
+    s.Width.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.MinDimension; s.Height.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.MinDimension;
+    s.Width.Base = big ? Range(0.2, 0.5) : Range(0.02, 0.12);
+    s.Height.Base = s.Kind == Krab.ShapeSynth.Core.Presets.PresetNodeKind.Rectangle && rng.NextDouble() < 0.5 ? s.Width.Base * Pick(new[] { 0.1, 0.25, 4.0, 8.0 }) : s.Width.Base;
+    if (s.Kind == Krab.ShapeSynth.Core.Presets.PresetNodeKind.Rectangle && rng.NextDouble() < 0.35) s.Anchor = Pick((Krab.ShapeSynth.Core.Presets.PresetAnchor[])System.Enum.GetValues(typeof(Krab.ShapeSynth.Core.Presets.PresetAnchor)));
+    if (rng.NextDouble() < 0.2) { s.Fill = false; s.Stroke = true; s.StrokeWidth.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.MinDimension; s.StrokeWidth.Base = 0.005; }
+
+    var layouts = new[] { Krab.ShapeSynth.Core.Presets.PresetLayoutKind.None, Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Row, Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Column, Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Grid, Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Circle };
+    var layout = big ? Krab.ShapeSynth.Core.Presets.PresetLayoutKind.None : Pick(layouts);
+    s.Layout.Kind = layout;
+    if (layout != Krab.ShapeSynth.Core.Presets.PresetLayoutKind.None)
+    {
+        s.Layout.Count = layout == Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Grid ? Pick(new[] { 9, 16, 25 }) : Pick(new[] { 3, 5, 8, 12, 16 });
+        s.Layout.Columns = (int)System.Math.Round(System.Math.Sqrt(s.Layout.Count));
+        s.Layout.SpacingX.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.MinDimension; s.Layout.SpacingY.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.MinDimension;
+        s.Layout.SpacingX.Base = Range(0.08, 0.9 / System.Math.Max(1, layout == Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Grid ? s.Layout.Columns : s.Layout.Count));
+        s.Layout.SpacingY.Base = s.Layout.SpacingX.Base;
+        s.Layout.Radius.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.MinDimension; s.Layout.Radius.Base = Range(0.15, 0.4);
+        s.Layout.FaceOutward = rng.NextDouble() < 0.5;
+        if (rng.NextDouble() < 0.6)
+        {
+            s.Layout.Delay = Pick(new[] { 0.03, 0.06, 0.125, 0.25 });
+            s.Layout.DelayOrder = Pick((Krab.ShapeSynth.Core.Presets.PresetDelayOrder[])System.Enum.GetValues(typeof(Krab.ShapeSynth.Core.Presets.PresetDelayOrder)));
+        }
+    }
+    else if (!big && rng.NextDouble() < 0.5)
+    {
+        // A single small shape: one of a few fixed places.
+        s.PositionX.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.CanvasWidth; s.PositionX.Random = 0.4; s.PositionX.RandomSteps = Pick(new[] { 3, 5 });
+    }
+
+    // Envelope on Opacity (the Voice's lifetime) and one or two motions.
+    s.Opacity.Base = 0; s.Opacity.Bind(Pick(envelopes).Id, 1);
+    var chosen = targets.OrderBy(_ => rng.Next()).Take(rng.Next(1, 3)).ToList();
+    if (layout == Krab.ShapeSynth.Core.Presets.PresetLayoutKind.None) chosen.Remove("Spread");
+    foreach (var target in chosen)
+    {
+        var v = Pick(motions);
+        switch (target)
+        {
+            case "PositionX": s.PositionX.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.CanvasWidth; s.PositionX.Base -= 0.15; s.PositionX.Bind(v.Id, 0.3); break;
+            case "PositionY": s.PositionY.Reference = Krab.ShapeSynth.Core.Definitions.ReferenceSource.CanvasHeight; s.PositionY.Base = -0.15; s.PositionY.Bind(v.Id, 0.3); break;
+            case "Rotation": s.Rotation.Bind(v.Id, Pick(new[] { 45.0, 90, 180 })); if (s.Layout.Kind != Krab.ShapeSynth.Core.Presets.PresetLayoutKind.None && rng.NextDouble() < 0.5) s.Rotation.Flip = Krab.ShapeSynth.Core.Presets.PresetFlip.Alternate; break;
+            case "Scale": s.ScaleX.Base = 0; s.ScaleY.Base = 0; s.ScaleX.Bind(v.Id, 1); s.ScaleY.Bind(v.Id, 1); break;
+            case "ScaleX": s.ScaleX.Base = 0; s.ScaleX.Bind(v.Id, 1); break;
+            case "ScaleY": s.ScaleY.Base = 0; s.ScaleY.Bind(v.Id, 1); break;
+            case "Size": s.Width.Bind(v.Id, s.Width.Base); if (s.Kind == Krab.ShapeSynth.Core.Presets.PresetNodeKind.Rectangle) s.Height.Bind(v.Id, s.Height.Base); break;
+            case "Spread":
+                if (layout == Krab.ShapeSynth.Core.Presets.PresetLayoutKind.Circle) { s.Layout.Radius.Base *= 0.3; s.Layout.Radius.Bind(v.Id, 0.3); }
+                else { s.Layout.SpacingX.Base *= 0.3; s.Layout.SpacingY.Base *= 0.3; s.Layout.SpacingX.Bind(v.Id, s.Layout.SpacingX.Base * 2); s.Layout.SpacingY.Bind(v.Id, s.Layout.SpacingY.Base * 2); }
+                break;
+        }
+    }
+
+    var signature = Measure(document, out var why);
+    if (signature == null) { Reject(why); continue; }
+    if (signatures.Any(other => other.Zip(signature, (a, b) => System.Math.Abs(a - b)).Average() < 0.02)) { Reject("similar"); continue; }
+
+    signatures.Add(signature);
+    saved++;
+    var slot = replace[saved - 1];
+    var number = Krab.ShapeSynth.Core.Presets.PresetPath.Parse(slot.Name).Title.Split(' ')[0];
+    document.Id = slot.Id;
+    document.Name = $"Gen/{number} {s.Kind} {layout} {string.Join("+", chosen)}";
+    repository.Save(document);
+}
+
+return $"compared with {startCount} existing; saved {saved} of {tried} tried; rejected " + string.Join(", ", reasons.Select(kv => kv.Key + " " + kv.Value));
