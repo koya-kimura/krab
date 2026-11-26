@@ -531,6 +531,7 @@ GameObject:
   - component: {fileID: 894227609}
   - component: {fileID: 894227610}
   - component: {fileID: 894227611}
+  - component: {fileID: 894227612}
   m_Layer: 0
   m_Name: Common
   m_TagString: Untagged
@@ -622,6 +623,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf5247c5247c4c27b4e41002999103c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Views.MidiBindingUi
+--- !u!114 &894227612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894227603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af07595e3858c4e6eb2231d8176294b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Devices.Mpd218.Mpd218Simulator
 --- !u!4 &937342195 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3460104897646375886, guid: 53cb97e4c09164f4bb6dcfd51b215329, type: 3}
@@ -686,7 +699,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Krab.ShapeSynth.Unity::Krab.ShapeSynth.Unity.TargetCameraCanvas
   _drawInSceneView: 1
   _shaderLibrary: {fileID: 11400000, guid: 620af193329c432da3205918ea693f73, type: 2}
-  _targetCamera: {fileID: 330585545}
+  _pinnedCamera: {fileID: 330585545}
 --- !u!4 &1134658483
 Transform:
   m_ObjectHideFlags: 0

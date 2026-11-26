@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Krab.Common.Midi.Devices.ApcMiniMk2;
+using Krab.Common.Midi.Devices.Mpd218;
 using Krab.Common.Midi.Input;
 using Krab.Common.Midi.Output;
 using Krab.Common.Midi.Views;
@@ -98,9 +99,9 @@ namespace Krab.ImageLayer.Samples.Editor
             serializedImages.FindProperty("_images").objectReferenceValue = rig.Images;
             serializedImages.ApplyModifiedPropertiesWithoutUndo();
 
-            // MIDI pads switch the deck radios; the on-screen APC mini stands in when no controller is connected.
+            // MIDI pads switch the deck radios; the on-screen controllers stand in when none is connected.
             _ = new GameObject("MIDI", typeof(MidiOutput), typeof(MidiInputManager), typeof(ApcMiniMk2Simulator),
-                typeof(MidiBindingUi));
+                typeof(Mpd218Simulator), typeof(MidiBindingUi));
 
             var typeLayout = new GameObject("Type Layout", typeof(TypeLayoutCanvas), typeof(TypeLayoutFont),
                 typeof(TypeLayoutPerformance));

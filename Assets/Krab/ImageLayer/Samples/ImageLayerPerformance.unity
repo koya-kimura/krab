@@ -639,7 +639,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Krab.TypeLayout.Unity::Krab.TypeLayout.Unity.Rendering.TypeLayoutCanvas
   _drawInSceneView: 1
   _shaderLibrary: {fileID: 11400000, guid: 620af193329c432da3205918ea693f73, type: 2}
-  _targetCamera: {fileID: 1005848982}
+  _pinnedCamera: {fileID: 1005848982}
 --- !u!4 &815071628
 Transform:
   m_ObjectHideFlags: 0
@@ -873,6 +873,7 @@ GameObject:
   - component: {fileID: 1702341375}
   - component: {fileID: 1702341374}
   - component: {fileID: 1702341373}
+  - component: {fileID: 1702341378}
   m_Layer: 0
   m_Name: MIDI
   m_TagString: Untagged
@@ -945,6 +946,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1702341378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1702341372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af07595e3858c4e6eb2231d8176294b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Krab.Common.Midi.Devices.Mpd218.Mpd218Simulator
 --- !u!1001 &1873565266
 PrefabInstance:
   m_ObjectHideFlags: 0
