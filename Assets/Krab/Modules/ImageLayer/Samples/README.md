@@ -8,7 +8,7 @@
 - Layouts：Layoutプリセットの追加（種類を選んでAdd）、Edit（名前とパラメータ）、Copy、↑↓、Delete。Saveで `StreamingAssets/Krab/ImageLayer/Presets/Layouts.json` に保存、Revertで戻す。
 - Images：Imageエントリ（Set、Clip、Look、Frames Per Beat）の追加・編集。Add Missing Setsで、エントリの無いSetを補う。Saveで `StreamingAssets/Krab/ImageLayer/Presets/Images/<ライブラリ名>.json` に保存。
 - Library：ライブラリの選択、圧縮のON/OFF、Reload、読み込み状況、問題の一覧。
-- Display：表示、Duotone／Thresholdで使うDark／Lightの色、Thresholdの明度。
+- Display：Duotone／Thresholdで使うDark／Lightの色、Thresholdの明度。
 
 MIDIの部品（`MIDI` GameObject：MidiOutput、MidiInputManager、ApcMiniMk2Simulator、MidiBindingUi）はShapeSynthのSceneと同じ構成。APC mini mk2が無くても、設定UIのシミュレーターで操作できる。
 
