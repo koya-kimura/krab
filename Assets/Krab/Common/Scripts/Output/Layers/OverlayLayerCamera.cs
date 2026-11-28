@@ -1,12 +1,13 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-namespace Krab.ImageLayer.Unity.Rendering
+namespace Krab.Common.Output.Layers
 {
     /// <summary>
     /// Makes this camera an Overlay in the output camera's URP stack, so its drawings land on the output texture
-    /// in a fixed order above the base camera (and above overlays added earlier). p5.Unite canvases sharing one
-    /// camera have no defined order between them, so each layer gets its own camera.
+    /// in <see cref="Order"/> above the base camera. p5.Unite canvases sharing one camera have no defined order
+    /// between them, so each layer gets its own camera. Disabling this component hides the layer.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     [DisallowMultipleComponent]
@@ -40,29 +41,21 @@ namespace Krab.ImageLayer.Unity.Rendering
                 return;
             }
 
+            _camera.enabled = true;
             SyncTarget();
-            var stack = _baseCamera.GetUniversalAdditionalCameraData().cameraStack;
-            if (stack.Contains(_camera)) return;
+            var stack = Stack;
+            if (!stack.Contains(_camera)) stack.Add(_camera);
 
-            // OnEnable order between GameObjects is not defined, so insert by the explicit order instead.
-            int index = stack.Count;
-            for (int position = 0; position < stack.Count; position++)
-            {
-                var layer = stack[position] ? stack[position].GetComponent<OverlayLayerCamera>() : null;
-                if (layer == null || layer._order <= _order) continue;
-
-                index = position;
-                break;
-            }
-
-            stack.Insert(index, _camera);
+            // OnEnable order between GameObjects is not defined, so the stack is sorted by the explicit order.
+            SortStack();
         }
 
         private void OnDisable()
         {
+            _camera.enabled = false;
             if (!_baseCamera) return;
 
-            _baseCamera.GetUniversalAdditionalCameraData().cameraStack.Remove(_camera);
+            Stack.Remove(_camera);
             _camera.targetTexture = null;
         }
 
@@ -72,19 +65,52 @@ namespace Krab.ImageLayer.Unity.Rendering
             set => _baseCamera = value;
         }
 
+        /// <summary>Changing it while enabled moves the camera in the stack right away.</summary>
         public int Order
         {
             get => _order;
-            set => _order = value;
+            set
+            {
+                _order = value;
+                if (isActiveAndEnabled && _baseCamera) SortStack();
+            }
         }
 
         public Camera Camera => _camera;
+
+        private List<Camera> Stack => _baseCamera.GetUniversalAdditionalCameraData().cameraStack;
 
         private void SyncTarget()
         {
             if (!_baseCamera || _camera.targetTexture == _baseCamera.targetTexture) return;
 
             _camera.targetTexture = _baseCamera.targetTexture;
+        }
+
+        // Insertion sort keeps equal orders in their current places; List.Sort is not stable.
+        private void SortStack()
+        {
+            var stack = Stack;
+            stack.RemoveAll(camera => !camera);
+            for (int index = 1; index < stack.Count; index++)
+            {
+                var camera = stack[index];
+                int order = OrderOf(camera);
+                int position = index - 1;
+                while (position >= 0 && OrderOf(stack[position]) > order)
+                {
+                    stack[position + 1] = stack[position];
+                    position--;
+                }
+
+                stack[position + 1] = camera;
+            }
+        }
+
+        // Overlays that are not layers stay at the back, below every layer.
+        private static int OrderOf(Camera camera)
+        {
+            return camera.TryGetComponent<OverlayLayerCamera>(out var layer) ? layer._order : int.MinValue;
         }
     }
 }

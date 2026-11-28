@@ -6,6 +6,7 @@ using Krab.Common.Midi.Input;
 using Krab.Common.Midi.Output;
 using Krab.Common.Midi.Views;
 using Krab.Common.Output;
+using Krab.Common.Output.Layers;
 using Krab.ImageLayer.Performance;
 using Krab.ImageLayer.Unity.Rendering;
 using Krab.TypeLayout.Performance;
