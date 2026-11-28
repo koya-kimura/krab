@@ -83,7 +83,7 @@ BPMを共有すればグルーブを作れる足場があり、その上はフ�
 - Circle、Rectangle、標準三角形とGroupの組み合わせ。頂点編集の新機能は追加していない。
 - 2026-11-25にVisualを作り直すため削除した。Valueは共通ライブラリとして残している。
 
-[追加計画](../ShapeSynth/PresetCollectionPlan.md)と原本READMEに詳細・検証を残した。
+[追加計画](../../Modules/ShapeSynth/Docs/PresetCollectionPlan.md)と原本READMEに詳細・検証を残した。
 
 ### 赤い読込警告
 
@@ -103,11 +103,11 @@ Preset Editorの既存Sceneから開ける、保存済みプリセットの同�
 - Visual／Valuesの未保存編集を保持し、保存済みデータを比較する。保存先の追加・変更・削除にも追従する。
 - 閉じるとプレビュー用カメラ・RenderTextureとイベント購読を解放する。
 
-使い方と確認結果は [Preset Editor Workspace](../ShapeSynth/PresetEditorWorkspace.md)。Unityコンパイル、全30セルの描画、停止／再生、開閉の解放、31個目の追加／削除、未保存Document保持を確認した。数値Coreの変更はない。
+使い方と確認結果は [Preset Editor Workspace](../../Modules/ShapeSynth/Docs/PresetEditorWorkspace.md)。Unityコンパイル、全30セルの描画、停止／再生、開閉の解放、31個目の追加／削除、未保存Document保持を確認した。数値Coreの変更はない。
 
 ## 追加：ルーパーの実装
 
-このまとめの後、本人の依頼により、p5版の操作を参考に8スロットのルーパーを実装した。録音・再生はShapeSynthに依存しないCommonのCore、プリセットIDとUI／MIDIの接続はShapeSynth側に置く。Record → Play → Clear、手動Triggerのみ録音、p5版と同じ秒数固定でクオンタイズなし。詳細と検証Sceneは [ルーパー](../ShapeSynth/Looper.md)。
+このまとめの後、本人の依頼により、p5版の操作を参考に8スロットのルーパーを実装した。録音・再生はShapeSynthに依存しないCommonのCore、プリセットIDとUI／MIDIの接続はShapeSynth側に置く。Record → Play → Clear、手動Triggerのみ録音、p5版と同じ秒数固定でクオンタイズなし。詳細と検証Sceneは [ルーパー](../../Modules/ShapeSynth/Docs/Looper.md)。
 
 ## 次に考えたいこと
 

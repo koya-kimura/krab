@@ -1,12 +1,12 @@
 # Krab コーディングスタイル
 
-`Assets/Krab/Common/Scripts/` のうち `Midi/` 以外（`Timing/`、`Output/`、`Views/`、`Utils/`）はプロジェクトオーナーが書いたコードで、本プロジェクトの書き方の手本とする。新規コード・リファクタはこの文書と手本に合わせる。迷ったら `BPMManager`、`TapTempoController`、`OutputTextureProvider`、`SyphonController`、`OutputPreviewDisplay` を参照する。
+`Assets/Krab/Common/Runtime/` のうち `Midi/` 以外（`Timing/`、`Output/`、`Views/`、`Utils/`）はプロジェクトオーナーが書いたコードで、本プロジェクトの書き方の手本とする。新規コード・リファクタはこの文書と手本に合わせる。迷ったら `BPMManager`、`TapTempoController`、`OutputTextureProvider`、`SyphonController`、`OutputPreviewDisplay` を参照する。
 
 ## 命名
 
 | 対象 | 規則 | 例 |
 | --- | --- | --- |
-| namespace | フォルダに対応した `Krab.Common.*` / `Krab.ShapeSynth.*` | `Krab.Common.Output` |
+| namespace | フォルダに対応した `Krab.Common.*` / `Krab.ShapeSynth.*` など。`Modules`・`Runtime` は含めない | `Krab.Common.Output` |
 | 型・メソッド・プロパティ・イベント | PascalCase | `OutputTextureProvider`, `ApplyResolution()` |
 | interface | `I` + PascalCase。メンバーには明示的に `public` を付ける | `public RenderTexture Texture { get; }` |
 | private フィールド | `_camelCase` | `_textureContainer`, `_subscribed` |

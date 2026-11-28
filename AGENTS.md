@@ -12,31 +12,33 @@ KrabはUnity製の映像制作・ライブパフォーマンス用プロジェ�
 
 ## 構成と既存基盤
 
+Assets/Krab/ 直下は「共通基盤・機能モジュール・公演・全体資料」の4種類だけを置く。
+
 | パス | 役割 |
 | --- | --- |
-| `Assets/Krab/Common/Scripts/Timing/` | `IBPMManager` / `BPMManager`、Tap Tempo、フレームレート設定 |
-| `Assets/Krab/Common/Scripts/Midi/` | MIDI入出力、Action、Binding、APC Mini MK2対応 |
-| `Assets/Krab/Common/Scripts/Views/` | `IUiTarget` と `UiBuilder` による設定UIの集約 |
-| `Assets/Krab/Common/Scripts/Output/` | Camera→RenderTexture、プレビュー、Syphon（macOS）/ Spout（Windows）出力 |
-| `Assets/Krab/Common/Prefabs/` | 共通コンポーネントとSceneContainerなどのPrefab |
-| `Assets/Krab/Resources/ProjectContainer.prefab` | プロジェクト共通のDI構成 |
-| `Assets/Krab/Scenes/` / `Assets/Krab/Performances/` | Sceneと公演ごとの資産 |
-| `Assets/Krab/ShapeSynth/Scripts/Core/` | Unity非依存の数値Core（VoiceTime、ADSRなど） |
-| `Assets/Krab/ShapeSynth/Tests/Editor/` | CoreのNUnit EditModeテスト |
-| `Assets/Krab/ShapeSynth/Scripts/Performance/` / `Scripts/PresetEditor/` | 正式な演奏操作UIとプリセット編集UI |
-| `Assets/Krab/ShapeSynth/Scripts/Editor/Scenes/` | Scene構築・設定用Editorツール |
-| `Assets/Krab/ShapeSynth/Samples/` | 専用の検証SceneとSmokeTestコード |
-| `Assets/Krab/Docs/` | MIDI・ShapeSynthの設計資料と実装計画 |
+| `Assets/Krab/Common/` | 共通基盤。`Runtime/`（Timing、Midi、Output、Views、Looping、Utils）、`Editor/`、`Tests/`、`Prefabs/`、`Settings/`、`Docs/` |
+| `Assets/Krab/Common/Runtime/Timing/` | `IBPMManager` / `BPMManager`、Tap Tempo、フレームレート設定 |
+| `Assets/Krab/Common/Runtime/Midi/` | MIDI入出力、Action、Binding、APC mini mk2 / MPD218対応 |
+| `Assets/Krab/Common/Runtime/Views/` | `IUiTarget` と `UiBuilder` による設定UIの集約 |
+| `Assets/Krab/Common/Runtime/Output/` | Camera→RenderTexture、プレビュー、Syphon（macOS）/ Spout（Windows）出力、`Layers/`（描画レイヤーの重なり順） |
+| `Assets/Krab/Common/Resources/ProjectContainer.prefab` | プロジェクト共通のDI構成 |
+| `Assets/Krab/Modules/<名前>/` | 機能モジュール（`ShapeSynth`、`TypeLayout`、`ImageLayer`）。将来は別パッケージへ切り出す可能性がある |
+| `Assets/Krab/Modules/<名前>/Runtime/` | `Core/`（Unity非依存・`noEngineReferences`）、`Unity/`（Unity接続）、`Performance/`（演奏UI）など |
+| `Assets/Krab/Modules/<名前>/Editor/` / `Tests/` / `Samples/` / `Docs/` | Editorツール、テスト、検証Scene、設計資料と計画 |
+| `Assets/Krab/Shows/<公演>/` | 公演ごとのSceneと、その組み立て用Editorツール・検証Scene |
+| `Assets/Krab/Docs/` | プロジェクト全体の資料（`CodingStyle.md`、`WindowsSupport.md`、`VJ/`） |
+| `Assets/StreamingAssets/Krab/<名前>/` | モジュールが実行時に読み書きするデータ（フォント、画像ライブラリ、プリセット）。Git管理 |
 
+- namespaceはフォルダに対応させ、配置だけのための `Modules` と `Runtime` は含めない（例：`Modules/ShapeSynth/Runtime/Core/Voices/` → `Krab.ShapeSynth.Core.Voices`、`Shows/2612_shirt-meets-lausbub/Editor/` → `Krab.Shows.ShirtMeetsLausbub.Editor`）。
 - DIはUnitySimpleContainerを使用。既存のContainer・`[Inject]` による注入方式を確認して接続する。
 - UIはRosettaUI、設定保存はPrefsGUIを使用。`IUiTarget.CreateElement()` を `UiBuilder` が集約する。
 - MIDI関連はMinis、映像出力はKlak Syphon（macOS）とKlak Spout（Windows）（`Assets/Krab/Docs/WindowsSupport.md`）、描画にはp5.Uniteが利用可能。実装前に実際の利用箇所とAPIを確認する。
 - 出力は `OutputTextureProvider` / `IOutputTextureContainer` を再利用し、`TextureChanged` の通知と購読解除を維持する。
-- 設計資料の計画と実装済み機能を区別する。ShapeSynthの後続フェーズは `Assets/Krab/Docs/ShapeSynth/ShapeSynthImplementationPlan.md` を参照し、今回の依頼範囲を越えて実装しない。
+- 設計資料の計画と実装済み機能を区別する。ShapeSynthの後続フェーズは `Assets/Krab/Modules/ShapeSynth/Docs/ShapeSynthImplementationPlan.md` を参照し、今回の依頼範囲を越えて実装しない。
 
 ## コード変更のルール
 
-- 命名・メンバー順・書式・Unity接続の書き方は `Assets/Krab/Docs/CodingStyle.md` に従う。`Common/Scripts/` のMidi以外がオーナーの手本コード。
+- 命名・メンバー順・書式・Unity接続の書き方は `Assets/Krab/Docs/CodingStyle.md` に従う。`Common/Runtime/` のMidi以外がオーナーの手本コード。
 - 既存のnamespace（`Krab.Common.*`、`Krab.ShapeSynth.*`）と周辺コードの書式に合わせる。機能と無関係な一括整形・リファクタリングは避ける。
 - 継承を想定しないクラスは `sealed` を検討し、単純なプロパティにはauto-propertyや式形式を使う。UnityのInspector表示・シリアライズが必要なフィールドは維持する。
 - ファイルが300行を超える場合は責務ごとの分割を検討する。分割自体を目的にしない。
@@ -74,7 +76,7 @@ KrabはUnity製の映像制作・ライブパフォーマンス用プロジェ�
 
 ## ドキュメントと検証成果物の配置
 
-- ShapeSynthは `Assets/Krab/ShapeSynth/` に置き、`Common/` と同階層を維持する。
-- 設計・調査・計画は `Assets/Krab/Docs/ShapeSynth/` にまとめ、Git管理する。
+- 機能は `Assets/Krab/Modules/<名前>/` に置く。モジュールから `Shows/` を参照しない。
+- 設計・調査・計画は、モジュール固有なら `Modules/<名前>/Docs/`、Common固有なら `Common/Docs/`、全体に関わるものは `Assets/Krab/Docs/` に置き、Git管理する。
 - `Tests/` のテストコード・asmdef・meta、および `Samples/` の検証Scene・デモは、再現可能な検証に必要なソースとしてGit管理する。
 - 実行ごとのレポート・ログ・JSON/XML・画像はプロジェクト直下の `Reports/` に出力し、gitignore対象とする。長期参照する仕様や手順はDocsまたはSamplesのREADMEへ残す。
