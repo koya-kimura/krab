@@ -29,7 +29,6 @@ namespace Krab.TypeLayout.Performance
 
         [SerializeField] private Camera _outputCamera;
 
-        private readonly PrefsBool _visible = new("TypeLayout Visible", true);
         private readonly PrefsBool _showGuides = new("TypeLayout Guides", false);
         private readonly PrefsColor _color = new("TypeLayout Color", Color.white);
         private readonly PrefsFloat _margin = new("TypeLayout Margin", 40);
@@ -70,7 +69,6 @@ namespace Krab.TypeLayout.Performance
         {
             // A script reload during Play clears the drawer without calling Start again.
             if (_drawer == null && !TryInitialize()) return;
-            if (!_visible.Get()) return;
 
             var frame = new LayoutFrame(_outputCamera.pixelWidth, _outputCamera.pixelHeight);
             var margin = Mathf.Clamp(_margin.Get(), 0, (float)(frame.ReferenceHeight / 2 - 1));
@@ -84,12 +82,6 @@ namespace Krab.TypeLayout.Performance
             var context = new PatternContext(frame, safeArea, beats, bpm, _drawer, _color.Get(), _words);
             foreach (var pattern in _patterns)
                 pattern.Draw(context);
-        }
-
-        public bool Visible
-        {
-            get => _visible.Get();
-            set => _visible.Set(value);
         }
 
         public IReadOnlyList<TypePattern> Patterns => _patterns;
@@ -142,7 +134,6 @@ namespace Krab.TypeLayout.Performance
         private Element CreateDisplayTab()
         {
             return UI.Column(
-                _visible.CreateElement("Visible"),
                 _color.CreateElement("Color"),
                 _margin.CreateSlider("Safe Area Margin", 0f, 300f),
                 _showGuides.CreateElement("Guides"),

@@ -31,7 +31,6 @@ namespace Krab.ImageLayer.Performance
 
         [SerializeField] private ImageLayerCanvas _images;
 
-        private readonly PrefsBool _visible = new("ImageLayer Visible", true);
         private readonly PrefsString _libraryName = new("ImageLayer Library", "Sequences");
         private readonly PrefsBool _compress = new("ImageLayer Compress", true);
         private readonly PrefsColor _dark = new("ImageLayer Dark", new Color(0.12f, 0.12f, 0.14f));
@@ -90,7 +89,7 @@ namespace Krab.ImageLayer.Performance
             if (canvas == null) return;
 
             canvas.Reset();
-            if (!_visible.Get() || _library == null) return;
+            if (_library == null) return;
 
             foreach (var deck in _decks)
                 DrawDeck(deck, canvas);
@@ -113,12 +112,6 @@ namespace Krab.ImageLayer.Performance
         public float Progress => _progress;
 
         public IReadOnlyList<ImageDeck> Decks => _decks;
-
-        public bool Visible
-        {
-            get => _visible.Get();
-            set => _visible.Set(value);
-        }
 
         [Inject]
         public void Construct(IBPMManager bpmManager, [Nullable] IMidiBindingProvider midi,

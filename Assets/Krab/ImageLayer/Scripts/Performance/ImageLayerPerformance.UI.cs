@@ -253,7 +253,6 @@ namespace Krab.ImageLayer.Performance
         private Element CreateDisplayTab()
         {
             return UI.Column(
-                _visible.CreateElement("Visible"),
                 _dark.CreateElement("Dark"),
                 _light.CreateElement("Light"),
                 _thresholdLevel.CreateSlider("Threshold", 0f, 1f),
