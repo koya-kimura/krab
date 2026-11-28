@@ -1,0 +1,1181 @@
+{
+  "SchemaVersion": 1,
+  "Values": [
+    {
+      "Id": "3ac4072c65ca452ea4a1090aeff62d38",
+      "Name": "All Shapes/Rise",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 0.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "f8461e2bbdfd407cbac1d3dd83abb6aa",
+      "Name": "All Shapes/Rise Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "2f423e8142ad41dd97719870ce49bc70",
+      "Name": "All Shapes/Rise Step Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "bde21faf2f3b47658417b49ba9d11c9b",
+      "Name": "All Shapes/Rise Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "8a3089797a3744c3b3de48af5cc040c1",
+      "Name": "All Shapes/Rise Step Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.5,
+          "Decay": 0.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "ffa3128038894c3cb44f928ce355333e",
+      "Name": "All Shapes/Rise Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "7a5b0cacc5784318bc88b5aa9b10235a",
+      "Name": "All Shapes/Rise Step Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "00d832740e614c29bb35ab087d6c54c3",
+      "Name": "All Shapes/Rise Settle Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "d2a7aac6518f4438b96c8fa4134071f9",
+      "Name": "All Shapes/Rise Two-Step Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.5,
+          "SustainLevel": 0.5,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "e8b7370bbfaa4d43bb868b3dc08fee12",
+      "Name": "All Shapes/Rise Settle Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "5e4c2d30ba6e4bdf9724dc8c369b0e3b",
+      "Name": "All Shapes/Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "45a2cb745cc441f58f984c8a2c2b3b4d",
+      "Name": "All Shapes/Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "adf12fac8db94c229fe9e88e87caab01",
+      "Name": "All Shapes/Fall Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "d8befcceec3d4048bc9599707196df87",
+      "Name": "All Shapes/Two-Step Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.5,
+          "SustainLevel": 0.5,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "14fa0ddf159640e8b49acdbe5ba13ad0",
+      "Name": "All Shapes/Fall Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "e36cc2261c9d4c78b609a8a53c9ee7a3",
+      "Name": "All Shapes/Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "80e63086a36d47f3812ea8fd9a36a8c8",
+      "Name": "ADSR/Fast",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.125,
+          "Decay": 0.625,
+          "SustainLevel": 0.800000011920929,
+          "SustainTime": 0.0,
+          "Release": 0.5,
+          "AttackCurve": 1,
+          "DecayCurve": 0,
+          "ReleaseCurve": 2,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "6ca04b4867094847918005419be48639",
+      "Name": "ADSR/Low",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.25,
+          "Decay": 0.5,
+          "SustainLevel": 0.8,
+          "SustainTime": 0.25,
+          "Release": 0.5,
+          "AttackCurve": 1,
+          "DecayCurve": 0,
+          "ReleaseCurve": 2,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "c216b3d836194731b14e3c1dcac3aa3f",
+      "Name": "Motion/Pop",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.25,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.75,
+          "Release": 0.0,
+          "AttackCurve": 14,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "fb182f2b752847978cace46d775dd3ec",
+      "Name": "Motion/Windup",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.5,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.5,
+          "Release": 0.0,
+          "AttackCurve": 13,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "50e787726b654af581f58d97ccf1d449",
+      "Name": "Motion/Drop",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 20,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "0efba55f45bf4318b74f9f1005de4f0a",
+      "Name": "Motion/Wobble",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.5,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.5,
+          "Release": 0.0,
+          "AttackCurve": 17,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "56fbe3bcfc0e44c68fc9945ddb531a64",
+      "Name": "Motion/Impact",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.36,
+          "Decay": 0.15,
+          "SustainLevel": 0.0,
+          "SustainTime": 0.0,
+          "Release": 0.0,
+          "AttackCurve": 10,
+          "DecayCurve": 5,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "69d62a1b65434a1c89d39a17c954416d",
+      "Name": "Motion/Fade",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.5,
+          "Release": 0.5,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 4,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "c3ab7a04974a4884b4052f34ba35f134",
+      "Name": "LFO/Sine 0.25",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.25,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "a7acdf4b0ceb4575acfa47d121d4a1a9",
+      "Name": "LFO/Sine 0.5",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "ba9483b291d74a90b9eada99f497c260",
+      "Name": "LFO/Sine 1",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 1.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "6d731915fc2741658d6ff309b63fdd7d",
+      "Name": "LFO/Sine 2",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 2.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "8261df66cc2840c98f27ead035c8fe9c",
+      "Name": "LFO/Triangle 0.25",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.25,
+          "PhaseOffset": 0.0,
+          "Waveform": 1
+        }
+      ]
+    },
+    {
+      "Id": "62f67225e9ea4b8286102ebf39d7c0e9",
+      "Name": "LFO/Triangle 0.5",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 1
+        }
+      ]
+    },
+    {
+      "Id": "e9d8b4ac4e074cbb87142a78b50ac03c",
+      "Name": "LFO/Triangle 1",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 1.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 1
+        }
+      ]
+    },
+    {
+      "Id": "1d4bd1e0473d4d4489cec21785738bd0",
+      "Name": "LFO/Triangle 2",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 2.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 1
+        }
+      ]
+    },
+    {
+      "Id": "ebf6fe1b52fa47ceb7e38e1da1a094d1",
+      "Name": "LFO/Sawtooth 0.25",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.25,
+          "PhaseOffset": 0.0,
+          "Waveform": 2
+        }
+      ]
+    },
+    {
+      "Id": "9b96f35bf4de4a1596708a698c8e57c3",
+      "Name": "LFO/Sawtooth 0.5",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 2
+        }
+      ]
+    },
+    {
+      "Id": "4ae5c69556ca4693857d5ec6bfbec7f3",
+      "Name": "LFO/Sawtooth 1",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 1.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 2
+        }
+      ]
+    },
+    {
+      "Id": "c44d4472694c4d2cbf32a948e1b87bb7",
+      "Name": "LFO/Sawtooth 2",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 2.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 2
+        }
+      ]
+    },
+    {
+      "Id": "fe1d57eb7d414330a35a47b2cdb6a498",
+      "Name": "LFO/Square 0.25",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.25,
+          "PhaseOffset": 0.0,
+          "Waveform": 3
+        }
+      ]
+    },
+    {
+      "Id": "a3b76b1f13694081b8894afabae0dc81",
+      "Name": "LFO/Square 0.5",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 3
+        }
+      ]
+    },
+    {
+      "Id": "6a3def9d42f949d3aee3a0724a1cdd99",
+      "Name": "LFO/Square 1",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 1.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 3
+        }
+      ]
+    },
+    {
+      "Id": "81f7baf9f69c4148806b2d45777c6504",
+      "Name": "LFO/Square 2",
+      "Components": [
+        {
+          "Kind": 1,
+          "Weight": 1.0,
+          "Attack": 0.1,
+          "Decay": 0.2,
+          "SustainLevel": 0.8,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 0,
+          "DecayCurve": 0,
+          "ReleaseCurve": 0,
+          "CyclesPerBeat": 2.0,
+          "PhaseOffset": 0.0,
+          "Waveform": 3
+        }
+      ]
+    },
+    {
+      "Id": "b95100c035c0484a81638b6790baac01",
+      "Name": "Eased/Rise",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 0.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "55a533ef58aa475f9cb5461e4ed789a2",
+      "Name": "Eased/Rise Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "e23750b0c89740a6b8eddd5ec9a5c96e",
+      "Name": "Eased/Rise Step Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "cca7258401044167b67b2f976a9d4e66",
+      "Name": "Eased/Rise Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "ef51490e70ef45d8beed3b86d9069447",
+      "Name": "Eased/Rise Step Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.5,
+          "Decay": 0.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "c48f7afa7395400db268c483ff45b707",
+      "Name": "Eased/Rise Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "372d31dad7c046149d5b18f264d7d894",
+      "Name": "Eased/Rise Step Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "212479a17f604054813c00378b5f9661",
+      "Name": "Eased/Rise Settle Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "cd5fc5c394494da08e0ca8f620760c7b",
+      "Name": "Eased/Rise Two-Step Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 0.5,
+          "SustainLevel": 0.5,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "699b296cb377452ab112d4af418ee73f",
+      "Name": "Eased/Rise Settle Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 1.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "bb2983ed1ce740aab6c1594a83320308",
+      "Name": "Eased/Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "4764e8b5704248bb9b61da99da01ee66",
+      "Name": "Eased/Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "245add61f4f14938b8357f114bb4f74e",
+      "Name": "Eased/Fall Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "e26d29e2b800447483484e8aaa49102f",
+      "Name": "Eased/Two-Step Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.5,
+          "SustainLevel": 0.5,
+          "SustainTime": 0.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "000fe681d72147a4b8cf048b68e76015",
+      "Name": "Eased/Fall Hold Fall",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 1.0,
+          "SustainLevel": 0.5,
+          "SustainTime": 1.0,
+          "Release": 1.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    },
+    {
+      "Id": "4505e963d5e14d78909eb6617ce5aca9",
+      "Name": "Eased/Hold",
+      "Components": [
+        {
+          "Kind": 0,
+          "Weight": 1.0,
+          "Attack": 0.0,
+          "Decay": 0.0,
+          "SustainLevel": 1.0,
+          "SustainTime": 1.0,
+          "Release": 0.0,
+          "AttackCurve": 2,
+          "DecayCurve": 3,
+          "ReleaseCurve": 1,
+          "CyclesPerBeat": 0.5,
+          "PhaseOffset": 0.0,
+          "Waveform": 0
+        }
+      ]
+    }
+  ]
+}

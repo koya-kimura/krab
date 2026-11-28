@@ -12,17 +12,18 @@ namespace Krab.ShapeSynth.Unity.Persistence
 {
     /// <summary>
     /// Stores validated preset documents as separate JSON files, and the Values they share as one library file
-    /// next to the preset folder. A loaded preset gets the library attached as its Values.
+    /// next to the preset folder. A loaded preset gets the library attached as its Values. By default they live under
+    /// StreamingAssets/Krab/ShapeSynth, kept in Git with the performance.
     /// </summary>
     public sealed class PresetRepository
     {
+        public const string RelativeRoot = "Krab/ShapeSynth/Presets";
         public const string ValuesFileName = "Values.json";
         private const int ValuesSchemaVersion = 1;
 
         public PresetRepository(string directoryPath = null, string valuesPath = null)
         {
-            DirectoryPath = directoryPath ?? System.IO.Path.Combine(
-                Application.persistentDataPath, "ShapeSynth", "Presets");
+            DirectoryPath = directoryPath ?? System.IO.Path.Combine(Application.streamingAssetsPath, RelativeRoot);
             ValuesPath = valuesPath ?? System.IO.Path.Combine(
                 System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(DirectoryPath)
                     .TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)),

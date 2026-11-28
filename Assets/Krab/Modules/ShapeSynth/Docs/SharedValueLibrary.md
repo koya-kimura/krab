@@ -14,8 +14,8 @@ Valueを全プリセット共通の部品にした。プリセットは「Visual
 
 | ファイル | 中身 |
 |---|---|
-| `{persistentDataPath}/ShapeSynth/Values.json` | 共通Value（`{"SchemaVersion": 1, "Values": [...]}`） |
-| `{persistentDataPath}/ShapeSynth/Presets/{ID}.json` | プリセット（SchemaVersion 7。共有の `Values` は持たず、専用の `LocalValues` を持つ） |
+| `StreamingAssets/Krab/ShapeSynth/Values.json` | 共通Value（`{"SchemaVersion": 1, "Values": [...]}`） |
+| `StreamingAssets/Krab/ShapeSynth/Presets/{ID}.json` | プリセット（SchemaVersion 7。共有の `Values` は持たず、専用の `LocalValues` を持つ） |
 
 - `PresetDocument.Values` は保存しない（`[NonSerialized]`）。読み込み時に `PresetRepository` が共通Valueを付ける。`List()` で読んだプリセットは同じValue一覧を共有する。
 - `Values.json` がない場合は空のライブラリとして扱う。読めない場合は一覧に1件のエラーを出し、プリセットは読み込まない。

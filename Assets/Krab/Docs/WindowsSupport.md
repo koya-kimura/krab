@@ -28,7 +28,7 @@ Krabは macOS / Windows のEditorとStandalone Playerで動かすことを想定
 - PrefsGUIの設定（MIDI Binding、Syphon/Spoutの送信名なども含む）は、OSによって保存先が違う。
   - macOS：`Application.persistentDataPath`
   - Windows：`UiBuilder.prefab` の `PrefsKvsPathCustom` で決まる `%dataPath%/../../%productName%Prefs`。Editorではプロジェクトフォルダと同じ階層、Playerではビルドフォルダと同じ階層になる。
-- ShapeSynthのプリセットはどちらのOSでも `Application.persistentDataPath/ShapeSynth/Presets`。
+- ShapeSynthのプリセット・共通Value・評価は、どちらのOSでも `StreamingAssets/Krab/ShapeSynth/`（Git管理）。
 - MacとWindowsの間で設定は自動では引き継がれない。必要ならJSONを手でコピーする。
 
 ## Windows実機での確認項目（未実施）
